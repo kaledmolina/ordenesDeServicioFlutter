@@ -4,7 +4,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/notification_service.dart';
 import 'home_screen.dart';
-import 'preoperational_screen.dart';
+
 import '../widgets/app_background.dart';
 import '../widgets/glass_card.dart';
 

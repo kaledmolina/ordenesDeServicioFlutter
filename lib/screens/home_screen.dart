@@ -12,7 +12,7 @@ import 'login_screen.dart';
 import 'order_detail_screen.dart';
 import '../widgets/app_background.dart';
 import '../widgets/connection_status_indicator.dart';
-import 'preoperational_screen.dart';
+
 import 'debug_database_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -262,17 +262,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       title: const Text('Todas las Órdenes'),
                       onTap: () => _applyFilter('todas', 'Todas las Órdenes'),
                     ),
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.checklist_rtl),
-                      title: const Text('Inspección Preoperacional'),
-                      onTap: () {
-                        Navigator.of(context).pop(); // Cierra el drawer
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const PreoperationalScreen()),
-                        );
-                      },
-                    ),
+
                     const Padding(
                       padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Text('FILTRAR POR ESTADO', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
