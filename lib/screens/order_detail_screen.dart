@@ -220,7 +220,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             observaciones: _currentOrder!.observaciones,
             esProgramada: _currentOrder!.esProgramada,
             fechaProgramada: _currentOrder!.fechaProgramada,
-            status: 'en proceso',
+            status: 'En Proceso',
             nombreAsignado: _currentOrder!.nombreAsignado,
             fechaLlegada: _currentOrder!.fechaLlegada,
             solucionTecnico: _currentOrder!.solucionTecnico,
@@ -355,7 +355,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           observaciones: _currentOrder!.observaciones,
           esProgramada: _currentOrder!.esProgramada,
           fechaProgramada: _currentOrder!.fechaProgramada,
-          status: 'cerrada',
+          status: 'Ejecutada',
           nombreAsignado: _currentOrder!.nombreAsignado,
           fechaLlegada: _currentOrder!.fechaLlegada,
           solucionTecnico: _currentOrder!.solucionTecnico,
@@ -474,7 +474,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildActionButtons(Orden orden) {
-    if (orden.status == 'abierta') {
+    if (orden.status == 'Asignada') {
       return Row(
         children: [
           Expanded(
@@ -512,7 +512,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ],
       );
     }
-    if (orden.status == 'en proceso') {
+    if (orden.status == 'En Proceso') {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

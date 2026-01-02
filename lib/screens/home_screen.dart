@@ -124,12 +124,13 @@ class _HomeScreenState extends State<HomeScreen> {
 
   (Color, IconData) _getStatusInfo(String status) {
     switch (status) {
-      case 'abierta': return (Colors.green, Icons.flag_outlined);
-      case 'programada': return (Colors.cyan.shade700, Icons.schedule_outlined);
-      case 'en proceso': return (Colors.orange.shade800, Icons.construction_outlined);
-      case 'cerrada': return (Colors.blue, Icons.check_circle_outline);
-      case 'fallida': return (Colors.red.shade700, Icons.error_outline);
-      case 'anulada': return (Colors.grey.shade600, Icons.cancel_outlined);
+      case 'Pendiente': return (Colors.grey, Icons.hourglass_empty);
+      case 'Asignada': return (Colors.green, Icons.assignment_ind);
+      case 'En Sitio': return (Colors.blue, Icons.location_on);
+      case 'En Proceso': return (Colors.orange.shade800, Icons.construction_outlined);
+      case 'Ejecutada': return (Colors.teal, Icons.check_circle);
+      case 'Cerrada': return (Colors.blueGrey, Icons.lock);
+      case 'Anulada': return (Colors.red.shade700, Icons.cancel_outlined);
       default: return (Colors.grey, Icons.help_outline);
     }
   }
@@ -267,12 +268,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Text('FILTRAR POR ESTADO', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                     ),
-                    _buildFilterTile('abierta', 'Abiertas'),
-                    _buildFilterTile('programada', 'Programadas'),
-                    _buildFilterTile('en proceso', 'En Proceso'),
-                    _buildFilterTile('cerrada', 'Cerradas'),
-                    _buildFilterTile('fallida', 'Fallidas'),
-                    _buildFilterTile('anulada', 'Anuladas'),
+                    _buildFilterTile('Pendiente', 'Pendientes'),
+                    _buildFilterTile('Asignada', 'Asignadas'),
+                    _buildFilterTile('En Sitio', 'En Sitio'),
+                    _buildFilterTile('En Proceso', 'En Proceso'),
+                    _buildFilterTile('Ejecutada', 'Ejecutadas'),
+                    _buildFilterTile('Cerrada', 'Cerradas'),
+                    _buildFilterTile('Anulada', 'Anuladas'),
                     const Divider(),
                     ListTile(
                       leading: const Icon(Icons.sync, color: Colors.blue),
