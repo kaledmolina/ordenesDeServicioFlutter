@@ -570,46 +570,33 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           child: _buildDetailCard('Información Principal', [
             _buildDetailRow('Estado', orden.status.toUpperCase(), highlight: true),
             _buildDetailRow('Número de Orden', orden.numeroOrden),
-            _buildDetailRow('Número de Expediente', orden.numeroExpediente),
             _buildDetailRow('Nombre Cliente', orden.nombreCliente),
-            _buildDetailRow('Fecha y Hora', dateFormatter.format(orden.fechaHora)),
-            _buildDetailRow('¿Es Programada?', orden.esProgramada ? 'Sí' : 'No'),
+            _buildDetailRow('Fecha Creación', dateFormatter.format(orden.fechaHora)),
+            if (orden.fechaLlegada != null)
+              _buildDetailRow('Fecha Llegada', dateFormatter.format(orden.fechaLlegada!)),
           ]),
         ),
         _buildGlassCard(
           child: _buildDetailCard('Información de Contacto', [
-            _buildDetailRow('Nombre Asignado', orden.nombreAsignado),
             _buildDetailRow('Celular', orden.celular),
+            _buildDetailRow('Dirección', orden.direccion),
+            _buildDetailRow('Observaciones', orden.observaciones),
           ]),
         ),
+        if (orden.macRouter != null || orden.macOnt != null || orden.solucionTecnico != null)
         _buildGlassCard(
-          child: _buildDetailCard('Detalles del Vehículo/Activo', [
-            _buildDetailRow('Placa', orden.placa),
-            _buildDetailRow('Referencia', orden.referencia),
-            _buildDetailRow('Tipo de Activo', orden.tipoActivo),
-            _buildDetailRow('Marca', orden.marca),
+          child: _buildDetailCard('Detalles Técnicos', [
+            _buildDetailRow('MAC Router', orden.macRouter),
+            _buildDetailRow('MAC ONT', orden.macOnt),
+            _buildDetailRow('MAC Bridge', orden.macBridge),
+            _buildDetailRow('Otros Equipos', orden.otrosEquipos),
+            _buildDetailRow('Solución', orden.solucionTecnico),
           ]),
         ),
+         if (orden.articulos != null && orden.articulos!.isNotEmpty)
         _buildGlassCard(
-          child: _buildDetailCard('Detalles del Servicio', [
-            _buildDetailRow('Unidad de Negocio', orden.unidadNegocio),
-            _buildDetailRow('Movimiento', orden.movimiento),
-            _buildDetailRow('Servicio', orden.servicio),
-            _buildDetailRow('Modalidad', orden.modalidad),
-          ]),
-        ),
-        _buildGlassCard(
-          child: _buildDetailCard('Origen', [
-            _buildDetailRow('Ciudad', orden.ciudadOrigen),
-            _buildDetailRow('Dirección', orden.direccionOrigen),
-            _buildDetailRow('Observaciones', orden.observacionesOrigen),
-          ]),
-        ),
-        _buildGlassCard(
-          child: _buildDetailCard('Destino', [
-            _buildDetailRow('Ciudad', orden.ciudadDestino),
-            _buildDetailRow('Dirección', orden.direccionDestino),
-            _buildDetailRow('Observaciones', orden.observacionesDestino),
+          child: _buildDetailCard('Artículos', [
+             ...orden.articulos!.map((art) => Text('• $art')).toList(), // Simple list for now
           ]),
         ),
       ],

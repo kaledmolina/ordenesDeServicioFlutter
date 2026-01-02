@@ -42,8 +42,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   void initState() {
     super.initState();
     _celularController = TextEditingController(text: widget.orden.celular);
-    _obsOrigenController = TextEditingController(text: widget.orden.observacionesOrigen);
-    _obsDestinoController = TextEditingController(text: widget.orden.observacionesDestino);
+    _obsOrigenController = TextEditingController(text: widget.orden.observaciones); // Using this for general observations
+    _obsDestinoController = TextEditingController(); // Unused
     _initialize();
   }
   
@@ -159,8 +159,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     try {
       await _orderRepo.updateOrderDetails(widget.orden.numeroOrden, {
         'celular': _celularController.text,
-        'observaciones_origen': _obsOrigenController.text,
-        'observaciones_destino': _obsDestinoController.text,
+        'observaciones': _obsOrigenController.text, // Sending as general observations
       });
 
       final newPhotos = _galleryPhotos.where((p) => p.status == PhotoStatusType.local && p.localId == null).toList();
@@ -216,7 +215,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                GlassCard(
+                  GlassCard(
                   borderRadius: 16,
                   child: Padding(
                     padding: const EdgeInsets.all(16.0),
@@ -229,15 +228,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                         ),
                         const SizedBox(height: 16),
                         TextFormField(
-                          controller: _obsOrigenController,
-                          decoration: const InputDecoration(labelText: 'Observaciones de Origen', border: OutlineInputBorder()),
-                          maxLines: 3,
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _obsDestinoController,
-                          decoration: const InputDecoration(labelText: 'Observaciones de Destino', border: OutlineInputBorder()),
-                          maxLines: 3,
+                          controller: _obsOrigenController, // Reusing controller var name for simplicity, but cleaner to rename if possible. Let's just use it for "Observaciones"
+                          decoration: const InputDecoration(labelText: 'Observaciones', border: OutlineInputBorder()),
+                          maxLines: 5,
                         ),
                       ],
                     ),

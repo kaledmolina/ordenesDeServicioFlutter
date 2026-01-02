@@ -23,7 +23,15 @@ class Orden {
   final String? observacionesDestino;
   final bool esProgramada;
   final DateTime? fechaProgramada;
-  final String status;
+  final DateTime? fechaLlegada;
+  final String? solucionTecnico;
+  final String? macRouter;
+  final String? macBridge;
+  final String? macOnt;
+  final String? otrosEquipos;
+  final String? firmaTecnico;
+  final String? firmaSuscriptor;
+  final List<dynamic>? articulos;
 
   Orden({
     required this.id,
@@ -51,6 +59,15 @@ class Orden {
     required this.esProgramada,
     this.fechaProgramada,
     required this.status,
+    this.fechaLlegada,
+    this.solucionTecnico,
+    this.macRouter,
+    this.macBridge,
+    this.macOnt,
+    this.otrosEquipos,
+    this.firmaTecnico,
+    this.firmaSuscriptor,
+    this.articulos,
   });
 
   factory Orden.fromJson(Map<String, dynamic> json) {
@@ -80,6 +97,15 @@ class Orden {
       esProgramada: json['es_programada'] == 1 || json['es_programada'] == true,
       fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
       status: json['status'] ?? 'desconocido',
+      fechaLlegada: DateTime.tryParse(json['fecha_llegada'] ?? '')?.toLocal(),
+      solucionTecnico: json['solucion_tecnico'],
+      macRouter: json['mac_router'],
+      macBridge: json['mac_bridge'],
+      macOnt: json['mac_ont'],
+      otrosEquipos: json['otros_equipos'],
+      firmaTecnico: json['firma_tecnico'],
+      firmaSuscriptor: json['firma_suscriptor'],
+      articulos: json['articulos'],
     );
   }
 }

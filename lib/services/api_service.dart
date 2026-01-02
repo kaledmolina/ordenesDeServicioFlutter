@@ -100,7 +100,7 @@ class ApiService {
   }
 
   // CAMBIO: Acepta un String en lugar de un int
-  Future<void> updateDetails(String orderNumber, Map<String, String> data) async {
+  Future<void> updateDetails(String orderNumber, Map<String, dynamic> data) async {
     final token = await AuthService.instance.getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/v1/orders/$orderNumber/update-details'),
