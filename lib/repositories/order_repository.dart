@@ -15,13 +15,17 @@ class OrderRepository {
     if (hasConnection) {
       try {
         final response = await _apiService.getOrders(page: page, status: status);
+        debugPrint('API Response Data Length: ${(response['data'] as List).length}');
+        
         final ordersData = response['data'] as List;
         
         final orders = ordersData.map((json) => Orden.fromJson(json)).toList();
         await _saveOrdersToLocal(ordersData);
         
         return orders;
-      } catch (e) {
+      } catch (e, stack) {
+        debugPrint('Error fetching orders from API: $e');
+        debugPrint('Stack trace: $stack');
         return await _getOrdersFromLocal(status: status);
       }
     }
