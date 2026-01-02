@@ -86,16 +86,7 @@ class DatabaseService {
       )
     ''');
 
-    // Tabla pending_inspections
-    await db.execute('''
-      CREATE TABLE pending_inspections (
-        id INTEGER PRIMARY KEY AUTOINCREMENT,
-        inspection_data TEXT NOT NULL,
-        created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-        retry_count INTEGER NOT NULL DEFAULT 0,
-        last_error TEXT
-      )
-    ''');
+
 
     // Tabla sync_metadata
     await db.execute('''
@@ -182,15 +173,7 @@ class DatabaseService {
         )
       ''');
 
-      await db.execute('''
-        CREATE TABLE pending_inspections (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          inspection_data TEXT NOT NULL,
-          created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
-          retry_count INTEGER NOT NULL DEFAULT 0,
-          last_error TEXT
-        )
-      ''');
+
 
       await db.execute('''
         CREATE TABLE sync_metadata (
@@ -399,46 +382,7 @@ class DatabaseService {
     }
   }
 
-  // ========== PENDING INSPECTIONS ==========
-  Future<int> addPendingInspection(Map<String, dynamic> inspectionData) async {
-    final db = await database;
-    return await db.insert('pending_inspections', {
-      'inspection_data': jsonEncode(inspectionData),
-    });
-  }
 
-  Future<List<Map<String, dynamic>>> getPendingInspections() async {
-    final db = await database;
-    return await db.query('pending_inspections', orderBy: 'created_at ASC');
-  }
-
-  Future<void> deletePendingInspection(int id) async {
-    final db = await database;
-    await db.delete('pending_inspections', where: 'id = ?', whereArgs: [id]);
-  }
-
-  Future<void> incrementInspectionRetryCount(int id, String? error) async {
-    final db = await database;
-    final result = await db.query(
-      'pending_inspections',
-      where: 'id = ?',
-      whereArgs: [id],
-      columns: ['retry_count'],
-      limit: 1,
-    );
-    if (result.isNotEmpty) {
-      final currentCount = result.first['retry_count'] as int;
-      await db.update(
-        'pending_inspections',
-        {
-          'retry_count': currentCount + 1,
-          'last_error': error,
-        },
-        where: 'id = ?',
-        whereArgs: [id],
-      );
-    }
-  }
 
   // ========== SYNC METADATA ==========
   Future<void> setSyncMetadata(String key, String value) async {

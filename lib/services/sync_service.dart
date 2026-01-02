@@ -59,7 +59,7 @@ class SyncService {
       await _syncPendingOperations();
       
       // 3. Subir inspecciones pendientes
-      await _syncPendingInspections();
+
       
       // 4. Subir fotos pendientes (ya manejado por UploadService)
       await UploadService.instance.syncPendingUploads();
@@ -132,26 +132,7 @@ class SyncService {
     }
   }
 
-  Future<void> _syncPendingInspections() async {
-    final pending = await _dbService.getPendingInspections();
-    debugPrint("Sincronizando ${pending.length} inspecciones pendientes");
-    
-    for (var inspection in pending) {
-      final id = inspection['id'] as int;
-      final data = jsonDecode(inspection['inspection_data'] as String);
-      
-      try {
-        await _apiService.submitInspection(
-          Map<String, dynamic>.from(data),
-        );
-        await _dbService.deletePendingInspection(id);
-        debugPrint("Inspección $id sincronizada");
-      } catch (e) {
-        await _dbService.incrementInspectionRetryCount(id, e.toString());
-        debugPrint("Error al sincronizar inspección $id: $e");
-      }
-    }
-  }
+
 
   Map<String, dynamic> _orderJsonToDbMap(Map<String, dynamic> json) {
     return {

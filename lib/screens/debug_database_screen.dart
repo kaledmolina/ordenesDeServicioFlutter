@@ -12,7 +12,7 @@ class DebugDatabaseScreen extends StatefulWidget {
 
 class _DebugDatabaseScreenState extends State<DebugDatabaseScreen> {
   List<Map<String, dynamic>> _pendingOperations = [];
-  List<Map<String, dynamic>> _pendingInspections = [];
+
   List<Map<String, dynamic>> _pendingPhotos = [];
   Map<String, String> _syncMetadata = {};
   bool _loading = true;
@@ -30,7 +30,7 @@ class _DebugDatabaseScreenState extends State<DebugDatabaseScreen> {
     
     try {
       _pendingOperations = await db.getPendingOperations();
-      _pendingInspections = await db.getPendingInspections();
+
       _pendingPhotos = await db.getPendingPhotos();
       
       _syncMetadata = {
@@ -112,9 +112,8 @@ class _DebugDatabaseScreenState extends State<DebugDatabaseScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final totalPending = _pendingOperations.length + _pendingInspections.length + _pendingPhotos.length;
-    final hasErrors = _pendingOperations.any((op) => op['last_error'] != null) ||
-                     _pendingInspections.any((insp) => insp['last_error'] != null);
+    final totalPending = _pendingOperations.length + _pendingPhotos.length;
+    final hasErrors = _pendingOperations.any((op) => op['last_error'] != null);
 
     return Scaffold(
       appBar: AppBar(
@@ -147,8 +146,7 @@ class _DebugDatabaseScreenState extends State<DebugDatabaseScreen> {
                       if (_pendingOperations.isNotEmpty)
                         _buildPendingOperationsCard(),
                       const SizedBox(height: 16),
-                      if (_pendingInspections.isNotEmpty)
-                        _buildPendingInspectionsCard(),
+
                       const SizedBox(height: 16),
                       if (_pendingPhotos.isNotEmpty)
                         _buildPendingPhotosCard(),
@@ -347,112 +345,7 @@ class _DebugDatabaseScreenState extends State<DebugDatabaseScreen> {
     );
   }
 
-  Widget _buildPendingInspectionsCard() {
-    return Card(
-      elevation: 2,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            padding: const EdgeInsets.all(16),
-            decoration: BoxDecoration(
-              color: Colors.blue.withOpacity(0.1),
-              borderRadius: const BorderRadius.only(
-                topLeft: Radius.circular(4),
-                topRight: Radius.circular(4),
-              ),
-            ),
-            child: Row(
-              children: [
-                const Icon(Icons.checklist, color: Colors.blue),
-                const SizedBox(width: 8),
-                Text(
-                  'Inspecciones Pendientes (${_pendingInspections.length})',
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.blue,
-                  ),
-                ),
-              ],
-            ),
-          ),
-          ..._pendingInspections.map((insp) {
-            final retryCount = insp['retry_count'] as int;
-            final error = _getErrorMessage(insp['last_error'] as String?);
-            final createdAt = _formatTimestamp(insp['created_at'] as int?);
 
-            return Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Expanded(
-                        child: Text(
-                          'Inspección Preoperacional',
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      if (error != null)
-                        const Icon(Icons.error, color: Colors.red, size: 20),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  if (retryCount > 0)
-                    Text(
-                      'Intentos de sincronización: $retryCount',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[600],
-                        fontStyle: FontStyle.italic,
-                      ),
-                    ),
-                  if (error != null) ...[
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.red.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(8),
-                        border: Border.all(color: Colors.red.withOpacity(0.3)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(Icons.warning, color: Colors.red, size: 20),
-                          const SizedBox(width: 8),
-                          Expanded(
-                            child: Text(
-                              error,
-                              style: const TextStyle(
-                                color: Colors.red,
-                                fontSize: 13,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                  Text(
-                    'Creado: $createdAt',
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Colors.grey[500],
-                    ),
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-      ),
-    );
-  }
 
   Widget _buildPendingPhotosCard() {
     return Card(
