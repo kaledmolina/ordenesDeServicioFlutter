@@ -16,7 +16,7 @@ class OrderRepository {
     if (hasConnection) {
       try {
         final response = await _apiService.getOrders(page: page, status: status);
-        debugPrint('API Response Data Length: ${(response['data'] as List).length}');
+        print('API Response Data Length: ${(response['data'] as List).length}');
         
         final ordersData = response['data'] as List;
         
@@ -25,8 +25,8 @@ class OrderRepository {
         
         return orders;
       } catch (e, stack) {
-        debugPrint('Error fetching orders from API: $e');
-        debugPrint('Stack trace: $stack');
+        print('Error fetching orders from API: $e');
+        print('Stack trace: $stack');
         return await _getOrdersFromLocal(status: status);
       }
     }

@@ -76,9 +76,9 @@ class Orden {
         articulos: json['articulos'],
       );
     } catch (e, stack) {
-      debugPrint('Error parsing Orden JSON: $e');
-      debugPrint('JSON Content: $json');
-      debugPrint('Stack trace: $stack');
+      print('Error parsing Orden JSON: $e');
+      print('JSON Content: $json');
+      print('Stack trace: $stack');
       rethrow;
     }
   }
