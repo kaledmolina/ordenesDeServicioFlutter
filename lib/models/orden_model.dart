@@ -5,22 +5,11 @@ class Orden {
   final String nombreCliente;
   final DateTime fechaHora;
   final double? valorServicio;
-  final String? placa;
-  final String? referencia;
-  final String? nombreAsignado;
   final String? celular;
-  final String? unidadNegocio;
-  final String? movimiento;
-  final String? servicio;
-  final String? modalidad;
-  final String? tipoActivo;
-  final String? marca;
-  final String ciudadOrigen;
-  final String direccionOrigen;
-  final String? observacionesOrigen;
-  final String ciudadDestino;
-  final String direccionDestino;
-  final String? observacionesDestino;
+  final String? direccion;
+  final String? observaciones;
+  final String status;
+  final String? nombreAsignado;
   final bool esProgramada;
   final DateTime? fechaProgramada;
   final DateTime? fechaLlegada;
@@ -40,25 +29,13 @@ class Orden {
     required this.nombreCliente,
     required this.fechaHora,
     this.valorServicio,
-    this.placa,
-    this.referencia,
-    this.nombreAsignado,
     this.celular,
-    this.unidadNegocio,
-    this.movimiento,
-    this.servicio,
-    this.modalidad,
-    this.tipoActivo,
-    this.marca,
-    required this.ciudadOrigen,
-    required this.direccionOrigen,
-    this.observacionesOrigen,
-    required this.ciudadDestino,
-    required this.direccionDestino,
-    this.observacionesDestino,
+    this.direccion,
+    this.observaciones,
+    required this.status,
+    this.nombreAsignado,
     required this.esProgramada,
     this.fechaProgramada,
-    required this.status,
     this.fechaLlegada,
     this.solucionTecnico,
     this.macRouter,
@@ -76,27 +53,15 @@ class Orden {
       numeroOrden: json['numero_orden'],
       numeroExpediente: json['numero_expediente'],
       nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
-      fechaHora: DateTime.tryParse(json['fecha_hora'] ?? '')?.toLocal() ?? DateTime.now(),
-      valorServicio: double.tryParse(json['valor_servicio']?.toString() ?? '0'),
-      placa: json['placa'],
-      referencia: json['referencia'],
+      fechaHora: DateTime.tryParse(json['created_at'] ?? json['fecha_hora'] ?? '')?.toLocal() ?? DateTime.now(),
+      valorServicio: double.tryParse(json['valor_servicio']?.toString() ?? json['valor_total']?.toString() ?? '0'),
+      celular: json['celular'] ?? json['telefono'],
+      direccion: json['direccion'],
+      observaciones: json['observaciones'],
+      status: json['status'] ?? 'desconocido',
       nombreAsignado: json['nombre_asignado'],
-      celular: json['celular'],
-      unidadNegocio: json['unidad_negocio'],
-      movimiento: json['movimiento'],
-      servicio: json['servicio'],
-      modalidad: json['modalidad'],
-      tipoActivo: json['tipo_activo'],
-      marca: json['marca'],
-      ciudadOrigen: json['ciudad_origen'] ?? 'Origen no especificado',
-      direccionOrigen: json['direccion_origen'] ?? 'Dirección no especificada',
-      observacionesOrigen: json['observaciones_origen'],
-      ciudadDestino: json['ciudad_destino'] ?? 'Destino no especificado',
-      direccionDestino: json['direccion_destino'] ?? 'Dirección no especificada',
-      observacionesDestino: json['observaciones_destino'],
       esProgramada: json['es_programada'] == 1 || json['es_programada'] == true,
       fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
-      status: json['status'] ?? 'desconocido',
       fechaLlegada: DateTime.tryParse(json['fecha_llegada'] ?? '')?.toLocal(),
       solucionTecnico: json['solucion_tecnico'],
       macRouter: json['mac_router'],

@@ -28,20 +28,11 @@ class _SplashScreenState extends State<SplashScreen> {
     // Aseguramos que el token se registre al iniciar la app
     await NotificationService.instance.requestPermissionAndRegisterToken();
 
-    try {
-      final completed = await ApiService().hasCompletedInspectionToday();
-      if (mounted) {
-        if (completed) {
-          // Si ya completó la inspección, va a la pantalla principal.
-          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
-        } else {
-          // Si no, va a la pantalla de inspección.
-          Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const PreoperationalScreen()));
-        }
-      }
-    } catch (e) {
-      // Si hay un error (ej. token inválido), lo mandamos al login.
-      if (mounted) {
+    final token = await AuthService.instance.getToken();
+    if (mounted) {
+      if (token != null) {
+        Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const HomeScreen()));
+      } else {
         Navigator.of(context).pushReplacement(MaterialPageRoute(builder: (_) => const LoginScreen()));
       }
     }

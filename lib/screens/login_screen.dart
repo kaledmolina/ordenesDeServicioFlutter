@@ -45,29 +45,10 @@ class _LoginScreenState extends State<LoginScreen> {
 
     if (success && mounted) {
       await NotificationService.instance.requestPermissionAndRegisterToken();
-
-      try {
-        final completed = await ApiService().hasCompletedInspectionToday();
-        if (completed) {
-          // ✅ Ya hizo la inspección, va al Home
-          Navigator.of(context).pushReplacement(
+      if (mounted) {
+         Navigator.of(context).pushReplacement(
             MaterialPageRoute(builder: (_) => const HomeScreen()),
-          );
-        } else {
-          // 🚫 No la hizo, mandarlo primero a la Inspección
-          Navigator.of(context).pushReplacement(
-            MaterialPageRoute(builder: (_) => const PreoperationalScreen()),
-          );
-        }
-      } catch (e) {
-        // Si hay error, muestra aviso
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Error verificando inspección. Intenta nuevamente.'),
-            ),
-          );
-        }
+         );
       }
     } else {
       if (mounted) {
