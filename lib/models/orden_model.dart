@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+
 class Orden {
   final int id;
   final String numeroOrden;
@@ -48,29 +50,36 @@ class Orden {
   });
 
   factory Orden.fromJson(Map<String, dynamic> json) {
-    return Orden(
-      id: json['id'],
-      numeroOrden: json['numero_orden'],
-      numeroExpediente: json['numero_expediente'],
-      nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
-      fechaHora: DateTime.tryParse(json['created_at'] ?? json['fecha_hora'] ?? '')?.toLocal() ?? DateTime.now(),
-      valorServicio: double.tryParse(json['valor_servicio']?.toString() ?? json['valor_total']?.toString() ?? '0'),
-      celular: json['celular'] ?? json['telefono'],
-      direccion: json['direccion'],
-      observaciones: json['observaciones'],
-      status: json['status'] ?? 'desconocido',
-      nombreAsignado: json['nombre_asignado'],
-      esProgramada: json['es_programada'] == 1 || json['es_programada'] == true,
-      fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
-      fechaLlegada: DateTime.tryParse(json['fecha_llegada'] ?? '')?.toLocal(),
-      solucionTecnico: json['solucion_tecnico'],
-      macRouter: json['mac_router'],
-      macBridge: json['mac_bridge'],
-      macOnt: json['mac_ont'],
-      otrosEquipos: json['otros_equipos'],
-      firmaTecnico: json['firma_tecnico'],
-      firmaSuscriptor: json['firma_suscriptor'],
-      articulos: json['articulos'],
-    );
+    try {
+      return Orden(
+        id: json['id'] is String ? int.parse(json['id']) : json['id'],
+        numeroOrden: json['numero_orden'].toString(),
+        numeroExpediente: json['numero_expediente']?.toString(),
+        nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
+        fechaHora: DateTime.tryParse(json['created_at'] ?? json['fecha_hora'] ?? '')?.toLocal() ?? DateTime.now(),
+        valorServicio: double.tryParse(json['valor_servicio']?.toString() ?? json['valor_total']?.toString() ?? '0'),
+        celular: json['celular']?.toString() ?? json['telefono']?.toString(),
+        direccion: json['direccion'],
+        observaciones: json['observaciones'],
+        status: json['status'] ?? 'desconocido',
+        nombreAsignado: json['nombre_asignado'],
+        esProgramada: json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1',
+        fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
+        fechaLlegada: DateTime.tryParse(json['fecha_llegada'] ?? '')?.toLocal(),
+        solucionTecnico: json['solucion_tecnico'],
+        macRouter: json['mac_router'],
+        macBridge: json['mac_bridge'],
+        macOnt: json['mac_ont'],
+        otrosEquipos: json['otros_equipos'],
+        firmaTecnico: json['firma_tecnico'],
+        firmaSuscriptor: json['firma_suscriptor'],
+        articulos: json['articulos'],
+      );
+    } catch (e, stack) {
+      debugPrint('Error parsing Orden JSON: $e');
+      debugPrint('JSON Content: $json');
+      debugPrint('Stack trace: $stack');
+      rethrow;
+    }
   }
 }
