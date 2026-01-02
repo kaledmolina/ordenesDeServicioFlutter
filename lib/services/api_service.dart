@@ -26,8 +26,9 @@ class ApiService {
       final response = await http.get(Uri.parse('$baseUrl/v1/health'))
           .timeout(const Duration(seconds: 5));
       return response.statusCode == 200;
-    } catch (e) {
+    } catch (e, stack) {
       debugPrint("Fallo en la verificación de la API: $e");
+      debugPrint("Stack trace: $stack");
       return false;
     }
   }
