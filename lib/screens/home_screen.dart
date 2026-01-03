@@ -123,14 +123,16 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   (Color, IconData) _getStatusInfo(String status) {
-    switch (status) {
-      case 'Pendiente': return (Colors.grey, Icons.hourglass_empty);
-      case 'Asignada': return (Colors.green, Icons.assignment_ind);
-      case 'En Sitio': return (Colors.blue, Icons.location_on);
-      case 'En Proceso': return (Colors.orange.shade800, Icons.construction_outlined);
-      case 'Ejecutada': return (Colors.teal, Icons.check_circle);
-      case 'Cerrada': return (Colors.blueGrey, Icons.lock);
-      case 'Anulada': return (Colors.red.shade700, Icons.cancel_outlined);
+    switch (status.toLowerCase()) {
+      case Orden.ESTADO_PENDIENTE: return (Colors.grey, Icons.hourglass_empty);
+      case Orden.ESTADO_ASIGNADA: return (Colors.green, Icons.assignment_ind);
+      case Orden.ESTADO_EN_SITIO: return (Colors.blue, Icons.location_on);
+      case Orden.ESTADO_EN_PROCESO: return (Colors.orange.shade800, Icons.construction_outlined);
+      case Orden.ESTADO_EJECUTADA: return (Colors.teal, Icons.check_circle);
+      case Orden.ESTADO_CERRADA: return (Colors.blueGrey, Icons.lock);
+      case Orden.ESTADO_ANULADA: return (Colors.red.shade700, Icons.cancel_outlined);
+      // Fallback for legacy database values if any
+      case 'abierta': return (Colors.green, Icons.assignment_ind); 
       default: return (Colors.grey, Icons.help_outline);
     }
   }
@@ -268,13 +270,13 @@ class _HomeScreenState extends State<HomeScreen> {
                       padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
                       child: Text('FILTRAR POR ESTADO', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
                     ),
-                    _buildFilterTile('Pendiente', 'Pendientes'),
-                    _buildFilterTile('Asignada', 'Asignadas'),
-                    _buildFilterTile('En Sitio', 'En Sitio'),
-                    _buildFilterTile('En Proceso', 'En Proceso'),
-                    _buildFilterTile('Ejecutada', 'Ejecutadas'),
-                    _buildFilterTile('Cerrada', 'Cerradas'),
-                    _buildFilterTile('Anulada', 'Anuladas'),
+                    _buildFilterTile(Orden.ESTADO_PENDIENTE, 'Pendientes'),
+                    _buildFilterTile(Orden.ESTADO_ASIGNADA, 'Asignadas'),
+                    _buildFilterTile(Orden.ESTADO_EN_SITIO, 'En Sitio'),
+                    _buildFilterTile(Orden.ESTADO_EN_PROCESO, 'En Proceso'),
+                    _buildFilterTile(Orden.ESTADO_EJECUTADA, 'Ejecutadas'),
+                    _buildFilterTile(Orden.ESTADO_CERRADA, 'Cerradas'),
+                    _buildFilterTile(Orden.ESTADO_ANULADA, 'Anuladas'),
                     const Divider(),
                     ListTile(
                       leading: const Icon(Icons.sync, color: Colors.blue),

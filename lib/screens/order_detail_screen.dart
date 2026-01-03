@@ -510,7 +510,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildActionButtons(Orden orden) {
-    if (orden.status.toLowerCase() == Orden.ESTADO_ASIGNADA) {
+    if (orden.status.toLowerCase() == Orden.ESTADO_ASIGNADA || orden.status.toLowerCase() == 'abierta') {
       return Row(
         children: [
           Expanded(
