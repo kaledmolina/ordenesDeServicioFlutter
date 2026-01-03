@@ -504,7 +504,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildActionButtons(Orden orden) {
-    if (orden.status.toLowerCase() == Orden.ESTADO_ASIGNADA || orden.status.toLowerCase() == 'abierta') {
+    final status = orden.status.toLowerCase().replaceAll(' ', '_');
+    
+    if (status == Orden.ESTADO_ASIGNADA || status == 'abierta') {
        // ... (existing Accept/Reject logic)
        return Row(
         children: [
@@ -543,7 +545,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       );
     }
     
-    if (orden.status.toLowerCase() == Orden.ESTADO_EN_PROCESO) {
+    if (status == Orden.ESTADO_EN_PROCESO) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -576,7 +578,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       );
     }
     
-    if (orden.status.toLowerCase() == Orden.ESTADO_EN_SITIO) { // estado_en_sitio logic
+    if (status == Orden.ESTADO_EN_SITIO) { // estado_en_sitio logic
        return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
