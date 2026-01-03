@@ -126,7 +126,6 @@ class DatabaseService {
 
       // Crear nuevas tablas
       await db.execute('''
-      await db.execute('''
         CREATE TABLE orders (
           id INTEGER PRIMARY KEY,
           numero_orden TEXT NOT NULL UNIQUE,
