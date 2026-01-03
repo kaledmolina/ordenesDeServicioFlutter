@@ -112,17 +112,14 @@ class OrderRepository {
         return Orden(
           id: localOrder.id,
           numeroOrden: localOrder.numeroOrden,
-          // numeroExpediente: localOrder.numeroExpediente, // REMOVED
           nombreCliente: localOrder.nombreCliente,
           fechaHora: localOrder.fechaHora,
           valorServicio: localOrder.valorServicio,
           celular: localOrder.celular,
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
-          // esProgramada: localOrder.esProgramada, // REMOVED
           fechaProgramada: localOrder.fechaProgramada,
           status: 'En Proceso',
-          // nombreAsignado: localOrder.nombreAsignado, // REMOVED
           fechaLlegada: localOrder.fechaLlegada,
           solucionTecnico: localOrder.solucionTecnico,
           macRouter: localOrder.macRouter,
@@ -132,6 +129,27 @@ class OrderRepository {
           firmaTecnico: localOrder.firmaTecnico,
           firmaSuscriptor: localOrder.firmaSuscriptor,
           articulos: localOrder.articulos,
+          technicianId: localOrder.technicianId,
+          clienteId: localOrder.clienteId,
+          cedula: localOrder.cedula,
+          precinto: localOrder.precinto,
+          tipoOrden: localOrder.tipoOrden,
+          tipoFuncion: localOrder.tipoFuncion,
+          fechaTrn: localOrder.fechaTrn,
+          fechaVencimiento: localOrder.fechaVencimiento,
+          estadoOrden: localOrder.estadoOrden,
+          tipo: localOrder.tipo,
+          estadoInterno: localOrder.estadoInterno,
+          direccionAsociado: localOrder.direccionAsociado,
+          telefono: localOrder.telefono,
+          saldoCliente: localOrder.saldoCliente,
+          solicitadoPor: localOrder.solicitadoPor,
+          estadoTv: localOrder.estadoTv,
+          tecnicoAuxiliarId: localOrder.tecnicoAuxiliarId,
+          solicitudSuscriptor: localOrder.solicitudSuscriptor,
+          fechaInicioAtencion: DateTime.now(),
+          fechaFinAtencion: localOrder.fechaFinAtencion,
+          fechaCierre: localOrder.fechaCierre,
         );
       }
     }
@@ -177,17 +195,14 @@ class OrderRepository {
         return Orden(
           id: localOrder.id,
           numeroOrden: localOrder.numeroOrden,
-          // numeroExpediente: localOrder.numeroExpediente, // REMOVED
           nombreCliente: localOrder.nombreCliente,
           fechaHora: localOrder.fechaHora,
           valorServicio: localOrder.valorServicio,
           celular: localOrder.celular,
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
-          // esProgramada: localOrder.esProgramada, // REMOVED
           fechaProgramada: localOrder.fechaProgramada,
           status: 'Ejecutada',
-          // nombreAsignado: localOrder.nombreAsignado, // REMOVED
           fechaLlegada: localOrder.fechaLlegada,
           solucionTecnico: localOrder.solucionTecnico,
           macRouter: localOrder.macRouter,
@@ -197,6 +212,27 @@ class OrderRepository {
           firmaTecnico: localOrder.firmaTecnico,
           firmaSuscriptor: localOrder.firmaSuscriptor,
           articulos: localOrder.articulos,
+          technicianId: localOrder.technicianId,
+          clienteId: localOrder.clienteId,
+          cedula: localOrder.cedula,
+          precinto: localOrder.precinto,
+          tipoOrden: localOrder.tipoOrden,
+          tipoFuncion: localOrder.tipoFuncion,
+          fechaTrn: localOrder.fechaTrn,
+          fechaVencimiento: localOrder.fechaVencimiento,
+          estadoOrden: localOrder.estadoOrden,
+          tipo: localOrder.tipo,
+          estadoInterno: localOrder.estadoInterno,
+          direccionAsociado: localOrder.direccionAsociado,
+          telefono: localOrder.telefono,
+          saldoCliente: localOrder.saldoCliente,
+          solicitadoPor: localOrder.solicitadoPor,
+          estadoTv: localOrder.estadoTv,
+          tecnicoAuxiliarId: localOrder.tecnicoAuxiliarId,
+          solicitudSuscriptor: localOrder.solicitudSuscriptor,
+          fechaInicioAtencion: localOrder.fechaInicioAtencion,
+          fechaFinAtencion: DateTime.now(),
+          fechaCierre: DateTime.now(),
         );
       }
     }
@@ -337,20 +373,14 @@ class OrderRepository {
     return {
       'id': json['id'],
       'numero_orden': json['numero_orden'],
-      'numero_expediente': json['numero_expediente'],
       'nombre_cliente': json['nombre_cliente'] ?? 'Cliente Desconocido',
       'fecha_hora': json['created_at'] ?? json['fecha_hora'] ?? DateTime.now().toIso8601String(),
       'valor_servicio': json['valor_servicio']?.toString() ?? json['valor_total']?.toString(),
       'celular': json['celular'] ?? json['telefono'],
       'direccion': json['direccion'], 
       'observaciones': json['observaciones'],
-      // es_programada: json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1' ? 1 : 0, // REMOVED
       'fecha_programada': json['fecha_programada'],
       'status': json['status'],
-      // Nuevos campos que deberian guardarse si la DB lo soporta.
-      // Por compatibilidad con tabla existente, ignoramos los json fields nuevos en la LISTA general si no son críticos
-      // O los mapeamos si agregamos columnas. Asumimos que la DB local ya fue actualizada o se actualizará.
-      // Por ahora mantenemos lo crítico.
       'fecha_llegada': json['fecha_llegada'],
       'solucion_tecnico': json['solucion_tecnico'],
       'mac_router': json['mac_router'],
@@ -360,6 +390,27 @@ class OrderRepository {
       'firma_tecnico': json['firma_tecnico'],
       'firma_suscriptor': json['firma_suscriptor'],
       'articulos': json['articulos'] != null ? jsonEncode(json['articulos']) : null,
+      'technician_id': json['technician_id'],
+      'cliente_id': json['cliente_id'],
+      'cedula': json['cedula'],
+      'precinto': json['precinto'],
+      'tipo_orden': json['tipo_orden'],
+      'tipo_funcion': json['tipo_funcion'],
+      'fecha_trn': json['fecha_trn'],
+      'fecha_vencimiento': json['fecha_vencimiento'],
+      'estado_orden': json['estado_orden'],
+      'tipo': json['tipo'],
+      'estado_interno': json['estado_interno'],
+      'direccion_asociado': json['direccion_asociado'],
+      'telefono': json['telefono'],
+      'saldo_cliente': json['saldo_cliente'],
+      'solicitado_por': json['solicitado_por'],
+      'estado_tv': json['estado_tv'],
+      'tecnico_auxiliar_id': json['tecnico_auxiliar_id'],
+      'solicitud_suscriptor': json['solicitud_suscriptor'],
+      'fecha_inicio_atencion': json['fecha_inicio_atencion'],
+      'fecha_fin_atencion': json['fecha_fin_atencion'],
+      'fecha_cierre': json['fecha_cierre'],
     };
   }
 
@@ -367,17 +418,14 @@ class OrderRepository {
     return {
       'id': order.id,
       'numero_orden': order.numeroOrden,
-      // 'numero_expediente': order.numeroExpediente, // REMOVED
       'nombre_cliente': order.nombreCliente,
       'fecha_hora': order.fechaHora.toIso8601String(),
       'valor_servicio': order.valorServicio?.toString(),
       'celular': order.celular,
       'direccion': order.direccion,
       'observaciones': order.observaciones,
-      // 'es_programada': order.esProgramada ? 1 : 0, // REMOVED
       'fecha_programada': order.fechaProgramada?.toIso8601String(),
       'status': order.status,
-      // Nuevos campos
       'fecha_llegada': order.fechaLlegada?.toIso8601String(),
       'solucion_tecnico': order.solucionTecnico,
       'mac_router': order.macRouter,
@@ -387,6 +435,27 @@ class OrderRepository {
       'firma_tecnico': order.firmaTecnico,
       'firma_suscriptor': order.firmaSuscriptor,
       'articulos': order.articulos != null ? jsonEncode(order.articulos) : null,
+      'technician_id': order.technicianId,
+      'cliente_id': order.clienteId,
+      'cedula': order.cedula,
+      'precinto': order.precinto,
+      'tipo_orden': order.tipoOrden,
+      'tipo_funcion': order.tipoFuncion,
+      'fecha_trn': order.fechaTrn?.toIso8601String(),
+      'fecha_vencimiento': order.fechaVencimiento?.toIso8601String(),
+      'estado_orden': order.estadoOrden,
+      'tipo': order.tipo,
+      'estado_interno': order.estadoInterno,
+      'direccion_asociado': order.direccionAsociado,
+      'telefono': order.telefono,
+      'saldo_cliente': order.saldoCliente,
+      'solicitado_por': order.solicitadoPor,
+      'estado_tv': order.estadoTv,
+      'tecnico_auxiliar_id': order.tecnicoAuxiliarId,
+      'solicitud_suscriptor': order.solicitudSuscriptor,
+      'fecha_inicio_atencion': order.fechaInicioAtencion?.toIso8601String(),
+      'fecha_fin_atencion': order.fechaFinAtencion?.toIso8601String(),
+      'fecha_cierre': order.fechaCierre?.toIso8601String(),
     };
   }
 
@@ -394,7 +463,6 @@ class OrderRepository {
     return Orden(
       id: map['id'] as int,
       numeroOrden: map['numero_orden'] as String,
-      // numeroExpediente: map['numero_expediente'] as String?, // REMOVED
       nombreCliente: map['nombre_cliente'] as String,
       fechaHora: DateTime.parse(map['fecha_hora'] as String).toLocal(),
       valorServicio: map['valor_servicio'] != null
@@ -403,12 +471,10 @@ class OrderRepository {
       celular: map['celular'] as String?,
       direccion: map['direccion'] as String?,
       observaciones: map['observaciones'] as String?,
-      // esProgramada: (map['es_programada'] as int) == 1, // REMOVED
       fechaProgramada: map['fecha_programada'] != null
           ? DateTime.parse(map['fecha_programada'] as String).toLocal()
           : null,
       status: map['status'] as String,
-      // nombreAsignado: map['nombre_asignado'] as String?, // REMOVED (Implicitly handled if unused in map)
       fechaLlegada: map['fecha_llegada'] != null ? DateTime.parse(map['fecha_llegada'] as String).toLocal() : null,
       solucionTecnico: map['solucion_tecnico'] as String?,
       macRouter: map['mac_router'] as String?,
@@ -418,6 +484,27 @@ class OrderRepository {
       firmaTecnico: map['firma_tecnico'] as String?,
       firmaSuscriptor: map['firma_suscriptor'] as String?,
       articulos: map['articulos'] != null ? jsonDecode(map['articulos'] as String) as List<dynamic> : null,
+      technicianId: map['technician_id'] as int?,
+      clienteId: map['cliente_id'] as int?,
+      cedula: map['cedula'] as String?,
+      precinto: map['precinto'] as String?,
+      tipoOrden: map['tipo_orden'] as String?,
+      tipoFuncion: map['tipo_funcion'] as String?,
+      fechaTrn: map['fecha_trn'] != null ? DateTime.tryParse(map['fecha_trn'] as String)?.toLocal() : null,
+      fechaVencimiento: map['fecha_vencimiento'] != null ? DateTime.tryParse(map['fecha_vencimiento'] as String)?.toLocal() : null,
+      estadoOrden: map['estado_orden'] as String?,
+      tipo: map['tipo'] as String?,
+      estadoInterno: map['estado_interno'] as String?,
+      direccionAsociado: map['direccion_asociado'] as String?,
+      telefono: map['telefono'] as String?,
+      saldoCliente: map['saldo_cliente'] as String?,
+      solicitadoPor: map['solicitado_por'] as String?,
+      estadoTv: map['estado_tv'] as String?,
+      tecnicoAuxiliarId: map['tecnico_auxiliar_id'] as int?,
+      solicitudSuscriptor: map['solicitud_suscriptor'] as String?,
+      fechaInicioAtencion: map['fecha_inicio_atencion'] != null ? DateTime.tryParse(map['fecha_inicio_atencion'] as String)?.toLocal() : null,
+      fechaFinAtencion: map['fecha_fin_atencion'] != null ? DateTime.tryParse(map['fecha_fin_atencion'] as String)?.toLocal() : null,
+      fechaCierre: map['fecha_cierre'] != null ? DateTime.tryParse(map['fecha_cierre'] as String)?.toLocal() : null,
     );
   }
 

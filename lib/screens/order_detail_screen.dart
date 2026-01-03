@@ -211,17 +211,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           _currentOrder = Orden(
             id: _currentOrder!.id,
             numeroOrden: _currentOrder!.numeroOrden,
-            // numeroExpediente: _currentOrder!.numeroExpediente, // REMOVED
             nombreCliente: _currentOrder!.nombreCliente,
             fechaHora: _currentOrder!.fechaHora,
             valorServicio: _currentOrder!.valorServicio,
             celular: _currentOrder!.celular,
             direccion: _currentOrder!.direccion,
             observaciones: _currentOrder!.observaciones,
-            // esProgramada: _currentOrder!.esProgramada, // REMOVED
             fechaProgramada: _currentOrder!.fechaProgramada,
             status: 'En Proceso',
-            // nombreAsignado: _currentOrder!.nombreAsignado, // REMOVED
             fechaLlegada: _currentOrder!.fechaLlegada,
             solucionTecnico: _currentOrder!.solucionTecnico,
             macRouter: _currentOrder!.macRouter,
@@ -231,6 +228,27 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             firmaTecnico: _currentOrder!.firmaTecnico,
             firmaSuscriptor: _currentOrder!.firmaSuscriptor,
             articulos: _currentOrder!.articulos,
+            technicianId: _currentOrder!.technicianId,
+            clienteId: _currentOrder!.clienteId,
+            cedula: _currentOrder!.cedula,
+            precinto: _currentOrder!.precinto,
+            tipoOrden: _currentOrder!.tipoOrden,
+            tipoFuncion: _currentOrder!.tipoFuncion,
+            fechaTrn: _currentOrder!.fechaTrn,
+            fechaVencimiento: _currentOrder!.fechaVencimiento,
+            estadoOrden: _currentOrder!.estadoOrden,
+            tipo: _currentOrder!.tipo,
+            estadoInterno: _currentOrder!.estadoInterno,
+            direccionAsociado: _currentOrder!.direccionAsociado,
+            telefono: _currentOrder!.telefono,
+            saldoCliente: _currentOrder!.saldoCliente,
+            solicitadoPor: _currentOrder!.solicitadoPor,
+            estadoTv: _currentOrder!.estadoTv,
+            tecnicoAuxiliarId: _currentOrder!.tecnicoAuxiliarId,
+            solicitudSuscriptor: _currentOrder!.solicitudSuscriptor,
+            fechaInicioAtencion: DateTime.now(),
+            fechaFinAtencion: _currentOrder!.fechaFinAtencion,
+            fechaCierre: _currentOrder!.fechaCierre,
           );
           _hasStateChanged = true;
         }
@@ -346,17 +364,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         _currentOrder = Orden(
           id: _currentOrder!.id,
           numeroOrden: _currentOrder!.numeroOrden,
-          // numeroExpediente: _currentOrder!.numeroExpediente, // REMOVED
           nombreCliente: _currentOrder!.nombreCliente,
           fechaHora: _currentOrder!.fechaHora,
           valorServicio: _currentOrder!.valorServicio,
           celular: _currentOrder!.celular,
           direccion: _currentOrder!.direccion,
           observaciones: _currentOrder!.observaciones,
-          // esProgramada: _currentOrder!.esProgramada, // REMOVED
           fechaProgramada: _currentOrder!.fechaProgramada,
           status: 'Ejecutada',
-          // nombreAsignado: _currentOrder!.nombreAsignado, // REMOVED
           fechaLlegada: _currentOrder!.fechaLlegada,
           solucionTecnico: _currentOrder!.solucionTecnico,
           macRouter: _currentOrder!.macRouter,
@@ -366,6 +381,27 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           firmaTecnico: _currentOrder!.firmaTecnico,
           firmaSuscriptor: _currentOrder!.firmaSuscriptor,
           articulos: _currentOrder!.articulos,
+          technicianId: _currentOrder!.technicianId,
+          clienteId: _currentOrder!.clienteId,
+          cedula: _currentOrder!.cedula,
+          precinto: _currentOrder!.precinto,
+          tipoOrden: _currentOrder!.tipoOrden,
+          tipoFuncion: _currentOrder!.tipoFuncion,
+          fechaTrn: _currentOrder!.fechaTrn,
+          fechaVencimiento: _currentOrder!.fechaVencimiento,
+          estadoOrden: _currentOrder!.estadoOrden,
+          tipo: _currentOrder!.tipo,
+          estadoInterno: _currentOrder!.estadoInterno,
+          direccionAsociado: _currentOrder!.direccionAsociado,
+          telefono: _currentOrder!.telefono,
+          saldoCliente: _currentOrder!.saldoCliente,
+          solicitadoPor: _currentOrder!.solicitadoPor,
+          estadoTv: _currentOrder!.estadoTv,
+          tecnicoAuxiliarId: _currentOrder!.tecnicoAuxiliarId,
+          solicitudSuscriptor: _currentOrder!.solicitudSuscriptor,
+          fechaInicioAtencion: _currentOrder!.fechaInicioAtencion,
+          fechaFinAtencion: DateTime.now(),
+          fechaCierre: DateTime.now(),
         );
         _hasStateChanged = true;
       }

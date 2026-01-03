@@ -3,83 +3,138 @@ import 'package:flutter/foundation.dart';
 class Orden {
   final int id;
   final String numeroOrden;
-  // final String? numeroExpediente; // REMOVED
   final String nombreCliente;
-  final DateTime fechaHora;
-  final double? valorServicio;
-  final String? celular;
-  final String? direccion;
-  final String? observaciones;
+  final int? technicianId;
   final String status;
-  // final String? nombreAsignado; // REMOVED
-  // final bool esProgramada; // REMOVED
+  final DateTime fechaHora; // created_at
+  final DateTime? updatedAt;
   final DateTime? fechaProgramada;
-  final DateTime? fechaLlegada;
+  final int? clienteId;
+  final String? direccion;
+  final String? cedula;
+  final String? precinto;
+  final String? tipoOrden;
+  final String? tipoFuncion;
+  final DateTime? fechaTrn;
+  final DateTime? fechaVencimiento;
+  final String? estadoOrden;
+  final String? tipo;
+  final String? estadoInterno;
+  final String? direccionAsociado;
+  final String? telefono;
+  final String? saldoCliente;
+  final String? solicitadoPor;
+  final String? estadoTv;
+  final int? tecnicoAuxiliarId;
+  final String? solicitudSuscriptor;
   final String? solucionTecnico;
+  final double? valorServicio; // valor_total in JSON? No, kept as is or mapped from null. JSON has valor_total: null
+  final String? observaciones;
+  final List<dynamic>? articulos;
+  
+  // Fields for local use / extra JSON fields
+  final DateTime? fechaInicioAtencion;
+  final DateTime? fechaFinAtencion;
+  final DateTime? fechaCierre;
+  final DateTime? fechaLlegada;
+  final Timestamp? fechaAsignacion; // Keeping DateTime for simplicity
   final String? macRouter;
   final String? macBridge;
   final String? macOnt;
   final String? otrosEquipos;
   final String? firmaTecnico;
   final String? firmaSuscriptor;
-  final List<dynamic>? articulos;
+
+  // Celular alias for UI compatibility (maps to telefono)
+  String? get celular => telefono;
 
   Orden({
     required this.id,
     required this.numeroOrden,
-    // this.numeroExpediente,
     required this.nombreCliente,
-    required this.fechaHora,
-    this.valorServicio,
-    this.celular,
-    this.direccion,
-    this.observaciones,
+    this.technicianId,
     required this.status,
-    // this.nombreAsignado,
-    // required this.esProgramada,
+    required this.fechaHora,
+    this.updatedAt,
     this.fechaProgramada,
-    this.fechaLlegada,
+    this.clienteId,
+    this.direccion,
+    this.cedula,
+    this.precinto,
+    this.tipoOrden,
+    this.tipoFuncion,
+    this.fechaTrn,
+    this.fechaVencimiento,
+    this.estadoOrden,
+    this.tipo,
+    this.estadoInterno,
+    this.direccionAsociado,
+    this.telefono,
+    this.saldoCliente,
+    this.solicitadoPor,
+    this.estadoTv,
+    this.tecnicoAuxiliarId,
+    this.solicitudSuscriptor,
     this.solucionTecnico,
+    this.valorServicio,
+    this.observaciones,
+    this.articulos,
+    this.fechaInicioAtencion,
+    this.fechaFinAtencion,
+    this.fechaCierre,
+    this.fechaLlegada,
+    this.fechaAsignacion,
     this.macRouter,
     this.macBridge,
     this.macOnt,
     this.otrosEquipos,
     this.firmaTecnico,
     this.firmaSuscriptor,
-    this.articulos,
   });
 
   factory Orden.fromJson(Map<String, dynamic> json) {
-    try {
-      return Orden(
-        id: json['id'] is String ? int.parse(json['id']) : json['id'],
-        numeroOrden: json['numero_orden'].toString(),
-        // numeroExpediente: json['numero_expediente']?.toString(),
-        nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
-        fechaHora: DateTime.tryParse(json['created_at'] ?? json['fecha_hora'] ?? '')?.toLocal() ?? DateTime.now(),
-        valorServicio: double.tryParse(json['valor_servicio']?.toString() ?? json['valor_total']?.toString() ?? '0'),
-        celular: json['celular']?.toString() ?? json['telefono']?.toString(),
-        direccion: json['direccion'],
-        observaciones: json['observaciones'],
-        status: json['status'] ?? 'desconocido',
-        // nombreAsignado: json['nombre_asignado'],
-        // esProgramada: json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1',
-        fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
-        fechaLlegada: DateTime.tryParse(json['fecha_llegada'] ?? '')?.toLocal(),
-        solucionTecnico: json['solucion_tecnico'],
-        macRouter: json['mac_router'],
-        macBridge: json['mac_bridge'],
-        macOnt: json['mac_ont'],
-        otrosEquipos: json['otros_equipos'],
-        firmaTecnico: json['firma_tecnico'],
-        firmaSuscriptor: json['firma_suscriptor'],
-        articulos: json['articulos'],
-      );
-    } catch (e, stack) {
-      print('Error parsing Orden JSON: $e');
-      print('JSON Content: $json');
-      print('Stack trace: $stack');
-      rethrow;
-    }
+    return Orden(
+      id: json['id'] is String ? int.parse(json['id']) : json['id'],
+      numeroOrden: json['numero_orden']?.toString() ?? '',
+      nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
+      technicianId: json['technician_id'],
+      status: json['status'] ?? 'desconocido',
+      fechaHora: DateTime.tryParse(json['created_at'] ?? '')?.toLocal() ?? DateTime.now(),
+      updatedAt: DateTime.tryParse(json['updated_at'] ?? '')?.toLocal(),
+      fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
+      clienteId: json['cliente_id'],
+      direccion: json['direccion'],
+      cedula: json['cedula'],
+      precinto: json['precinto'],
+      tipoOrden: json['tipo_orden'],
+      tipoFuncion: json['tipo_funcion'],
+      fechaTrn: DateTime.tryParse(json['fecha_trn'] ?? '')?.toLocal(),
+      fechaVencimiento: DateTime.tryParse(json['fecha_vencimiento'] ?? '')?.toLocal(),
+      estadoOrden: json['estado_orden'],
+      tipo: json['tipo'],
+      estadoInterno: json['estado_interno'],
+      direccionAsociado: json['direccion_asociado'],
+      telefono: json['telefono']?.toString(), // Primary phone field
+      saldoCliente: json['saldo_cliente']?.toString(),
+      solicitadoPor: json['solicitado_por'],
+      estadoTv: json['estado_tv'],
+      tecnicoAuxiliarId: json['tecnico_auxiliar_id'],
+      solicitudSuscriptor: json['solicitud_suscriptor'],
+      solucionTecnico: json['solucion_tecnico'],
+      valorServicio: double.tryParse(json['valor_total']?.toString() ?? json['valor_servicio']?.toString() ?? '0'),
+      observaciones: json['observaciones'],
+      articulos: json['articulos'],
+      fechaInicioAtencion: DateTime.tryParse(json['fecha_inicio_atencion'] ?? '')?.toLocal(),
+      fechaFinAtencion: DateTime.tryParse(json['fecha_fin_atencion'] ?? '')?.toLocal(),
+      fechaCierre: DateTime.tryParse(json['fecha_cierre'] ?? '')?.toLocal(),
+      fechaLlegada: DateTime.tryParse(json['fecha_llegada'] ?? '')?.toLocal(),
+      fechaAsignacion: null, // Placeholder if needed
+      macRouter: json['mac_router'],
+      macBridge: json['mac_bridge'],
+      macOnt: json['mac_ont'],
+      otrosEquipos: json['otros_equipos'],
+      firmaTecnico: json['firma_tecnico'],
+      firmaSuscriptor: json['firma_suscriptor'],
+    );
   }
 }

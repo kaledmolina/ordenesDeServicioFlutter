@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
-  static const int _databaseVersion = 7;
+  static const int _databaseVersion = 8;
 
   DatabaseService._init();
 
@@ -63,7 +63,28 @@ class DatabaseService {
         otros_equipos TEXT,
         firma_tecnico TEXT,
         firma_suscriptor TEXT,
-        articulos TEXT
+        articulos TEXT,
+        technician_id INTEGER,
+        cliente_id INTEGER,
+        cedula TEXT,
+        precinto TEXT,
+        tipo_orden TEXT,
+        tipo_funcion TEXT,
+        fecha_trn TEXT,
+        fecha_vencimiento TEXT,
+        estado_orden TEXT,
+        tipo TEXT,
+        estado_interno TEXT,
+        direccion_asociado TEXT,
+        telefono TEXT,
+        saldo_cliente TEXT,
+        solicitado_por TEXT,
+        estado_tv TEXT,
+        tecnico_auxiliar_id INTEGER,
+        solicitud_suscriptor TEXT,
+        fecha_inicio_atencion TEXT,
+        fecha_fin_atencion TEXT,
+        fecha_cierre TEXT
       )
     ''');
 
@@ -198,6 +219,36 @@ class DatabaseService {
       ];
       for (var col in columns) {
         try { await db.execute('ALTER TABLE orders ADD COLUMN \$col TEXT'); } catch (_) {}
+      }
+    }
+
+    if (oldVersion < 8) {
+      final newColumns = [
+        'technician_id INTEGER',
+        'cliente_id INTEGER',
+        'cedula TEXT',
+        'precinto TEXT',
+        'tipo_orden TEXT',
+        'tipo_funcion TEXT',
+        'fecha_trn TEXT',
+        'fecha_vencimiento TEXT',
+        'estado_orden TEXT',
+        'tipo TEXT',
+        'estado_interno TEXT',
+        'direccion_asociado TEXT',
+        'telefono TEXT',
+        'saldo_cliente TEXT',
+        'solicitado_por TEXT',
+        'estado_tv TEXT',
+        'tecnico_auxiliar_id INTEGER',
+        'solicitud_suscriptor TEXT',
+        'fecha_inicio_atencion TEXT',
+        'fecha_fin_atencion TEXT',
+        'fecha_cierre TEXT'
+      ];
+      
+      for (var colDef in newColumns) {
+        try { await db.execute('ALTER TABLE orders ADD COLUMN $colDef'); } catch (_) {}
       }
     }
   }
