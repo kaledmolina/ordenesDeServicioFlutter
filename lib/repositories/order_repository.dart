@@ -20,8 +20,43 @@ class OrderRepository {
         
         final ordersData = response['data'] as List;
         
-        final orders = ordersData.map((json) => Orden.fromJson(json)).toList();
-        await _saveOrdersToLocal(ordersData);
+        // Save to local first (SyncService logic prevents overwriting if valid, but let's be safe here too)
+        // Actually, we should merge.
+        
+        // 1. Get IDs of orders with pending operations
+        final pendingOps = await _dbService.getPendingOperations();
+        final pendingOrderNumbers = pendingOps.map((op) => op['order_number'].toString()).toSet();
+        
+        // 2. Transform API data to Orden objects, but favor local version if pending
+        List<Orden> orders = [];
+        
+        for (var json in ordersData) {
+          final orderNumber = json['numero_orden'].toString();
+          if (pendingOrderNumbers.contains(orderNumber)) {
+             // Fetch from local because it has the partial update (e.g. status changed)
+             final localOrder = await _getOrderFromLocal(orderNumber);
+             if (localOrder != null) {
+               orders.add(localOrder);
+             } else {
+               orders.add(Orden.fromJson(json));
+             }
+          } else {
+             orders.add(Orden.fromJson(json));
+          }
+        }
+
+        // Also save to local, but SyncService handles the "don't overwrite" logic nicely. 
+        // We can just call _saveOrdersToLocal - the SyncService might have already run or will run.
+        // But to be consistent with SyncService logic, we should filter before saving if we are essentially "syncing" here.
+        // However, this method is "getOrders", not "sync". 
+        // We will save what we got, but we rely on SyncService prevention mechanism? 
+        // No, we should replicate the safety mechanism here too if we want to write to DB.
+        
+        final ordersToSave = ordersData
+          .where((json) => !pendingOrderNumbers.contains(json['numero_orden'].toString()))
+          .toList();
+          
+        await _saveOrdersToLocal(ordersToSave);
         
         return orders;
       } catch (e, stack) {
