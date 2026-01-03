@@ -78,6 +78,17 @@ class ApiService {
     final data = _handleResponse(response);
     return Orden.fromJson(data['order']);
   }
+
+  // CAMBIO: Nuevo método para reportar en sitio
+  Future<Orden> reportOnSite(String orderNumber) async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/v1/orders/$orderNumber/report-on-site'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    final data = _handleResponse(response);
+    return Orden.fromJson(data['order']);
+  }
   
   // CAMBIO: Acepta un String en lugar de un int y datos de cierre
   Future<Orden> closeOrder(String orderNumber, Map<String, dynamic> data) async {
