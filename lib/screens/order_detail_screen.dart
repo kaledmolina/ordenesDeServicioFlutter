@@ -218,7 +218,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             direccion: _currentOrder!.direccion,
             observaciones: _currentOrder!.observaciones,
             fechaProgramada: _currentOrder!.fechaProgramada,
-            status: 'En Proceso',
+            status: Orden.ESTADO_EN_PROCESO,
             fechaLlegada: _currentOrder!.fechaLlegada,
             solucionTecnico: _currentOrder!.solucionTecnico,
             macRouter: _currentOrder!.macRouter,
@@ -371,7 +371,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           direccion: _currentOrder!.direccion,
           observaciones: _currentOrder!.observaciones,
           fechaProgramada: _currentOrder!.fechaProgramada,
-          status: 'Ejecutada',
+          status: Orden.ESTADO_EJECUTADA,
           fechaLlegada: _currentOrder!.fechaLlegada,
           solucionTecnico: _currentOrder!.solucionTecnico,
           macRouter: _currentOrder!.macRouter,
@@ -510,7 +510,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildActionButtons(Orden orden) {
-    if (orden.status == 'Asignada') {
+    if (orden.status.toLowerCase() == Orden.ESTADO_ASIGNADA) {
       return Row(
         children: [
           Expanded(
@@ -548,7 +548,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ],
       );
     }
-    if (orden.status == 'En Proceso') {
+    if (orden.status.toLowerCase() == Orden.ESTADO_EN_PROCESO) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

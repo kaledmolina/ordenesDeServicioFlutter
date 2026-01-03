@@ -2,6 +2,16 @@ import 'package:flutter/foundation.dart';
 
 class Orden {
   final int id;
+  
+  // Status Constants
+  static const String ESTADO_PENDIENTE = 'pendiente';
+  static const String ESTADO_ASIGNADA = 'asignada';
+  static const String ESTADO_EN_SITIO = 'en_sitio';
+  static const String ESTADO_EN_PROCESO = 'en_proceso';
+  static const String ESTADO_EJECUTADA = 'ejecutada';
+  static const String ESTADO_CERRADA = 'cerrada';
+  static const String ESTADO_ANULADA = 'anulada';
+  
   final String numeroOrden;
   final String nombreCliente;
   final int? technicianId;
@@ -98,7 +108,7 @@ class Orden {
       numeroOrden: json['numero_orden']?.toString() ?? '',
       nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
       technicianId: json['technician_id'],
-      status: json['status'] ?? 'desconocido',
+      status: json['status'] ?? json['estado_orden'] ?? 'desconocido',
       fechaHora: DateTime.tryParse(json['created_at'] ?? '')?.toLocal() ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updated_at'] ?? '')?.toLocal(),
       fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),

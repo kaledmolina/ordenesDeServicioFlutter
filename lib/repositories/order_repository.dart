@@ -119,7 +119,7 @@ class OrderRepository {
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
           fechaProgramada: localOrder.fechaProgramada,
-          status: 'En Proceso',
+          status: Orden.ESTADO_EN_PROCESO,
           fechaLlegada: localOrder.fechaLlegada,
           solucionTecnico: localOrder.solucionTecnico,
           macRouter: localOrder.macRouter,
@@ -164,14 +164,14 @@ class OrderRepository {
         return order;
       } catch (e) {
         // Actualizar estado local inmediatamente
-        await _updateLocalOrderStatus(orderNumber, 'En Proceso');
+        await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EN_PROCESO);
         await _queueOperation('accept', orderNumber, {});
         rethrow;
       }
     }
     
     // Actualizar estado local inmediatamente antes de encolar
-    await _updateLocalOrderStatus(orderNumber, 'En Proceso');
+    await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EN_PROCESO);
     await _queueOperation('accept', orderNumber, {});
     
     final localOrder = await _getOrderFromLocal(orderNumber);
@@ -202,7 +202,7 @@ class OrderRepository {
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
           fechaProgramada: localOrder.fechaProgramada,
-          status: 'Ejecutada',
+          status: Orden.ESTADO_EJECUTADA,
           fechaLlegada: localOrder.fechaLlegada,
           solucionTecnico: localOrder.solucionTecnico,
           macRouter: localOrder.macRouter,
@@ -247,14 +247,14 @@ class OrderRepository {
         return order;
       } catch (e) {
         // Actualizar estado local inmediatamente
-        await _updateLocalOrderStatus(orderNumber, 'Ejecutada');
+        await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EJECUTADA);
         await _queueOperation('close', orderNumber, {});
         rethrow;
       }
     }
     
     // Actualizar estado local inmediatamente antes de encolar
-    await _updateLocalOrderStatus(orderNumber, 'Ejecutada');
+    await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EJECUTADA);
     await _queueOperation('close', orderNumber, {});
     
     final localOrder = await _getOrderFromLocal(orderNumber);
