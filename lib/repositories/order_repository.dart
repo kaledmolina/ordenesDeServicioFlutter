@@ -341,13 +341,13 @@ class OrderRepository {
       'id': json['id'],
       'numero_orden': json['numero_orden'],
       'numero_expediente': json['numero_expediente'],
-      'nombre_cliente': json['nombre_cliente'],
-      'fecha_hora': json['fecha_hora'],
-      'valor_servicio': json['valor_servicio']?.toString(),
-      'celular': json['celular'],
+      'nombre_cliente': json['nombre_cliente'] ?? 'Cliente Desconocido',
+      'fecha_hora': json['created_at'] ?? json['fecha_hora'] ?? DateTime.now().toIso8601String(),
+      'valor_servicio': json['valor_servicio']?.toString() ?? json['valor_total']?.toString(),
+      'celular': json['celular'] ?? json['telefono'],
       'direccion_origen': json['direccion'], // Mapeo a columna existente por ahora
       'observaciones_origen': json['observaciones'], // Mapeo a columna existente
-      'es_programada': json['es_programada'] == 1 || json['es_programada'] == true ? 1 : 0,
+      'es_programada': json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1' ? 1 : 0,
       'fecha_programada': json['fecha_programada'],
       'status': json['status'],
       // Nuevos campos que deberian guardarse si la DB lo soporta.
