@@ -298,11 +298,8 @@ class OrderRepository {
   Future<void> _updateLocalOrder(String orderNumber, Map<String, String> data) async {
     final updates = <String, dynamic>{};
     if (data.containsKey('celular')) updates['celular'] = data['celular'];
-    if (data.containsKey('observaciones_origen')) {
-      updates['observaciones_origen'] = data['observaciones_origen'];
-    }
-    if (data.containsKey('observaciones_destino')) {
-      updates['observaciones_destino'] = data['observaciones_destino'];
+    if (data.containsKey('observaciones')) {
+      updates['observaciones'] = data['observaciones'];
     }
     await _dbService.updateOrder(orderNumber, updates);
   }
@@ -345,8 +342,8 @@ class OrderRepository {
       'fecha_hora': json['created_at'] ?? json['fecha_hora'] ?? DateTime.now().toIso8601String(),
       'valor_servicio': json['valor_servicio']?.toString() ?? json['valor_total']?.toString(),
       'celular': json['celular'] ?? json['telefono'],
-      'direccion_origen': json['direccion'], // Mapeo a columna existente por ahora
-      'observaciones_origen': json['observaciones'], // Mapeo a columna existente
+      'direccion': json['direccion'], 
+      'observaciones': json['observaciones'],
       'es_programada': json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1' ? 1 : 0,
       'fecha_programada': json['fecha_programada'],
       'status': json['status'],
@@ -375,8 +372,8 @@ class OrderRepository {
       'fecha_hora': order.fechaHora.toIso8601String(),
       'valor_servicio': order.valorServicio?.toString(),
       'celular': order.celular,
-      'direccion_origen': order.direccion,
-      'observaciones_origen': order.observaciones,
+      'direccion': order.direccion,
+      'observaciones': order.observaciones,
       'es_programada': order.esProgramada ? 1 : 0,
       'fecha_programada': order.fechaProgramada?.toIso8601String(),
       'status': order.status,
@@ -404,8 +401,8 @@ class OrderRepository {
           ? double.tryParse(map['valor_servicio'] as String)
           : null,
       celular: map['celular'] as String?,
-      direccion: map['direccion_origen'] as String?, // Mapeamos direccion_origen a direccion para compatibilidad DB
-      observaciones: map['observaciones_origen'] as String?, // Mapeamos obs_origen a observaciones
+      direccion: map['direccion'] as String?,
+      observaciones: map['observaciones'] as String?,
       esProgramada: (map['es_programada'] as int) == 1,
       fechaProgramada: map['fecha_programada'] != null
           ? DateTime.parse(map['fecha_programada'] as String).toLocal()
