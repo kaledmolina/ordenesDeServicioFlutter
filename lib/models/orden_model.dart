@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 class Orden {
   final int id;
   final String numeroOrden;
-  final String? numeroExpediente;
+  // final String? numeroExpediente; // REMOVED
   final String nombreCliente;
   final DateTime fechaHora;
   final double? valorServicio;
@@ -11,8 +11,8 @@ class Orden {
   final String? direccion;
   final String? observaciones;
   final String status;
-  final String? nombreAsignado;
-  final bool esProgramada;
+  // final String? nombreAsignado; // REMOVED
+  // final bool esProgramada; // REMOVED
   final DateTime? fechaProgramada;
   final DateTime? fechaLlegada;
   final String? solucionTecnico;
@@ -27,7 +27,7 @@ class Orden {
   Orden({
     required this.id,
     required this.numeroOrden,
-    this.numeroExpediente,
+    // this.numeroExpediente,
     required this.nombreCliente,
     required this.fechaHora,
     this.valorServicio,
@@ -35,8 +35,8 @@ class Orden {
     this.direccion,
     this.observaciones,
     required this.status,
-    this.nombreAsignado,
-    required this.esProgramada,
+    // this.nombreAsignado,
+    // required this.esProgramada,
     this.fechaProgramada,
     this.fechaLlegada,
     this.solucionTecnico,
@@ -54,7 +54,7 @@ class Orden {
       return Orden(
         id: json['id'] is String ? int.parse(json['id']) : json['id'],
         numeroOrden: json['numero_orden'].toString(),
-        numeroExpediente: json['numero_expediente']?.toString(),
+        // numeroExpediente: json['numero_expediente']?.toString(),
         nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
         fechaHora: DateTime.tryParse(json['created_at'] ?? json['fecha_hora'] ?? '')?.toLocal() ?? DateTime.now(),
         valorServicio: double.tryParse(json['valor_servicio']?.toString() ?? json['valor_total']?.toString() ?? '0'),
@@ -62,8 +62,8 @@ class Orden {
         direccion: json['direccion'],
         observaciones: json['observaciones'],
         status: json['status'] ?? 'desconocido',
-        nombreAsignado: json['nombre_asignado'],
-        esProgramada: json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1',
+        // nombreAsignado: json['nombre_asignado'],
+        // esProgramada: json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1',
         fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
         fechaLlegada: DateTime.tryParse(json['fecha_llegada'] ?? '')?.toLocal(),
         solucionTecnico: json['solucion_tecnico'],

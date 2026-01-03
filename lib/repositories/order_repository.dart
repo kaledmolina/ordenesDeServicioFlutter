@@ -112,17 +112,17 @@ class OrderRepository {
         return Orden(
           id: localOrder.id,
           numeroOrden: localOrder.numeroOrden,
-          numeroExpediente: localOrder.numeroExpediente,
+          // numeroExpediente: localOrder.numeroExpediente, // REMOVED
           nombreCliente: localOrder.nombreCliente,
           fechaHora: localOrder.fechaHora,
           valorServicio: localOrder.valorServicio,
           celular: localOrder.celular,
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
-          esProgramada: localOrder.esProgramada,
+          // esProgramada: localOrder.esProgramada, // REMOVED
           fechaProgramada: localOrder.fechaProgramada,
           status: 'En Proceso',
-          nombreAsignado: localOrder.nombreAsignado,
+          // nombreAsignado: localOrder.nombreAsignado, // REMOVED
           fechaLlegada: localOrder.fechaLlegada,
           solucionTecnico: localOrder.solucionTecnico,
           macRouter: localOrder.macRouter,
@@ -177,17 +177,17 @@ class OrderRepository {
         return Orden(
           id: localOrder.id,
           numeroOrden: localOrder.numeroOrden,
-          numeroExpediente: localOrder.numeroExpediente,
+          // numeroExpediente: localOrder.numeroExpediente, // REMOVED
           nombreCliente: localOrder.nombreCliente,
           fechaHora: localOrder.fechaHora,
           valorServicio: localOrder.valorServicio,
           celular: localOrder.celular,
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
-          esProgramada: localOrder.esProgramada,
+          // esProgramada: localOrder.esProgramada, // REMOVED
           fechaProgramada: localOrder.fechaProgramada,
           status: 'Ejecutada',
-          nombreAsignado: localOrder.nombreAsignado,
+          // nombreAsignado: localOrder.nombreAsignado, // REMOVED
           fechaLlegada: localOrder.fechaLlegada,
           solucionTecnico: localOrder.solucionTecnico,
           macRouter: localOrder.macRouter,
@@ -344,7 +344,7 @@ class OrderRepository {
       'celular': json['celular'] ?? json['telefono'],
       'direccion': json['direccion'], 
       'observaciones': json['observaciones'],
-      'es_programada': json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1' ? 1 : 0,
+      // es_programada: json['es_programada'] == 1 || json['es_programada'] == true || json['es_programada'] == '1' ? 1 : 0, // REMOVED
       'fecha_programada': json['fecha_programada'],
       'status': json['status'],
       // Nuevos campos que deberian guardarse si la DB lo soporta.
@@ -367,14 +367,14 @@ class OrderRepository {
     return {
       'id': order.id,
       'numero_orden': order.numeroOrden,
-      'numero_expediente': order.numeroExpediente,
+      // 'numero_expediente': order.numeroExpediente, // REMOVED
       'nombre_cliente': order.nombreCliente,
       'fecha_hora': order.fechaHora.toIso8601String(),
       'valor_servicio': order.valorServicio?.toString(),
       'celular': order.celular,
       'direccion': order.direccion,
       'observaciones': order.observaciones,
-      'es_programada': order.esProgramada ? 1 : 0,
+      // 'es_programada': order.esProgramada ? 1 : 0, // REMOVED
       'fecha_programada': order.fechaProgramada?.toIso8601String(),
       'status': order.status,
       // Nuevos campos
@@ -394,7 +394,7 @@ class OrderRepository {
     return Orden(
       id: map['id'] as int,
       numeroOrden: map['numero_orden'] as String,
-      numeroExpediente: map['numero_expediente'] as String?,
+      // numeroExpediente: map['numero_expediente'] as String?, // REMOVED
       nombreCliente: map['nombre_cliente'] as String,
       fechaHora: DateTime.parse(map['fecha_hora'] as String).toLocal(),
       valorServicio: map['valor_servicio'] != null
@@ -403,11 +403,12 @@ class OrderRepository {
       celular: map['celular'] as String?,
       direccion: map['direccion'] as String?,
       observaciones: map['observaciones'] as String?,
-      esProgramada: (map['es_programada'] as int) == 1,
+      // esProgramada: (map['es_programada'] as int) == 1, // REMOVED
       fechaProgramada: map['fecha_programada'] != null
           ? DateTime.parse(map['fecha_programada'] as String).toLocal()
           : null,
       status: map['status'] as String,
+      // nombreAsignado: map['nombre_asignado'] as String?, // REMOVED (Implicitly handled if unused in map)
       fechaLlegada: map['fecha_llegada'] != null ? DateTime.parse(map['fecha_llegada'] as String).toLocal() : null,
       solucionTecnico: map['solucion_tecnico'] as String?,
       macRouter: map['mac_router'] as String?,

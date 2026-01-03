@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
-  static const int _databaseVersion = 6;
+  static const int _databaseVersion = 7;
 
   DatabaseService._init();
 
@@ -45,14 +45,12 @@ class DatabaseService {
       CREATE TABLE orders (
         id INTEGER PRIMARY KEY,
         numero_orden TEXT NOT NULL UNIQUE,
-        numero_expediente TEXT,
         nombre_cliente TEXT NOT NULL,
         fecha_hora TEXT NOT NULL,
         valor_servicio REAL,
         celular TEXT,
         direccion TEXT,
         observaciones TEXT,
-        es_programada INTEGER NOT NULL DEFAULT 0,
         fecha_programada TEXT,
         status TEXT NOT NULL,
         synced_at INTEGER,
@@ -129,14 +127,12 @@ class DatabaseService {
         CREATE TABLE orders (
           id INTEGER PRIMARY KEY,
           numero_orden TEXT NOT NULL UNIQUE,
-          numero_expediente TEXT,
           nombre_cliente TEXT NOT NULL,
           fecha_hora TEXT NOT NULL,
           valor_servicio REAL,
           celular TEXT,
           direccion TEXT,
           observaciones TEXT,
-          es_programada INTEGER NOT NULL DEFAULT 0,
           fecha_programada TEXT,
           status TEXT NOT NULL,
           synced_at INTEGER,
@@ -192,6 +188,17 @@ class DatabaseService {
     if (oldVersion < 6) {
        try { await db.execute('ALTER TABLE orders ADD COLUMN direccion TEXT'); } catch (_) {}
        try { await db.execute('ALTER TABLE orders ADD COLUMN observaciones TEXT'); } catch (_) {}
+    }
+
+    if (oldVersion < 7) {
+      // Ensure all other new columns exist
+      final columns = [
+        'fecha_llegada', 'solucion_tecnico', 'mac_router', 'mac_bridge', 
+        'mac_ont', 'otros_equipos', 'firma_tecnico', 'firma_suscriptor', 'articulos'
+      ];
+      for (var col in columns) {
+        try { await db.execute('ALTER TABLE orders ADD COLUMN \$col TEXT'); } catch (_) {}
+      }
     }
   }
 

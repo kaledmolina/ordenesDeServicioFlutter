@@ -211,17 +211,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           _currentOrder = Orden(
             id: _currentOrder!.id,
             numeroOrden: _currentOrder!.numeroOrden,
-            numeroExpediente: _currentOrder!.numeroExpediente,
+            // numeroExpediente: _currentOrder!.numeroExpediente, // REMOVED
             nombreCliente: _currentOrder!.nombreCliente,
             fechaHora: _currentOrder!.fechaHora,
             valorServicio: _currentOrder!.valorServicio,
             celular: _currentOrder!.celular,
             direccion: _currentOrder!.direccion,
             observaciones: _currentOrder!.observaciones,
-            esProgramada: _currentOrder!.esProgramada,
+            // esProgramada: _currentOrder!.esProgramada, // REMOVED
             fechaProgramada: _currentOrder!.fechaProgramada,
             status: 'En Proceso',
-            nombreAsignado: _currentOrder!.nombreAsignado,
+            // nombreAsignado: _currentOrder!.nombreAsignado, // REMOVED
             fechaLlegada: _currentOrder!.fechaLlegada,
             solucionTecnico: _currentOrder!.solucionTecnico,
             macRouter: _currentOrder!.macRouter,
@@ -346,17 +346,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         _currentOrder = Orden(
           id: _currentOrder!.id,
           numeroOrden: _currentOrder!.numeroOrden,
-          numeroExpediente: _currentOrder!.numeroExpediente,
+          // numeroExpediente: _currentOrder!.numeroExpediente, // REMOVED
           nombreCliente: _currentOrder!.nombreCliente,
           fechaHora: _currentOrder!.fechaHora,
           valorServicio: _currentOrder!.valorServicio,
           celular: _currentOrder!.celular,
           direccion: _currentOrder!.direccion,
           observaciones: _currentOrder!.observaciones,
-          esProgramada: _currentOrder!.esProgramada,
+          // esProgramada: _currentOrder!.esProgramada, // REMOVED
           fechaProgramada: _currentOrder!.fechaProgramada,
           status: 'Ejecutada',
-          nombreAsignado: _currentOrder!.nombreAsignado,
+          // nombreAsignado: _currentOrder!.nombreAsignado, // REMOVED
           fechaLlegada: _currentOrder!.fechaLlegada,
           solucionTecnico: _currentOrder!.solucionTecnico,
           macRouter: _currentOrder!.macRouter,
