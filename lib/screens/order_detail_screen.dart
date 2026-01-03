@@ -435,6 +435,74 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     }
   }
 
+  @override
+  Widget build(BuildContext context) {
+    return WillPopScope(
+      onWillPop: () async {
+        Navigator.of(context).pop(_hasStateChanged ? 'refresh' : null);
+        return false;
+      },
+      child: AppBackground(
+        child: Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            title: Text('Detalles de Orden #${widget.orderNumber}'),
+            backgroundColor: Colors.transparent,
+            elevation: 0,
+            foregroundColor: Colors.black87,
+            actions: const [
+              Padding(
+                padding: EdgeInsets.only(right: 16.0),
+                child: ConnectionStatusIndicator(),
+              ),
+            ],
+          ),
+          body: _buildBody(),
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildBody() {
+    if (_isLoading && _currentOrder == null) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (_error != null) {
+      return Center(child: Text('Error al cargar detalles: $_error'));
+    }
+    if (_currentOrder == null) {
+      return const Center(child: Text('No se encontraron datos.'));
+    }
+    
+    final orden = _currentOrder!;
+    return Stack(
+      children: [
+        RefreshIndicator(
+          onRefresh: _loadOrderDetails,
+          child: SingleChildScrollView(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 150),
+            child: _buildDetailSection(orden),
+          ),
+        ),
+        if (_isLoading)
+          Container(
+            color: Colors.black.withOpacity(0.1),
+            child: const Center(child: CircularProgressIndicator()),
+          ),
+        Positioned(
+          bottom: 0,
+          left: 0,
+          right: 0,
+          child: Container(
+            padding: const EdgeInsets.all(16.0),
+            child: _buildActionButtons(orden),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildActionButtons(Orden orden) {
     if (orden.status.toLowerCase() == Orden.ESTADO_ASIGNADA || orden.status.toLowerCase() == 'abierta') {
        // ... (existing Accept/Reject logic)

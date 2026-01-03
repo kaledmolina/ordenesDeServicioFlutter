@@ -108,7 +108,7 @@ class SyncService {
             await _apiService.acceptOrder(orderNumber);
             break;
           case 'close':
-            await _apiService.closeOrder(orderNumber);
+            await _apiService.closeOrder(orderNumber, data);
             break;
           case 'reject':
             await _apiService.rejectOrder(orderNumber);
