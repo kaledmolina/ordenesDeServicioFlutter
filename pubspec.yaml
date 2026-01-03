@@ -50,7 +50,7 @@ dependencies:
   cupertino_icons: ^1.0.8
   firebase_in_app_messaging: ^0.7.5+7
   intl: ^0.20.2
-  signature: ^2.0.0
+  signature: ^6.3.0
 
 dev_dependencies:
   flutter_test:
