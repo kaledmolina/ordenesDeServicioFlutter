@@ -52,11 +52,11 @@ class SyncService {
     try {
       await _dbService.setSyncStatus('syncing');
       
-      // 1. Descargar órdenes actualizadas del servidor
-      await _syncOrdersFromServer();
-      
-      // 2. Subir operaciones pendientes
+      // 1. Subir operaciones pendientes (Upload first to update server)
       await _syncPendingOperations();
+      
+      // 2. Descargar órdenes actualizadas del servidor
+      await _syncOrdersFromServer();
       
       // 3. Subir inspecciones pendientes
 
@@ -81,12 +81,23 @@ class SyncService {
       final response = await _apiService.getOrders(page: 1, status: 'todas');
       final ordersData = response['data'] as List;
       
-      final orders = ordersData.map((json) => _orderJsonToDbMap(json)).toList();
-      await _dbService.saveOrders(orders);
+      // Obtener órdenes con operaciones pendientes para no sobrescribirlas
+      final pendingOps = await _dbService.getPendingOperations();
+      final pendingOrderNumbers = pendingOps.map((op) => op['order_number'].toString()).toSet();
+
+      final orders = ordersData
+          .where((json) => !pendingOrderNumbers.contains(json['numero_orden'].toString()))
+          .map((json) => _orderJsonToDbMap(json))
+          .toList();
+      
+      if (orders.isNotEmpty) {
+        await _dbService.saveOrders(orders);
+      }
+      
       await _dbService.setLastSyncOrders(
         DateTime.now().millisecondsSinceEpoch ~/ 1000,
       );
-      debugPrint("Órdenes sincronizadas: ${orders.length}");
+      debugPrint("Órdenes sincronizadas: ${orders.length} (Ignoradas por pendientes: ${ordersData.length - orders.length})");
     } catch (e) {
       debugPrint("Error al sincronizar órdenes: $e");
     }
