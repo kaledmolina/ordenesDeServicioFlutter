@@ -435,7 +435,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                 itemBuilder: (context, index) {
                    final article = _articles[index];
                    return Card(
-                     key: ValueKey(article), 
+                     key: UniqueKey(), 
                      margin: const EdgeInsets.only(bottom: 8),
                      child: Padding(
                        padding: const EdgeInsets.all(12.0),
@@ -444,7 +444,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                          children: [
                            Row(
                              children: [
-                               Expanded(child: Text(article['articulo']?.toString() ?? 'Artículo', style: const TextStyle(fontWeight: FontWeight.bold))),
+                               Expanded(child: Text(article['articulo']?.toString() ?? 'SIN NOMBRE', style: const TextStyle(fontWeight: FontWeight.bold))),
                                IconButton(
                                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                                  onPressed: () => _removeArticle(index),
