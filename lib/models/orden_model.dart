@@ -147,6 +147,6 @@ class Orden {
       otrosEquipos: json['otros_equipos']?.toString(),
       firmaTecnico: json['firma_tecnico']?.toString(),
       firmaSuscriptor: json['firma_suscriptor']?.toString(),
-    );    );
+    );
   }
 }
