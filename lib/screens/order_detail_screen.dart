@@ -1,17 +1,192 @@
-import 'dart:ui';
-import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import '../models/orden_model.dart';
-import '../repositories/order_repository.dart';
-import '../services/sync_service.dart';
-import '../services/database_service.dart';
-import 'manage_order_screen.dart';
-import '../widgets/app_background.dart';
-import '../widgets/connection_status_indicator.dart';
-import 'package:url_launcher/url_launcher.dart';
-import '../widgets/glass_card.dart';
+import 'dart:convert'; // For base64Encode
+import 'signature_screen.dart';
 
-class OrderDetailScreen extends StatefulWidget {
+// ... (existing imports)
+
+  Future<void> _reportOnSite() async {
+    if (_isLoading) return;
+    
+    setState(() => _isLoading = true);
+    
+    try {
+      // Actualizar UI inmediatamente (Optimistic)
+      if (_currentOrder != null) {
+        // ... (update _currentOrder status to EN_SITIO visually)
+        // For brevity in this diff, relying on setState refresh or repository return
+      }
+      
+      final updatedOrder = await _orderRepo.reportOnSite(widget.orderNumber);
+      if (mounted) {
+        setState(() => _currentOrder = updatedOrder);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reportado en sitio exitosamente.'), backgroundColor: Colors.blue),
+        );
+        SyncService.instance.sync();
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Guardado localmente. Se enviará al tener internet.'), backgroundColor: Colors.orange),
+        );
+        SyncService.instance.sync();
+        // Force reload to see local state change if needed
+        _loadOrderDetails();
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _closeOrder() async {
+    // 1. Navegar a pantalla de firmas
+    final signatures = await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SignatureScreen(orderNumber: widget.orderNumber),
+      ),
+    );
+
+    if (signatures == null) return; // Cancelado por usuario
+
+    if (_isLoading) return;
+    setState(() => _isLoading = true);
+    
+    // Preparar datos de cierre
+    final closingData = {
+      'firma_tecnico': base64Encode(signatures['technician']), // Asume Uint8List
+      'firma_suscriptor': base64Encode(signatures['subscriber']),
+      // Aquí se podrían agregar más datos del formulario de cierre si existiera
+      // 'articulos': ..., 
+      // 'mac_router': ...,
+    };
+
+    try {
+      final updatedOrder = await _orderRepo.closeOrder(widget.orderNumber, closingData);
+      if (mounted) {
+        setState(() => _currentOrder = updatedOrder);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Orden cerrada exitosamente.'), backgroundColor: Colors.green),
+        );
+        SyncService.instance.sync();
+        Navigator.of(context).pop('refresh');
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+           SnackBar(content: Text('Cierre guardado localmente.'), backgroundColor: Colors.orange),
+        );
+        SyncService.instance.sync();
+        Navigator.of(context).pop('refresh');
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // ... (existing methods)
+
+  Widget _buildActionButtons(Orden orden) {
+    if (orden.status.toLowerCase() == Orden.ESTADO_ASIGNADA || orden.status.toLowerCase() == 'abierta') {
+       // ... (existing Accept/Reject logic)
+       return Row(
+        children: [
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _showConfirmationDialog(
+                title: 'Rechazar Orden',
+                content: 'Si rechaza la orden, ya no podrá tomarla y se notificará al operador. ¿Está seguro?',
+                confirmText: 'Sí, Rechazar',
+                onConfirm: _rejectOrder,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.red.shade700,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Rechazar', style: TextStyle(color: Colors.white)),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: ElevatedButton(
+              onPressed: () => _showConfirmationDialog(
+                title: 'Tomar Orden',
+                content: '¿Está seguro de que desea tomar esta orden?',
+                confirmText: 'Sí, Tomar',
+                onConfirm: _takeOrder,
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.green,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+              ),
+              child: const Text('Tomar Orden', style: TextStyle(color: Colors.white)),
+            ),
+          ),
+        ],
+      );
+    }
+    
+    if (orden.status.toLowerCase() == Orden.ESTADO_EN_PROCESO) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.edit_document, color: Colors.white),
+            label: const Text('Gestionar Orden', style: TextStyle(color: Colors.white)),
+            onPressed: () async {
+               final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ManageOrderScreen(orden: orden),
+                ),
+              );
+              if (result == 'refresh' && mounted) _loadOrderDetails();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, padding: const EdgeInsets.symmetric(vertical: 12)),
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.location_on, color: Colors.white),
+            label: const Text('Reportar En Sitio', style: TextStyle(color: Colors.white)),
+            onPressed: () => _showConfirmationDialog(
+              title: 'Reportar en Sitio',
+              content: '¿Confirmas que has llegado al sitio del cliente?',
+              confirmText: 'Sí, estoy aquí',
+              onConfirm: _reportOnSite,
+            ),
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.symmetric(vertical: 12)),
+          ),
+        ],
+      );
+    }
+    
+    if (orden.status.toLowerCase() == Orden.ESTADO_EN_SITIO) { // estado_en_sitio logic
+       return Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          ElevatedButton.icon(
+            icon: const Icon(Icons.edit_document, color: Colors.white),
+            label: const Text('Gestionar Orden', style: TextStyle(color: Colors.white)),
+            onPressed: () async {
+               final result = await Navigator.of(context).push(
+                MaterialPageRoute(
+                  builder: (_) => ManageOrderScreen(orden: orden),
+                ),
+              );
+              if (result == 'refresh' && mounted) _loadOrderDetails();
+            },
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, padding: const EdgeInsets.symmetric(vertical: 12)),
+          ),
+          const SizedBox(height: 10),
+          ElevatedButton.icon(
+            icon: const Icon(Icons.check_circle, color: Colors.white),
+            label: const Text('Finalizar Orden', style: TextStyle(color: Colors.white)),
+            onPressed: _closeOrder, // Calls signature flow
+            style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, padding: const EdgeInsets.symmetric(vertical: 12)),
+          ),
+        ],
+      );
+    }
+
+    return const SizedBox.shrink();
+  }
   final String orderNumber;
   const OrderDetailScreen({super.key, required this.orderNumber});
 

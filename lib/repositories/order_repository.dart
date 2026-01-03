@@ -181,15 +181,14 @@ class OrderRepository {
     throw Exception('Orden no encontrada');
   }
 
-  Future<Orden> closeOrder(String orderNumber) async {
+  Future<Orden> reportOnSite(String orderNumber) async {
     final hasConnection = await _hasConnection();
     
-    // Verificar si ya existe una operación pendiente de cerrar
+    // Verificar si ya existe una operación pendiente de reporte en sitio
     final existingOps = await _dbService.getPendingOperationsForOrder(orderNumber);
-    final hasClosePending = existingOps.any((op) => op['operation_type'] == 'close');
+    final hasReportPending = existingOps.any((op) => op['operation_type'] == 'report_on_site');
     
-    if (hasClosePending) {
-      // Si ya hay una operación pendiente, retornar orden con estado actualizado localmente
+    if (hasReportPending) {
       final localOrder = await _getOrderFromLocal(orderNumber);
       if (localOrder != null) {
         return Orden(
@@ -198,12 +197,11 @@ class OrderRepository {
           nombreCliente: localOrder.nombreCliente,
           fechaHora: localOrder.fechaHora,
           valorServicio: localOrder.valorServicio,
-
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
           fechaProgramada: localOrder.fechaProgramada,
-          status: Orden.ESTADO_EJECUTADA,
-          fechaLlegada: localOrder.fechaLlegada,
+          status: Orden.ESTADO_EN_SITIO, // Optimistic Update
+          fechaLlegada: DateTime.now(),   // Set arrival time optimistically
           solucionTecnico: localOrder.solucionTecnico,
           macRouter: localOrder.macRouter,
           macBridge: localOrder.macBridge,
@@ -231,6 +229,92 @@ class OrderRepository {
           tecnicoAuxiliarId: localOrder.tecnicoAuxiliarId,
           solicitudSuscriptor: localOrder.solicitudSuscriptor,
           fechaInicioAtencion: localOrder.fechaInicioAtencion,
+          fechaFinAtencion: localOrder.fechaFinAtencion,
+          fechaCierre: localOrder.fechaCierre,
+        );
+      }
+    }
+    
+    if (hasConnection) {
+      try {
+        final order = await _apiService.reportOnSite(orderNumber);
+        await _saveOrderToLocal(order);
+        await _dbService.deletePendingOperation(
+          await _findPendingOperation('report_on_site', orderNumber),
+        );
+        return order;
+      } catch (e) {
+        // Fallback to offline
+        await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EN_SITIO);
+        // Also update arrival time locally
+        await _updateLocalOrder(orderNumber, {'fecha_llegada': DateTime.now().toIso8601String()});
+        await _queueOperation('report_on_site', orderNumber, {});
+        rethrow;
+      }
+    }
+
+    // Offline mode
+    await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EN_SITIO);
+    await _updateLocalOrder(orderNumber, {'fecha_llegada': DateTime.now().toIso8601String()});
+    await _queueOperation('report_on_site', orderNumber, {});
+    
+    final localOrder = await _getOrderFromLocal(orderNumber);
+    if (localOrder != null) return localOrder;
+    throw Exception('Orden no encontrada');
+  }
+
+  Future<Orden> closeOrder(String orderNumber, Map<String, dynamic> closingData) async {
+    final hasConnection = await _hasConnection();
+    
+    // Verificar si ya existe una operación pendiente de cerrar
+    final existingOps = await _dbService.getPendingOperationsForOrder(orderNumber);
+    final hasClosePending = existingOps.any((op) => op['operation_type'] == 'close');
+    
+    if (hasClosePending) {
+      // Si ya hay una operación pendiente, retornar orden con estado actualizado localmente
+      final localOrder = await _getOrderFromLocal(orderNumber);
+      if (localOrder != null) {
+        // Apply optimistic updates from closingData if needed, 
+        // usually just returning the current local state which should be executed is enough
+        // but let's be safe and ensure the status is returned as executed
+        return Orden(
+          id: localOrder.id,
+          numeroOrden: localOrder.numeroOrden,
+          nombreCliente: localOrder.nombreCliente,
+          fechaHora: localOrder.fechaHora,
+          valorServicio: localOrder.valorServicio,
+          direccion: localOrder.direccion,
+          observaciones: localOrder.observaciones,
+          fechaProgramada: localOrder.fechaProgramada,
+          status: Orden.ESTADO_EJECUTADA,
+          fechaLlegada: localOrder.fechaLlegada,
+          solucionTecnico: localOrder.solucionTecnico,
+          macRouter: closingData['mac_router'] ?? localOrder.macRouter,
+          macBridge: closingData['mac_bridge'] ?? localOrder.macBridge,
+          macOnt: closingData['mac_ont'] ?? localOrder.macOnt,
+          otrosEquipos: closingData['otros_equipos'] ?? localOrder.otrosEquipos,
+          firmaTecnico: closingData['firma_tecnico'] ?? localOrder.firmaTecnico,
+          firmaSuscriptor: closingData['firma_suscriptor'] ?? localOrder.firmaSuscriptor,
+          articulos: closingData['articulos'] ?? localOrder.articulos,
+          technicianId: localOrder.technicianId,
+          clienteId: localOrder.clienteId,
+          cedula: localOrder.cedula,
+          precinto: localOrder.precinto,
+          tipoOrden: localOrder.tipoOrden,
+          tipoFuncion: localOrder.tipoFuncion,
+          fechaTrn: localOrder.fechaTrn,
+          fechaVencimiento: localOrder.fechaVencimiento,
+          estadoOrden: localOrder.estadoOrden,
+          tipo: localOrder.tipo,
+          estadoInterno: localOrder.estadoInterno,
+          direccionAsociado: localOrder.direccionAsociado,
+          telefono: localOrder.telefono,
+          saldoCliente: localOrder.saldoCliente,
+          solicitadoPor: localOrder.solicitadoPor,
+          estadoTv: localOrder.estadoTv,
+          tecnicoAuxiliarId: localOrder.tecnicoAuxiliarId,
+          solicitudSuscriptor: localOrder.solicitudSuscriptor,
+          fechaInicioAtencion: localOrder.fechaInicioAtencion,
           fechaFinAtencion: DateTime.now(),
           fechaCierre: DateTime.now(),
         );
@@ -239,7 +323,7 @@ class OrderRepository {
     
     if (hasConnection) {
       try {
-        final order = await _apiService.closeOrder(orderNumber);
+        final order = await _apiService.closeOrder(orderNumber, closingData);
         await _saveOrderToLocal(order);
         await _dbService.deletePendingOperation(
           await _findPendingOperation('close', orderNumber),
@@ -248,18 +332,66 @@ class OrderRepository {
       } catch (e) {
         // Actualizar estado local inmediatamente
         await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EJECUTADA);
-        await _queueOperation('close', orderNumber, {});
+        // Also update local order with closing data
+        // Convert map values to String for updateLocalOrder if feasible or handle complex types
+        // For simplicity, we queue the full JSON operation, and maybe update simple fields locally
+        await _queueOperation('close', orderNumber, closingData);
         rethrow;
       }
     }
     
     // Actualizar estado local inmediatamente antes de encolar
     await _updateLocalOrderStatus(orderNumber, Orden.ESTADO_EJECUTADA);
-    await _queueOperation('close', orderNumber, {});
+     // Convert dynamic map to Map<String, String> for simple update, skipping complex fields for now 
+    // or improve _updateLocalOrder to handle dynamic.
+    // Ideally we should update the local DB with all closing data so the UI reflects it.
+    // For now we rely on the status update and the queue.
+    await _queueOperation('close', orderNumber, closingData);
     
     final localOrder = await _getOrderFromLocal(orderNumber);
     if (localOrder != null) {
-      return localOrder;
+      // Manually construct returned object with new data for immediate UI feedback
+       return Orden(
+          id: localOrder.id,
+          numeroOrden: localOrder.numeroOrden,
+          nombreCliente: localOrder.nombreCliente,
+          fechaHora: localOrder.fechaHora,
+          valorServicio: localOrder.valorServicio,
+          direccion: localOrder.direccion,
+          observaciones: localOrder.observaciones,
+          fechaProgramada: localOrder.fechaProgramada,
+          status: Orden.ESTADO_EJECUTADA,
+          fechaLlegada: localOrder.fechaLlegada,
+          solucionTecnico: localOrder.solucionTecnico,
+          macRouter: closingData['mac_router'] ?? localOrder.macRouter,
+          macBridge: closingData['mac_bridge'] ?? localOrder.macBridge,
+          macOnt: closingData['mac_ont'] ?? localOrder.macOnt,
+          otrosEquipos: closingData['otros_equipos'] ?? localOrder.otrosEquipos,
+          firmaTecnico: closingData['firma_tecnico'] ?? localOrder.firmaTecnico,
+          firmaSuscriptor: closingData['firma_suscriptor'] ?? localOrder.firmaSuscriptor,
+          articulos: closingData['articulos'] ?? localOrder.articulos,
+          technicianId: localOrder.technicianId,
+          clienteId: localOrder.clienteId,
+          cedula: localOrder.cedula,
+          precinto: localOrder.precinto,
+          tipoOrden: localOrder.tipoOrden,
+          tipoFuncion: localOrder.tipoFuncion,
+          fechaTrn: localOrder.fechaTrn,
+          fechaVencimiento: localOrder.fechaVencimiento,
+          estadoOrden: localOrder.estadoOrden,
+          tipo: localOrder.tipo,
+          estadoInterno: localOrder.estadoInterno,
+          direccionAsociado: localOrder.direccionAsociado,
+          telefono: localOrder.telefono,
+          saldoCliente: localOrder.saldoCliente,
+          solicitadoPor: localOrder.solicitadoPor,
+          estadoTv: localOrder.estadoTv,
+          tecnicoAuxiliarId: localOrder.tecnicoAuxiliarId,
+          solicitudSuscriptor: localOrder.solicitudSuscriptor,
+          fechaInicioAtencion: localOrder.fechaInicioAtencion,
+          fechaFinAtencion: DateTime.now(), // Optimistic
+          fechaCierre: DateTime.now(), // Optimistic
+        );
     }
     throw Exception('Orden no encontrada');
   }

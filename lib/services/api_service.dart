@@ -79,15 +79,20 @@ class ApiService {
     return Orden.fromJson(data['order']);
   }
   
-  // CAMBIO: Acepta un String en lugar de un int
-  Future<Orden> closeOrder(String orderNumber) async {
+  // CAMBIO: Acepta un String en lugar de un int y datos de cierre
+  Future<Orden> closeOrder(String orderNumber, Map<String, dynamic> data) async {
     final token = await AuthService.instance.getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/v1/orders/$orderNumber/close'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
+      body: jsonEncode(data),
     );
-    final data = _handleResponse(response);
-    return Orden.fromJson(data['order']);
+    final responseData = _handleResponse(response);
+    return Orden.fromJson(responseData['order']);
   }
   
   // CAMBIO: Acepta un String en lugar de un int
