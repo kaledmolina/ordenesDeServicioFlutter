@@ -37,7 +37,7 @@ class Orden {
   final DateTime? fechaFinAtencion;
   final DateTime? fechaCierre;
   final DateTime? fechaLlegada;
-  final Timestamp? fechaAsignacion; // Keeping DateTime for simplicity
+  final DateTime? fechaAsignacion; // Changed from Timestamp to DateTime
   final String? macRouter;
   final String? macBridge;
   final String? macOnt;
