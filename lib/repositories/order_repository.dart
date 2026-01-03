@@ -380,7 +380,7 @@ class OrderRepository {
       'direccion': json['direccion'], 
       'observaciones': json['observaciones'],
       'fecha_programada': json['fecha_programada'],
-      'status': json['status'],
+      'status': (json['estado_orden'] != null && json['estado_orden'].toString().isNotEmpty) ? json['estado_orden'] : json['status'],
       'fecha_llegada': json['fecha_llegada'],
       'solucion_tecnico': json['solucion_tecnico'],
       'mac_router': json['mac_router'],

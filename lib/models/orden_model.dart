@@ -108,7 +108,7 @@ class Orden {
       numeroOrden: json['numero_orden']?.toString() ?? '',
       nombreCliente: json['nombre_cliente'] ?? 'Cliente Desconocido',
       technicianId: json['technician_id'],
-      status: json['status'] ?? json['estado_orden'] ?? 'desconocido',
+      status: (json['estado_orden'] != null && json['estado_orden'].toString().isNotEmpty) ? json['estado_orden'] : (json['status'] ?? 'desconocido'),
       fechaHora: DateTime.tryParse(json['created_at'] ?? '')?.toLocal() ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updated_at'] ?? '')?.toLocal(),
       fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
