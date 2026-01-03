@@ -27,7 +27,12 @@ class OrderRepository {
       } catch (e, stack) {
         print('Error fetching orders from API: $e');
         print('Stack trace: $stack');
-        return await _getOrdersFromLocal(status: status);
+        final localOrders = await _getOrdersFromLocal(status: status);
+        if (localOrders.isEmpty) {
+           // Si no hay datos locales, lanzamos el error para verlo en la UI
+           throw Exception('Error API: $e');
+        }
+        return localOrders;
       }
     }
     
