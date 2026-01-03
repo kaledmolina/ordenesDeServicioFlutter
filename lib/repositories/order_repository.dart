@@ -115,7 +115,7 @@ class OrderRepository {
           nombreCliente: localOrder.nombreCliente,
           fechaHora: localOrder.fechaHora,
           valorServicio: localOrder.valorServicio,
-          telefono: localOrder.celular,
+
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
           fechaProgramada: localOrder.fechaProgramada,
@@ -198,7 +198,7 @@ class OrderRepository {
           nombreCliente: localOrder.nombreCliente,
           fechaHora: localOrder.fechaHora,
           valorServicio: localOrder.valorServicio,
-          telefono: localOrder.celular,
+
           direccion: localOrder.direccion,
           observaciones: localOrder.observaciones,
           fechaProgramada: localOrder.fechaProgramada,
@@ -468,7 +468,7 @@ class OrderRepository {
       valorServicio: map['valor_servicio'] != null
           ? double.tryParse(map['valor_servicio'] as String)
           : null,
-      telefono: map['celular'] as String?,
+
       direccion: map['direccion'] as String?,
       observaciones: map['observaciones'] as String?,
       fechaProgramada: map['fecha_programada'] != null

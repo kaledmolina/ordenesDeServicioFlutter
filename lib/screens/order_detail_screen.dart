@@ -214,7 +214,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             nombreCliente: _currentOrder!.nombreCliente,
             fechaHora: _currentOrder!.fechaHora,
             valorServicio: _currentOrder!.valorServicio,
-            telefono: _currentOrder!.celular,
+
             direccion: _currentOrder!.direccion,
             observaciones: _currentOrder!.observaciones,
             fechaProgramada: _currentOrder!.fechaProgramada,
@@ -367,7 +367,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           nombreCliente: _currentOrder!.nombreCliente,
           fechaHora: _currentOrder!.fechaHora,
           valorServicio: _currentOrder!.valorServicio,
-          telefono: _currentOrder!.celular,
+
           direccion: _currentOrder!.direccion,
           observaciones: _currentOrder!.observaciones,
           fechaProgramada: _currentOrder!.fechaProgramada,
