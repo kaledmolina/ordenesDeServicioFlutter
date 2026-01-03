@@ -375,8 +375,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                _buildBasicInfoSection().animate().fade().slideY(begin: 0.1, end: 0),
-                const SizedBox(height: 24),
+                // _buildBasicInfoSection().animate().fade().slideY(begin: 0.1, end: 0), // Removed as requested
+                // const SizedBox(height: 24),
                 _buildArticlesSection().animate().fade(delay: 100.ms).slideY(begin: 0.1, end: 0),
                 const SizedBox(height: 24),
                 _buildEquipmentSection().animate().fade(delay: 200.ms).slideY(begin: 0.1, end: 0),
@@ -404,31 +404,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     );
   }
 
-  Widget _buildBasicInfoSection() {
-    return GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Información Básica', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _celularController,
-              decoration: const InputDecoration(labelText: 'Celular', border: OutlineInputBorder()),
-              keyboardType: TextInputType.phone,
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _obsOrigenController,
-              decoration: const InputDecoration(labelText: 'Observaciones', border: OutlineInputBorder()),
-              maxLines: 3,
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  // Widget _buildBasicInfoSection() { ... } // Removed
 
   Widget _buildArticlesSection() {
     return GlassCard(
@@ -459,7 +435,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                 itemBuilder: (context, index) {
                    final article = _articles[index];
                    return Card(
-                     key: ValueKey(article), // Ideally use a unique ID, but map content ref implies unique obj in memory
+                     key: ValueKey(article), 
                      margin: const EdgeInsets.only(bottom: 8),
                      child: Padding(
                        padding: const EdgeInsets.all(12.0),
@@ -468,7 +444,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                          children: [
                            Row(
                              children: [
-                               Expanded(child: Text(article['articulo'], style: const TextStyle(fontWeight: FontWeight.bold))),
+                               Expanded(child: Text(article['articulo']?.toString() ?? 'Artículo', style: const TextStyle(fontWeight: FontWeight.bold))),
                                IconButton(
                                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                                  onPressed: () => _removeArticle(index),
@@ -481,7 +457,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                              children: [
                                Expanded(
                                  child: TextFormField(
-                                   initialValue: article['descripcion'],
+                                   initialValue: article['descripcion']?.toString() ?? '',
                                    decoration: const InputDecoration(labelText: 'Descripción', isDense: true),
                                    onChanged: (val) => _updateArticle(index, 'descripcion', val),
                                  ),
@@ -490,7 +466,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                                SizedBox(
                                  width: 80,
                                  child: TextFormField(
-                                   initialValue: article['asoc'],
+                                   initialValue: article['asoc']?.toString() ?? '',
                                     decoration: const InputDecoration(labelText: 'ASOC', isDense: true),
                                     onChanged: (val) => _updateArticle(index, 'asoc', val),
                                  ),
@@ -502,7 +478,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                              children: [
                                Expanded(
                                  child: TextFormField(
-                                   initialValue: article['valor_unitario'].toString(),
+                                   initialValue: article['valor_unitario']?.toString() ?? '0',
                                    decoration: const InputDecoration(labelText: 'V. Unit.', prefixText: '\$', isDense: true),
                                    keyboardType: TextInputType.number,
                                    onChanged: (val) => _updateArticle(index, 'valor_unitario', val),
@@ -511,7 +487,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                                const SizedBox(width: 8),
                                Expanded(
                                  child: TextFormField(
-                                   initialValue: article['cantidad'].toString(),
+                                   initialValue: article['cantidad']?.toString() ?? '0',
                                    decoration: const InputDecoration(labelText: 'Cant.', isDense: true),
                                    keyboardType: TextInputType.number,
                                    onChanged: (val) => _updateArticle(index, 'cantidad', val),
@@ -520,9 +496,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                                const SizedBox(width: 8),
                                Expanded(
                                  child: TextFormField(
-                                   // key: ValueKey(article['total']), // Force rebuild not needed if using standard state
                                    readOnly: true,
-                                   controller: TextEditingController(text: '\$${article['total']}'), // Simple display update
+                                   controller: TextEditingController(text: '\$${article['total']?.toString() ?? '0'}'), 
                                    decoration: const InputDecoration(labelText: 'Total', isDense: true, filled: true),
                                  ),
                                ),
