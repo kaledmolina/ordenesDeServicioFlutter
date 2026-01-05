@@ -289,7 +289,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     if (controller.isEmpty) return null;
     final Uint8List? data = await controller.toPngBytes();
     if (data == null) return null;
-    return base64Encode(data);
+    return 'data:image/png;base64,${base64Encode(data)}';
   }
 
   Future<void> _finalizeOrder() async {
