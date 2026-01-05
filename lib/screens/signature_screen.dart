@@ -15,13 +15,13 @@ class _SignatureScreenState extends State<SignatureScreen> {
   final SignatureController _technicianController = SignatureController(
     penStrokeWidth: 3,
     penColor: Colors.black,
-    exportBackgroundColor: Colors.white,
+    exportBackgroundColor: Colors.transparent,
   );
 
   final SignatureController _subscriberController = SignatureController(
     penStrokeWidth: 3,
     penColor: Colors.black,
-    exportBackgroundColor: Colors.white,
+    exportBackgroundColor: Colors.transparent,
   );
 
   @override
