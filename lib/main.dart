@@ -40,7 +40,7 @@ class MyApp extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return MaterialApp(
-      title: 'App para Técnicos',
+      title: 'ordenes intalnet',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.lightBlue.shade300,

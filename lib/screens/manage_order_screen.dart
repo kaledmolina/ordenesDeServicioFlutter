@@ -106,30 +106,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _initialize();
   }
 
-  // ... (inside _addArticle)
-                      setState(() {
-                        _articles.add({
-                          'uuid': DateTime.now().millisecondsSinceEpoch.toString(), // Stable Local ID
-                          'articulo': selectedArticle,
-                          'grupo_articulo': selectedArticle, // Ensure consistency
-                          'descripcion': '', 
-                          'asoc': '', 
-                          'valor_unitario': 0.0,
-                          'cantidad': 0,
-                          'total': 0.0,
-                        });
-                      });
 
-  // ... (inside itemBuilder)
-                   final article = _articles[index];
-                   final qty = int.tryParse(article['cantidad']?.toString() ?? '0') ?? 0;
-                   final uuid = article['uuid'] ?? 'temp_$index'; // Fallback
-                   
-                   return Card(
-                     key: ValueKey(uuid),  // STABLE KEY FIXES FOCUS LOSS
-                     margin: const EdgeInsets.only(bottom: 12),
-                     elevation: 2,
-                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+
   
   Future<void> _initialize() async {
     _authToken = await AuthService.instance.getToken();
