@@ -23,75 +23,42 @@ class HomeScreen extends StatefulWidget {
 
 class _HomeScreenState extends State<HomeScreen> {
   final OrderRepository _orderRepo = OrderRepository();
-  final ScrollController _scrollController = ScrollController();
-  
   List<Orden> _orders = [];
-  int _currentPage = 1;
   bool _isLoading = false;
-  bool _hasMore = true;
   String _currentStatusFilter = 'todas';
-  String _appBarTitle = 'Todas las Órdenes';
+  String _searchQuery = '';
+  Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    _fetchOrders(isRefresh: true);
-    _scrollController.addListener(_onScroll);
-    // SyncService usage removed for online-only mode
+    _fetchOrders();
   }
-
-  // _loadOrdersFromCache removed
 
   @override
   void dispose() {
-    _scrollController.removeListener(_onScroll);
-    _scrollController.dispose();
+    _debounce?.cancel();
     super.dispose();
-  }
-
-  void _onScroll() {
-    if (_scrollController.position.pixels >= _scrollController.position.maxScrollExtent - 200 &&
-        !_isLoading &&
-        _hasMore) {
-      _fetchOrders();
-    }
   }
 
   Future<void> _fetchOrders({bool isRefresh = false}) async {
     if (_isLoading && !isRefresh) return;
-    if (!isRefresh) {
-      setState(() => _isLoading = true);
-    }
-
-    if (isRefresh) {
-      _currentPage = 1;
-      _hasMore = true;
-    }
+    setState(() => _isLoading = true);
 
     try {
-      final orders = await _orderRepo.getOrders(page: _currentPage, status: _currentStatusFilter);
-      
+      // Note: Pagination logic simplified for Table view to load first page or all. 
+      // For a dashboard table, usually we might want more data, 
+      // but let's stick to standard fetch to avoid breaking repo.
+      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter);
       if (mounted) {
         setState(() {
-          if (isRefresh) {
-            _orders = orders;
-          } else {
-            _orders.addAll(orders);
-          }
-          _currentPage++;
-          _hasMore = orders.length >= 10;
+          _orders = orders;
         });
       }
     } catch (e) {
-      if (mounted && isRefresh) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error al cargar órdenes: ${e.toString()}'),
-            action: SnackBarAction(
-              label: 'Reintentar',
-              onPressed: () => _fetchOrders(isRefresh: true),
-            ),
-          ),
+          SnackBar(content: Text('Error: $e')),
         );
       }
     } finally {
@@ -99,214 +66,341 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  void _applyFilter(String status, String title) {
-    Navigator.of(context).pop();
-    if (_currentStatusFilter == status) return;
-    
-    setState(() {
-      _currentStatusFilter = status;
-      _appBarTitle = title;
-    });
-    _fetchOrders(isRefresh: true);
+  Future<void> _acceptOrder(Orden order) async {
+    try {
+      await _orderRepo.acceptOrder(order.numeroOrden);
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Orden aceptada'), backgroundColor: Colors.green),
+        );
+        _fetchOrders(isRefresh: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        String msg = e.toString().replaceAll('Exception:', '').trim();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
+      }
+    }
   }
 
-  (Color, IconData) _getStatusInfo(String status) {
-    switch (status.toLowerCase()) {
-      case Orden.ESTADO_PENDIENTE: return (Colors.grey, Icons.hourglass_empty);
-      case Orden.ESTADO_ASIGNADA: return (Colors.green, Icons.assignment_ind);
-      case Orden.ESTADO_EN_SITIO: return (Colors.blue, Icons.location_on);
-      case Orden.ESTADO_EN_PROCESO: return (Colors.orange.shade800, Icons.construction_outlined);
-      case Orden.ESTADO_EJECUTADA: return (Colors.teal, Icons.check_circle);
-      case Orden.ESTADO_CERRADA: return (Colors.blueGrey, Icons.lock);
-      case Orden.ESTADO_ANULADA: return (Colors.red.shade700, Icons.cancel_outlined);
-      default: return (Colors.grey, Icons.help_outline);
+  Future<void> _reportOnSite(Orden order) async {
+    try {
+      await _orderRepo.reportOnSite(order.numeroOrden);
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reportado en sitio'), backgroundColor: Colors.green),
+        );
+        _fetchOrders(isRefresh: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        String msg = e.toString().replaceAll('Exception:', '').trim();
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
+      }
     }
+  }
+
+  void _finishOrder(Orden order) {
+      // Para finalizar se requieren firmas y datos, redirigimos al detalle
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
+      ).then((_) => _fetchOrders(isRefresh: true));
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Completa los datos y firmas para finalizar.'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
   }
 
   @override
   Widget build(BuildContext context) {
-    return AppBackground(
-      child: Scaffold(
-        backgroundColor: Colors.transparent,
-        appBar: AppBar(
-          title: Text(_appBarTitle, style: const TextStyle(fontWeight: FontWeight.bold)),
-          backgroundColor: Colors.transparent,
-          elevation: 0,
-          centerTitle: true,
-          foregroundColor: Colors.black87,
-          actions: const [
-            Padding(
-              padding: EdgeInsets.only(right: 16.0),
-              child: ConnectionStatusIndicator(),
+    // ESTILOS TIPO DASHBOARD DARK (Filament-like)
+    const backgroundColor = Color(0xFF000000); // Fondo negro total o muy oscuro
+    const cardColor = Color(0xFF111827); // Gris oscuro (Gray 900)
+    const textColor = Colors.white;
+    const secondaryTextColor = Colors.white70;
+
+    return Scaffold(
+      backgroundColor: backgroundColor,
+      appBar: AppBar(
+        title: const Text('Orden De Servicios', style: TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: backgroundColor,
+        foregroundColor: textColor,
+        elevation: 0,
+        actions: const [
+          Padding(
+            padding: EdgeInsets.only(right: 16.0),
+            child: ConnectionStatusIndicator(),
+          ),
+        ],
+      ),
+      drawer: _buildDrawer(), // Reutilizamos el drawer existente o simplificado
+      body: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header / Breadcrumb visual
+            const Text(
+              'Gestión de Órdenes > Listado',
+              style: TextStyle(color: Colors.grey, fontSize: 12),
             ),
+            const SizedBox(height: 5),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Text(
+                  'Orden De Servicios',
+                  style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold),
+                ),
+                // Search Bar simulada
+                Container(
+                  width: 200,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.grey.shade800),
+                  ),
+                  child: const TextField(
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      hintText: 'Buscar...',
+                      hintStyle: TextStyle(color: Colors.grey),
+                      prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
+                      border: InputBorder.none,
+                      contentPadding: EdgeInsets.symmetric(vertical: 10),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
+            // TABLE CONTAINER
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  color: cardColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.grey.shade800),
+                ),
+                child: _isLoading && _orders.isEmpty 
+                  ? const Center(child: CircularProgressIndicator()) 
+                  : ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.vertical,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: DataTable(
+                            headingRowColor: MaterialStateProperty.all(Colors.black.withOpacity(0.3)),
+                            dataRowColor: MaterialStateProperty.all(cardColor),
+                            dividerThickness: 0.5,
+                            horizontalMargin: 20,
+                            columnSpacing: 30,
+                            columns: const [
+                              DataColumn(label: Text('N° Orden', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Técnico', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Fecha', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Estado', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
+                              DataColumn(label: Text('Acciones', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
+                            ],
+                            rows: _orders.map((order) {
+                              return DataRow(
+                                onSelectChanged: (_) {
+                                   Navigator.of(context).push(
+                                    MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
+                                  ).then((_) => _fetchOrders(isRefresh: true));
+                                },
+                                cells: [
+                                  DataCell(Text(order.numeroOrden, style: const TextStyle(color: textColor))),
+                                  DataCell(Text('Técnico intalnet', style: const TextStyle(color: textColor))), // Placeholder o real si viene del modelo
+                                  DataCell(Text(
+                                    order.fechaHora.toString().split(' ')[0], // Formato simple YYYY-MM-DD
+                                    style: const TextStyle(color: textColor)
+                                  )),
+                                  DataCell(_buildStatusBadge(order.status)),
+                                  DataCell(_buildActions(order)),
+                                ],
+                              );
+                            }).toList(),
+                          ),
+                        ),
+                      ),
+                    ),
+              ),
+            ),
+            // Footer de paginación simulado
+            Padding(
+              padding: const EdgeInsets.only(top: 10),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.end,
+                children: [
+                  Text('Mostrando ${_orders.length} resultados', style: const TextStyle(color: Colors.grey)),
+                ],
+              ),
+            )
           ],
         ),
-        drawer: _buildDrawer(),
-        body: _buildBody(),
       ),
     );
   }
 
-  Widget _buildBody() {
-    if (_isLoading && _orders.isEmpty) {
-      return const Center(child: CircularProgressIndicator());
+  Widget _buildStatusBadge(String status) {
+    Color color;
+    Color textColor = Colors.white;
+    String label = status.toUpperCase();
+
+    switch (status.toLowerCase()) {
+      case 'asignada':
+        color = const Color(0xFFF59E0B); // Amber/Yellow
+        textColor = Colors.black;
+        break;
+      case 'ejecutada':
+        color = const Color(0xFF10B981); // Emerald/Green
+        break;
+      case 'en_proceso':
+        color = Colors.blue;
+        break;
+      case 'en_sitio':
+        color = Colors.indigo;
+        break;
+      default:
+        color = Colors.grey;
     }
 
-    if (_orders.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[600]),
-            const SizedBox(height: 16),
-            Text(
-              _currentStatusFilter == 'todas'
-                  ? 'No tienes órdenes asignadas.'
-                  : 'No hay órdenes en estado "$_currentStatusFilter"',
-              style: Theme.of(context).textTheme.titleMedium,
-            ),
-            const SizedBox(height: 8),
-            ElevatedButton.icon(
-              icon: const Icon(Icons.refresh),
-              label: const Text('Refrescar'),
-              onPressed: () => _fetchOrders(isRefresh: true),
-            )
-          ],
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.2),
+        borderRadius: BorderRadius.circular(4),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Text(
+        status, 
+        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)
+      ),
+    );
+  }
+
+  Widget _buildActions(Orden order) {
+    String status = order.status.toLowerCase();
+
+    // 1. Asignada -> Aceptar
+    if (status == 'asignada') {
+      return InkWell(
+        onTap: () => _acceptOrder(order),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check, color: Colors.blue, size: 16),
+              SizedBox(width: 4),
+              Text('Aceptar Orden', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
+            ],
+          ),
         ),
       );
     }
 
-    return RefreshIndicator(
-      onRefresh: () => _fetchOrders(isRefresh: true),
-      child: ListView.builder(
-        controller: _scrollController,
-        itemCount: _orders.length + (_hasMore ? 1 : 0),
-        itemBuilder: (context, index) {
-          if (index == _orders.length) {
-            return _isLoading 
-                ? const Padding(
-                    padding: EdgeInsets.all(16.0),
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                : const SizedBox.shrink();
-          }
-          final order = _orders[index];
-          final statusInfo = _getStatusInfo(order.status);
-          
-          return _buildOrderCard(order, statusInfo);
-        },
-      ),
-    );
-  }
-
-  Widget _buildOrderCard(Orden order, (Color, IconData) statusInfo) {
-    return _buildGlassCard(
-      child: ListTile(
-        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        leading: Icon(statusInfo.$2, color: statusInfo.$1, size: 30),
-        title: Text('Orden #${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Text('Cliente: ${order.nombreCliente}'),
-        trailing: Chip(
-          label: Text(order.status.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
-          backgroundColor: statusInfo.$1.withOpacity(0.8),
-          padding: const EdgeInsets.symmetric(horizontal: 8),
-        ),
-        onTap: () async {
-          final result = await Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden),
-            ),
-          );
-          if (result == 'refresh' && mounted) {
-            _fetchOrders(isRefresh: true);
-          }
-        },
-      ),
-    ).animate().fade(duration: 500.ms).slideY(begin: 0.5);
-  }
-
-  Widget _buildGlassCard({required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.0),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16.0),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: child,
+    // 2. En Proceso -> Reportar En Sitio
+    if (status == 'en_proceso') {
+      return InkWell(
+        onTap: () => _reportOnSite(order),
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.indigo.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.location_on, color: Colors.indigo, size: 16),
+              SizedBox(width: 4),
+              Text('Llegué a Sitio', style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
+            ],
           ),
         ),
+      );
+    }
+
+    // 3. En Sitio -> Finalizar (Redirige a detalle)
+    if (status == 'en_sitio') {
+      return InkWell(
+        onTap: () => _finishOrder(order),
+        child: Container(
+           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+          decoration: BoxDecoration(
+            color: Colors.green.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(4),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 16),
+              SizedBox(width: 4),
+              Text('Finalizar Atención', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Default -> Ver detalles
+    return InkWell(
+      onTap: () {
+         Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
+          ).then((_) => _fetchOrders(isRefresh: true));
+      },
+      child: const Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.visibility, color: Colors.grey, size: 18),
+          SizedBox(width: 4),
+          Text('Ver', style: TextStyle(color: Colors.grey, fontSize: 12)),
+        ],
       ),
     );
   }
 
   Widget _buildDrawer() {
-    return ClipRRect(
-      borderRadius: const BorderRadius.only(topRight: Radius.circular(20), bottomRight: Radius.circular(20)),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
-        child: Drawer(
-          backgroundColor: Colors.lightBlue.shade50.withOpacity(0.9),
-          child: Column(
-            children: [
-              FutureBuilder<User?>(
-                future: AuthService.instance.getCurrentUser(),
-                builder: (context, snapshot) {
-                  final userName = snapshot.data?.name ?? 'Cargando...';
-                  final userEmail = snapshot.data?.email ?? '';
-                  return UserAccountsDrawerHeader(
-                    accountName: Text(userName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87)),
-                    accountEmail: Text(userEmail, style: const TextStyle(color: Colors.black54)),
-                    currentAccountPicture: CircleAvatar(
-                      backgroundColor: Colors.white,
-                      foregroundColor: Theme.of(context).primaryColor,
-                      child: Text(userName.isNotEmpty ? userName[0].toUpperCase() : '', style: const TextStyle(fontSize: 24)),
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.lightBlue.shade200.withOpacity(0.5),
-                    ),
-                  );
-                },
-              ),
-              Expanded(
-                child: ListView(
-                  padding: EdgeInsets.zero,
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.list),
-                      title: const Text('Todas las Órdenes'),
-                      onTap: () => _applyFilter('todas', 'Todas las Órdenes'),
-                    ),
-
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-                      child: Text('FILTRAR POR ESTADO', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
-                    ),
-                    _buildFilterTile(Orden.ESTADO_PENDIENTE, 'Pendientes'),
-                    _buildFilterTile(Orden.ESTADO_ASIGNADA, 'Asignadas'),
-                    _buildFilterTile(Orden.ESTADO_EN_SITIO, 'En Sitio'),
-                    _buildFilterTile(Orden.ESTADO_EN_PROCESO, 'En Proceso'),
-                    _buildFilterTile(Orden.ESTADO_EJECUTADA, 'Ejecutadas'),
-                    _buildFilterTile(Orden.ESTADO_CERRADA, 'Cerradas'),
-                    _buildFilterTile(Orden.ESTADO_ANULADA, 'Anuladas'),
-                    const Divider(),
-                    // Sync Status removed
-                  ],
-                ),
-              ),
-              const Divider(),
-              ListTile(
-                leading: const Icon(Icons.logout),
-                title: const Text('Cerrar Sesión'),
-                onTap: () async {
+     // Drawer simple oscuro
+    return Drawer(
+      backgroundColor: const Color(0xFF111827),
+      child: ListView(
+        children: [
+          const DrawerHeader(
+             decoration: BoxDecoration(color: Colors.black),
+             child: Center(child: Text('Menú', style: TextStyle(color: Colors.white, fontSize: 24))),
+          ),
+          ListTile(
+            leading: const Icon(Icons.list, color: Colors.white),
+            title: const Text('Órdenes', style: TextStyle(color: Colors.white)),
+            onTap: () {
+               Navigator.pop(context);
+               _fetchOrders(isRefresh: true);
+            },
+          ),
+           ListTile(
+            leading: const Icon(Icons.logout, color: Colors.red),
+            title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
+            onTap: () async {
                   await AuthService.instance.logout();
                   if (mounted) {
                     Navigator.of(context).pushAndRemoveUntil(
@@ -314,21 +408,10 @@ class _HomeScreenState extends State<HomeScreen> {
                       (route) => false,
                     );
                   }
-                },
-              ),
-            ],
+            },
           ),
-        ),
+        ],
       ),
-    );
-  }
-  
-  Widget _buildFilterTile(String status, String title) {
-    final statusInfo = _getStatusInfo(status);
-    return ListTile(
-      leading: Icon(statusInfo.$2, color: statusInfo.$1),
-      title: Text(title),
-      onTap: () => _applyFilter(status, 'Órdenes $title'),
     );
   }
 }
