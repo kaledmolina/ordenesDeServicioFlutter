@@ -434,75 +434,134 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                 onReorder: _moveArticle,
                 itemBuilder: (context, index) {
                    final article = _articles[index];
+                   final qty = int.tryParse(article['cantidad']?.toString() ?? '0') ?? 0;
+                   
                    return Card(
                      key: UniqueKey(), 
-                     margin: const EdgeInsets.only(bottom: 8),
+                     margin: const EdgeInsets.only(bottom: 12),
+                     elevation: 2,
+                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                      child: Padding(
                        padding: const EdgeInsets.all(12.0),
                        child: Column(
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
+                           // Header: Name and Delete
                            Row(
+                             crossAxisAlignment: CrossAxisAlignment.start,
                              children: [
-                               Expanded(child: Text(article['grupo_articulo']?.toString() ?? article['articulo']?.toString() ?? 'SIN NOMBRE', style: const TextStyle(fontWeight: FontWeight.bold))),
+                               Expanded(
+                                 child: Text(
+                                   article['grupo_articulo']?.toString() ?? article['articulo']?.toString() ?? 'SIN NOMBRE',
+                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.indigo),
+                                 ),
+                               ),
                                IconButton(
-                                 icon: const Icon(Icons.delete, color: Colors.red, size: 20),
+                                 icon: const Icon(Icons.delete, color: Colors.redAccent, size: 24),
                                  onPressed: () => _removeArticle(index),
                                ),
                              ],
                            ),
-                           const SizedBox(height: 8),
-                           // Fields row
+                           const Divider(),
+                           
+                           // Quantity Stepper and Unit Price
+                           Row(
+                             children: [
+                               // Stepper
+                               Container(
+                                 decoration: BoxDecoration(
+                                   border: Border.all(color: Colors.grey.shade300),
+                                   borderRadius: BorderRadius.circular(8),
+                                 ),
+                                 child: Row(
+                                   children: [
+                                     IconButton(
+                                       icon: const Icon(Icons.remove, color: Colors.indigo),
+                                       onPressed: () {
+                                         if (qty > 0) _updateArticle(index, 'cantidad', qty - 1);
+                                       },
+                                     ),
+                                     Text(
+                                       '$qty',
+                                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                                     ),
+                                     IconButton(
+                                       icon: const Icon(Icons.add, color: Colors.indigo),
+                                       onPressed: () => _updateArticle(index, 'cantidad', qty + 1),
+                                     ),
+                                   ],
+                                 ),
+                               ),
+                               const SizedBox(width: 16),
+                               
+                               // Unit Price Input
+                               Expanded(
+                                 child: TextFormField(
+                                   initialValue: article['valor_unitario']?.toString() ?? '0',
+                                   decoration: const InputDecoration(
+                                     labelText: 'Valor Unit.',
+                                     prefixText: '\$',
+                                     isDense: true,
+                                     border: OutlineInputBorder(),
+                                   ),
+                                   keyboardType: TextInputType.number,
+                                   onChanged: (val) => _updateArticle(index, 'valor_unitario', val),
+                                 ),
+                               ),
+                             ],
+                           ),
+                           const SizedBox(height: 12),
+                           
+                           // Description and ASOC
                            Row(
                              children: [
                                Expanded(
+                                 flex: 2,
                                  child: TextFormField(
                                    initialValue: article['descripcion']?.toString() ?? '',
-                                   decoration: const InputDecoration(labelText: 'Descripción', isDense: true),
+                                   decoration: const InputDecoration(
+                                     labelText: 'Descripción / Serial',
+                                     isDense: true,
+                                     border: OutlineInputBorder(),
+                                   ),
                                    onChanged: (val) => _updateArticle(index, 'descripcion', val),
                                  ),
                                ),
-                               const SizedBox(width: 8),
-                               SizedBox(
-                                 width: 80,
+                               const SizedBox(width: 12),
+                               Expanded(
+                                 flex: 1,
                                  child: TextFormField(
                                    initialValue: article['asoc']?.toString() ?? '',
-                                    decoration: const InputDecoration(labelText: 'ASOC', isDense: true),
+                                    decoration: const InputDecoration(
+                                      labelText: 'ASOC',
+                                      isDense: true,
+                                      border: OutlineInputBorder(),
+                                    ),
                                     onChanged: (val) => _updateArticle(index, 'asoc', val),
                                  ),
                                ),
                              ],
                            ),
-                            const SizedBox(height: 8),
-                           Row(
-                             children: [
-                               Expanded(
-                                 child: TextFormField(
-                                   initialValue: article['valor_unitario']?.toString() ?? '0',
-                                   decoration: const InputDecoration(labelText: 'V. Unit.', prefixText: '\$', isDense: true),
-                                   keyboardType: TextInputType.number,
-                                   onChanged: (val) => _updateArticle(index, 'valor_unitario', val),
+                           const SizedBox(height: 12),
+                           
+                           // Total Footer
+                           Container(
+                             padding: const EdgeInsets.all(8),
+                             decoration: BoxDecoration(
+                               color: Colors.grey.shade100,
+                               borderRadius: BorderRadius.circular(8),
+                             ),
+                             child: Row(
+                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                               children: [
+                                 const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                 Text(
+                                   '\$${article['total']?.toString() ?? '0'}',
+                                   style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16),
                                  ),
-                               ),
-                               const SizedBox(width: 8),
-                               Expanded(
-                                 child: TextFormField(
-                                   initialValue: article['cantidad']?.toString() ?? '0',
-                                   decoration: const InputDecoration(labelText: 'Cant.', isDense: true),
-                                   keyboardType: TextInputType.number,
-                                   onChanged: (val) => _updateArticle(index, 'cantidad', val),
-                                 ),
-                               ),
-                               const SizedBox(width: 8),
-                               Expanded(
-                                 child: TextFormField(
-                                   readOnly: true,
-                                   controller: TextEditingController(text: '\$${article['total']?.toString() ?? '0'}'), 
-                                   decoration: const InputDecoration(labelText: 'Total', isDense: true, filled: true),
-                                 ),
-                               ),
-                             ],
-                           )
+                               ],
+                             ),
+                           ),
                          ],
                        ),
                      ),
