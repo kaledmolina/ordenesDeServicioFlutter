@@ -444,7 +444,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                          children: [
                            Row(
                              children: [
-                               Expanded(child: Text(article['articulo']?.toString() ?? 'SIN NOMBRE', style: const TextStyle(fontWeight: FontWeight.bold))),
+                               Expanded(child: Text(article['grupo_articulo']?.toString() ?? article['articulo']?.toString() ?? 'SIN NOMBRE', style: const TextStyle(fontWeight: FontWeight.bold))),
                                IconButton(
                                  icon: const Icon(Icons.delete, color: Colors.red, size: 20),
                                  onPressed: () => _removeArticle(index),
