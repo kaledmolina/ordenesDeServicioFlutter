@@ -16,37 +16,20 @@ class OrderRepository {
       print('API Response Data Length: ${(response['data'] as List).length}');
       
       final ordersData = response['data'] as List;
-      final orders = ordersData.map((json) => Orden.fromJson(json)).toList();
-      
-      // Optional: Save to local just for caching view, but no offline logic interaction
-      await _saveOrdersToLocal(ordersData);
-      
-      return orders;
+      return ordersData.map((json) => Orden.fromJson(json)).toList();
     } catch (e, stack) {
       print('Error fetching orders from API: $e');
       print('Stack trace: $stack');
-      rethrow; // Fail directly if API fails
+      rethrow;
     }
   }
 
   Future<Orden> getOrderDetails(String orderNumber) async {
-    final hasConnection = await _hasConnection();
-    
-    if (hasConnection) {
-      try {
-        final order = await _apiService.getOrderDetails(orderNumber);
-        await _saveOrderToLocal(order);
-        return order;
-      } catch (e) {
-        final localOrder = await _getOrderFromLocal(orderNumber);
-        if (localOrder != null) return localOrder;
-        rethrow;
-      }
+    try {
+      return await _apiService.getOrderDetails(orderNumber);
+    } catch (e) {
+      rethrow;
     }
-    
-    final localOrder = await _getOrderFromLocal(orderNumber);
-    if (localOrder != null) return localOrder;
-    throw Exception('Orden no encontrada localmente y sin conexión');
   }
 
   Future<Orden> acceptOrder(String orderNumber) async {
@@ -55,8 +38,6 @@ class OrderRepository {
     
     try {
       final order = await _apiService.acceptOrder(orderNumber);
-      // Actualizar local para caché visual
-      await _saveOrderToLocal(order); 
       return order;
     } catch (e) {
       rethrow;
@@ -66,7 +47,6 @@ class OrderRepository {
   Future<Orden> reportOnSite(String orderNumber) async {
     try {
       final order = await _apiService.reportOnSite(orderNumber);
-      await _saveOrderToLocal(order);
       return order;
     } catch (e) {
       rethrow;
@@ -76,7 +56,6 @@ class OrderRepository {
   Future<Orden> closeOrder(String orderNumber, Map<String, dynamic> closingData) async {
     try {
       final order = await _apiService.closeOrder(orderNumber, closingData);
-      await _saveOrderToLocal(order);
       return order;
     } catch (e) {
       rethrow;
@@ -86,7 +65,8 @@ class OrderRepository {
   Future<void> rejectOrder(String orderNumber) async {
     try {
       await _apiService.rejectOrder(orderNumber);
-      await _dbService.deleteOrder(orderNumber);
+      // await _dbService.deleteOrder(orderNumber); // Optional: if we want to clean up local db, but user asked to remove "guardar local".
+      // Deleting is fine, but let's keep it clean and just do API.
     } catch (e) {
       rethrow;
     }
@@ -95,7 +75,6 @@ class OrderRepository {
   Future<void> updateOrderDetails(String orderNumber, Map<String, String> data) async {
     try {
       await _apiService.updateDetails(orderNumber, data);
-      await _updateLocalOrder(orderNumber, data);
     } catch (e) {
       rethrow;
     }
@@ -107,6 +86,7 @@ class OrderRepository {
         connectivityResult.contains(ConnectivityResult.wifi);
   }
 
+  /*
   Future<void> _saveOrdersToLocal(List<dynamic> ordersData) async {
     final orders = ordersData.map((json) => _orderJsonToDbMap(json)).toList();
     await _dbService.saveOrders(orders);
@@ -166,6 +146,7 @@ class OrderRepository {
     );
     return operation['id'] as int;
   }
+  */
 
   Map<String, dynamic> _orderJsonToDbMap(Map<String, dynamic> json) {
     return {
