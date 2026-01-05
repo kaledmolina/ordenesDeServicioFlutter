@@ -35,24 +35,12 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   void initState() {
     super.initState();
-    _loadOrdersFromCache();
     _fetchOrders(isRefresh: true);
     _scrollController.addListener(_onScroll);
-    SyncService.instance.sync();
+    // SyncService usage removed for online-only mode
   }
 
-  Future<void> _loadOrdersFromCache() async {
-    try {
-      final cachedOrders = await _orderRepo.getOrders(status: _currentStatusFilter);
-      if (mounted && cachedOrders.isNotEmpty) {
-        setState(() {
-          _orders = cachedOrders;
-        });
-      }
-    } catch (e) {
-      // Ignorar errores al cargar caché
-    }
-  }
+  // _loadOrdersFromCache removed
 
   @override
   void dispose() {
@@ -91,7 +79,7 @@ class _HomeScreenState extends State<HomeScreen> {
             _orders.addAll(orders);
           }
           _currentPage++;
-          _hasMore = orders.length >= 10; // Asumir paginación si hay 10+ resultados
+          _hasMore = orders.length >= 10;
         });
       }
     } catch (e) {
@@ -131,8 +119,6 @@ class _HomeScreenState extends State<HomeScreen> {
       case Orden.ESTADO_EJECUTADA: return (Colors.teal, Icons.check_circle);
       case Orden.ESTADO_CERRADA: return (Colors.blueGrey, Icons.lock);
       case Orden.ESTADO_ANULADA: return (Colors.red.shade700, Icons.cancel_outlined);
-      // Fallback for legacy database values if any
-      case 'abierta': return (Colors.green, Icons.assignment_ind); 
       default: return (Colors.grey, Icons.help_outline);
     }
   }
@@ -207,23 +193,57 @@ class _HomeScreenState extends State<HomeScreen> {
           final order = _orders[index];
           final statusInfo = _getStatusInfo(order.status);
           
-          return _PendingOperationsIndicator(
-            orderNumber: order.numeroOrden,
-            statusInfo: statusInfo,
-            order: order,
-            onTap: () async {
-              final result = await Navigator.of(context).push(
-                MaterialPageRoute(
-                  builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden),
-                ),
-              );
-              if (result == 'refresh' && mounted) {
-                _fetchOrders(isRefresh: true);
-              }
-            },
-          );
-              
+          return _buildOrderCard(order, statusInfo);
         },
+      ),
+    );
+  }
+
+  Widget _buildOrderCard(Orden order, (Color, IconData) statusInfo) {
+    return _buildGlassCard(
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        leading: Icon(statusInfo.$2, color: statusInfo.$1, size: 30),
+        title: Text('Orden #${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold)),
+        subtitle: Text('Cliente: ${order.nombreCliente}'),
+        trailing: Chip(
+          label: Text(order.status.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
+          backgroundColor: statusInfo.$1.withOpacity(0.8),
+          padding: const EdgeInsets.symmetric(horizontal: 8),
+        ),
+        onTap: () async {
+          final result = await Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden),
+            ),
+          );
+          if (result == 'refresh' && mounted) {
+            _fetchOrders(isRefresh: true);
+          }
+        },
+      ),
+    ).animate().fade(duration: 500.ms).slideY(begin: 0.5);
+  }
+
+  Widget _buildGlassCard({required Widget child}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(16.0),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
+          child: Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.5),
+              borderRadius: BorderRadius.circular(16.0),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.3),
+                width: 1.5,
+              ),
+            ),
+            child: child,
+          ),
+        ),
       ),
     );
   }
@@ -278,16 +298,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildFilterTile(Orden.ESTADO_CERRADA, 'Cerradas'),
                     _buildFilterTile(Orden.ESTADO_ANULADA, 'Anuladas'),
                     const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.sync, color: Colors.blue),
-                      title: const Text('Estado de Sincronización'),
-                      onTap: () {
-                        Navigator.of(context).pop(); // Cierra el drawer
-                        Navigator.of(context).push(
-                          MaterialPageRoute(builder: (_) => const DebugDatabaseScreen()),
-                        );
-                      },
-                    ),
+                    // Sync Status removed
                   ],
                 ),
               ),
@@ -320,133 +331,3 @@ class _HomeScreenState extends State<HomeScreen> {
       onTap: () => _applyFilter(status, 'Órdenes $title'),
     );
   }
-}
-
-// Widget separado que maneja el estado reactivo de las operaciones pendientes
-class _PendingOperationsIndicator extends StatefulWidget {
-  final String orderNumber;
-  final (Color, IconData) statusInfo;
-  final Orden order;
-  final VoidCallback onTap;
-
-  const _PendingOperationsIndicator({
-    required this.orderNumber,
-    required this.statusInfo,
-    required this.order,
-    required this.onTap,
-  });
-
-  @override
-  State<_PendingOperationsIndicator> createState() => _PendingOperationsIndicatorState();
-}
-
-class _PendingOperationsIndicatorState extends State<_PendingOperationsIndicator> {
-  StreamSubscription<String>? _subscription;
-  int _refreshKey = 0;
-
-  @override
-  void initState() {
-    super.initState();
-    // Escuchar cambios en el stream de notificaciones
-    _subscription = SyncService.instance.pendingOperationsStream.listen((orderNum) {
-      if (orderNum == widget.orderNumber || orderNum == '') {
-        // Forzar actualización cuando se sincroniza una operación de esta orden
-        setState(() {
-          _refreshKey++;
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _subscription?.cancel();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      key: ValueKey('${widget.orderNumber}_$_refreshKey'),
-      future: DatabaseService.instance.getPendingOperationsForOrder(widget.orderNumber),
-      builder: (context, snapshot) {
-        final hasPendingOps = snapshot.hasData && snapshot.data!.isNotEmpty;
-        
-        return _buildGlassCard(
-          child: ListTile(
-            contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-            leading: Stack(
-              children: [
-                Icon(widget.statusInfo.$2, color: widget.statusInfo.$1, size: 30),
-                if (hasPendingOps)
-                  Positioned(
-                    right: 0,
-                    top: 0,
-                    child: Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: Colors.orange,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: Colors.white, width: 2),
-                      ),
-                    ),
-                  ),
-              ],
-            ),
-            title: Row(
-              children: [
-                Expanded(
-                  child: Text('Orden #${widget.orderNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                ),
-                if (hasPendingOps)
-                  Container(
-                    margin: const EdgeInsets.only(left: 8),
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-                    decoration: BoxDecoration(
-                      color: Colors.orange,
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                    child: const Text(
-                      'Pendiente',
-                      style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold),
-                    ),
-                  ),
-              ],
-            ),
-            subtitle: Text('Cliente: ${widget.order.nombreCliente}'),
-            trailing: Chip(
-              label: Text(widget.order.status.toUpperCase(), style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 10)),
-              backgroundColor: widget.statusInfo.$1.withOpacity(0.8),
-              padding: const EdgeInsets.symmetric(horizontal: 8),
-            ),
-            onTap: widget.onTap,
-          ),
-        ).animate().fade(duration: 500.ms).slideY(begin: 0.5);
-      },
-    );
-  }
-
-  Widget _buildGlassCard({required Widget child}) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(16.0),
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 8.0, sigmaY: 8.0),
-          child: Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
-              borderRadius: BorderRadius.circular(16.0),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
-              ),
-            ),
-            child: child,
-          ),
-        ),
-      ),
-    );
-  }
-}

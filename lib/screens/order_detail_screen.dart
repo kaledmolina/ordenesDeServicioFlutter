@@ -32,7 +32,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   void initState() {
     super.initState();
     _loadOrderDetails();
-    SyncService.instance.sync();
+    // SyncService.instance.sync(); // Removed
   }
   
   Future<void> _loadOrderDetails() async {
