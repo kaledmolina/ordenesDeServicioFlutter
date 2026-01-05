@@ -8,6 +8,7 @@ class GlassCard extends StatelessWidget {
   final double sigmaY;
   final EdgeInsetsGeometry? padding;
   final EdgeInsetsGeometry? margin;
+  final Color? color;
 
   const GlassCard({
     super.key,
@@ -17,6 +18,7 @@ class GlassCard extends StatelessWidget {
     this.sigmaY = 10.0,
     this.padding,
     this.margin,
+    this.color,
   });
 
   @override
@@ -30,11 +32,11 @@ class GlassCard extends StatelessWidget {
           child: Container(
             padding: padding ?? EdgeInsets.zero,
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.5),
+              color: color ?? Colors.white.withOpacity(0.1),
               borderRadius: BorderRadius.circular(borderRadius),
               border: Border.all(
-                color: Colors.white.withOpacity(0.3),
-                width: 1.5,
+                color: Colors.white.withOpacity(0.1),
+                width: 1.0,
               ),
             ),
             child: child,
