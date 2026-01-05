@@ -204,7 +204,7 @@ class OrderRepository {
       'direccion': order.direccion,
       'observaciones': order.observaciones,
       'fecha_programada': order.fechaProgramada?.toIso8601String(),
-      'status': order.status,
+      'status': order.estadoOrden, // Map estadoOrden to local status column
       'fecha_llegada': order.fechaLlegada?.toIso8601String(),
       'solucion_tecnico': order.solucionTecnico,
       'mac_router': order.macRouter,
@@ -252,7 +252,7 @@ class OrderRepository {
       fechaProgramada: map['fecha_programada'] != null
           ? DateTime.tryParse(map['fecha_programada'].toString())?.toLocal()
           : null,
-      status: map['status']?.toString() ?? 'desconocido',
+      // status: REMOVED
       fechaLlegada: map['fecha_llegada'] != null ? DateTime.tryParse(map['fecha_llegada'].toString())?.toLocal() : null,
       solucionTecnico: map['solucion_tecnico']?.toString(),
       macRouter: map['mac_router']?.toString(),
@@ -270,7 +270,7 @@ class OrderRepository {
       tipoFuncion: map['tipo_funcion']?.toString(),
       fechaTrn: map['fecha_trn'] != null ? DateTime.tryParse(map['fecha_trn'].toString())?.toLocal() : null,
       fechaVencimiento: map['fecha_vencimiento'] != null ? DateTime.tryParse(map['fecha_vencimiento'].toString())?.toLocal() : null,
-      estadoOrden: map['estado_orden']?.toString(),
+      estadoOrden: map['estado_orden']?.toString() ?? map['status']?.toString(), // Map local status to estadoOrden
       tipo: map['tipo']?.toString(),
       estadoInterno: map['estado_interno']?.toString(),
       direccionAsociado: map['direccion_asociado']?.toString(),

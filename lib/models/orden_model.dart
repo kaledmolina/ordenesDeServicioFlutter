@@ -15,7 +15,7 @@ class Orden {
   final String numeroOrden;
   final String nombreCliente;
   final int? technicianId;
-  final String status;
+  // final String status; // Removed, using estadoOrden
   final DateTime fechaHora; // created_at
   final DateTime? updatedAt;
   final DateTime? fechaProgramada;
@@ -58,12 +58,15 @@ class Orden {
   // Celular alias for UI compatibility (maps to telefono)
   String? get celular => telefono;
 
+  // Status alias for UI compatibility (maps to estadoOrden)
+  String get status => estadoOrden?.toLowerCase() ?? 'pendiente';
+
   Orden({
     required this.id,
     required this.numeroOrden,
     required this.nombreCliente,
     this.technicianId,
-    required this.status,
+    // required this.status, REMOVED
     required this.fechaHora,
     this.updatedAt,
     this.fechaProgramada,
@@ -108,9 +111,7 @@ class Orden {
       numeroOrden: json['numero_orden']?.toString() ?? '',
       nombreCliente: json['nombre_cliente']?.toString() ?? 'Cliente Desconocido',
       technicianId: int.tryParse(json['technician_id']?.toString() ?? ''),
-      status: (json['estado_orden'] != null && json['estado_orden'].toString().isNotEmpty) 
-          ? json['estado_orden'].toString().toLowerCase().replaceAll(' ', '_') 
-          : (json['status']?.toString().toLowerCase().replaceAll(' ', '_') ?? 'desconocido'),
+      // status field removed. status getter uses estadoOrden
       fechaHora: DateTime.tryParse(json['created_at'] ?? '')?.toLocal() ?? DateTime.now(),
       updatedAt: DateTime.tryParse(json['updated_at'] ?? '')?.toLocal(),
       fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
@@ -122,7 +123,7 @@ class Orden {
       tipoFuncion: json['tipo_funcion']?.toString(),
       fechaTrn: DateTime.tryParse(json['fecha_trn'] ?? '')?.toLocal(),
       fechaVencimiento: DateTime.tryParse(json['fecha_vencimiento'] ?? '')?.toLocal(),
-      estadoOrden: json['estado_orden']?.toString(),
+      estadoOrden: json['estado_orden']?.toString() ?? json['status']?.toString() ?? 'pendiente', // Fallback for old API responses if any
       tipo: json['tipo']?.toString(),
       estadoInterno: json['estado_interno']?.toString(),
       direccionAsociado: json['direccion_asociado']?.toString(),
