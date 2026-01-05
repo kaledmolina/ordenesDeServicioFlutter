@@ -119,210 +119,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Validar si ya hay una orden en proceso antes de aceptar
-      final ordersInProcess = await DatabaseService.instance.getOrdersInProcess();
-      
-      // Obtener todas las operaciones pendientes
-      final allPendingOps = await DatabaseService.instance.getPendingOperations();
-      
-      // Obtener las órdenes que tienen operaciones pendientes de "close" (ya están siendo cerradas)
-      final ordersBeingClosed = allPendingOps
-          .where((op) => op['operation_type'] == 'close')
-          .map((op) => op['order_number'] as String)
-          .toSet();
-      
-      // Filtrar órdenes en proceso excluyendo:
-      // 1. La orden actual
-      // 2. Las órdenes que tienen una operación pendiente de "close" (ya están siendo cerradas)
-      final otherOrdersInProcess = ordersInProcess
-          .where((order) {
-            final orderNum = order['numero_orden'] as String;
-            return orderNum != widget.orderNumber && !ordersBeingClosed.contains(orderNum);
-          })
-          .toList();
-      
-      // Validar también operaciones pendientes de aceptar para otras órdenes
-      // (excluyendo las que están siendo cerradas)
-      final otherAcceptOps = allPendingOps
-          .where((op) => 
-              op['operation_type'] == 'accept' && 
-              op['order_number'] != widget.orderNumber &&
-              !ordersBeingClosed.contains(op['order_number'] as String))
-          .toList();
-      
-      String? orderInProcessNumber;
-      String? clientName;
-      
-      if (otherOrdersInProcess.isNotEmpty) {
-        final orderInProcess = otherOrdersInProcess.first;
-        orderInProcessNumber = orderInProcess['numero_orden'] as String;
-        clientName = orderInProcess['nombre_cliente'] as String? ?? 'N/A';
-      } else if (otherAcceptOps.isNotEmpty) {
-        final pendingOp = otherAcceptOps.first;
-        orderInProcessNumber = pendingOp['order_number'] as String;
-        // Intentar obtener el nombre del cliente de la orden local
-        final orderData = await DatabaseService.instance.getOrderByNumber(orderInProcessNumber);
-        clientName = orderData?['nombre_cliente'] as String? ?? 'N/A';
-      }
-      
-      if (orderInProcessNumber != null) {
-        if (mounted) {
-          setState(() => _isLoading = false);
-          await showDialog(
-            context: context,
-            builder: (context) => AlertDialog(
-              icon: const Icon(Icons.warning, color: Colors.orange, size: 48),
-              title: const Text(
-                'Orden en Proceso',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              content: Text(
-                'No puedes iniciar una nueva orden de servicio porque ya tienes una orden en proceso:\n\n'
-                'Orden #$orderInProcessNumber\n'
-                'Cliente: $clientName\n\n'
-                'Debes finalizar esta orden antes de poder iniciar otra.',
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text('Entendido'),
-                ),
-                FilledButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    // Navegar a la orden en proceso
-                    Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(
-                        builder: (_) => OrderDetailScreen(orderNumber: orderInProcessNumber!),
-                      ),
-                    );
-                  },
-                  child: const Text('Ver Orden en Proceso'),
-                ),
-              ],
-            ),
-          );
-        }
-        return;
-      }
-      
-      // Si no hay órdenes en proceso, proceder con aceptar la orden
-      setState(() {
-        // Actualizar UI inmediatamente
-        if (_currentOrder != null) {
-          _currentOrder = Orden(
-            id: _currentOrder!.id,
-            numeroOrden: _currentOrder!.numeroOrden,
-            nombreCliente: _currentOrder!.nombreCliente,
-            fechaHora: _currentOrder!.fechaHora,
-            valorServicio: _currentOrder!.valorServicio,
-
-            direccion: _currentOrder!.direccion,
-            observaciones: _currentOrder!.observaciones,
-            fechaProgramada: _currentOrder!.fechaProgramada,
-            status: Orden.ESTADO_EN_PROCESO,
-            fechaLlegada: _currentOrder!.fechaLlegada,
-            solucionTecnico: _currentOrder!.solucionTecnico,
-            macRouter: _currentOrder!.macRouter,
-            macBridge: _currentOrder!.macBridge,
-            macOnt: _currentOrder!.macOnt,
-            otrosEquipos: _currentOrder!.otrosEquipos,
-            firmaTecnico: _currentOrder!.firmaTecnico,
-            firmaSuscriptor: _currentOrder!.firmaSuscriptor,
-            articulos: _currentOrder!.articulos,
-            technicianId: _currentOrder!.technicianId,
-            clienteId: _currentOrder!.clienteId,
-            cedula: _currentOrder!.cedula,
-            precinto: _currentOrder!.precinto,
-            tipoOrden: _currentOrder!.tipoOrden,
-            tipoFuncion: _currentOrder!.tipoFuncion,
-            fechaTrn: _currentOrder!.fechaTrn,
-            fechaVencimiento: _currentOrder!.fechaVencimiento,
-            estadoOrden: _currentOrder!.estadoOrden,
-            tipo: _currentOrder!.tipo,
-            estadoInterno: _currentOrder!.estadoInterno,
-            direccionAsociado: _currentOrder!.direccionAsociado,
-            telefono: _currentOrder!.telefono,
-            saldoCliente: _currentOrder!.saldoCliente,
-            solicitadoPor: _currentOrder!.solicitadoPor,
-            estadoTv: _currentOrder!.estadoTv,
-            tecnicoAuxiliarId: _currentOrder!.tecnicoAuxiliarId,
-            solicitudSuscriptor: _currentOrder!.solicitudSuscriptor,
-            fechaInicioAtencion: DateTime.now(),
-            fechaFinAtencion: _currentOrder!.fechaFinAtencion,
-            fechaCierre: _currentOrder!.fechaCierre,
-          );
-          _hasStateChanged = true;
-        }
-      });
-      
       final updatedOrder = await _orderRepo.acceptOrder(widget.orderNumber);
       if (mounted) {
         setState(() => _currentOrder = updatedOrder);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Orden tomada exitosamente.'), backgroundColor: Colors.green),
         );
-        SyncService.instance.sync();
+        // Force refresh of the whole screen to reflect new state
+        _loadOrderDetails();
       }
     } catch (e) {
       if (mounted) {
-        // Verificar si el error es por orden en proceso
-        if (e.toString().contains('Ya tienes una orden de servicio en proceso')) {
-          // Este caso ya fue manejado arriba, pero por si acaso
-          final ordersInProcess = await DatabaseService.instance.getOrdersInProcess();
-          final otherOrdersInProcess = ordersInProcess
-              .where((order) => order['numero_orden'] != widget.orderNumber)
-              .toList();
-          
-          if (otherOrdersInProcess.isNotEmpty) {
-            final orderInProcess = otherOrdersInProcess.first;
-            final orderNumber = orderInProcess['numero_orden'] as String;
-            final clientName = orderInProcess['nombre_cliente'] as String? ?? 'N/A';
-            
-            await showDialog(
-              context: context,
-              builder: (context) => AlertDialog(
-                icon: const Icon(Icons.warning, color: Colors.orange, size: 48),
-                title: const Text(
-                  'Orden en Proceso',
-                  style: TextStyle(fontWeight: FontWeight.bold),
-                ),
-                content: Text(
-                  'No puedes iniciar una nueva orden de servicio porque ya tienes una orden en proceso:\n\n'
-                  'Orden #$orderNumber\n'
-                  'Cliente: $clientName\n\n'
-                  'Debes finalizar esta orden antes de poder iniciar otra.',
-                ),
-                actions: [
-                  TextButton(
-                    onPressed: () => Navigator.of(context).pop(),
-                    child: const Text('Entendido'),
-                  ),
-                  FilledButton(
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                      Navigator.of(context).pushReplacement(
-                        MaterialPageRoute(
-                          builder: (_) => OrderDetailScreen(orderNumber: orderNumber),
-                        ),
-                      );
-                    },
-                    child: const Text('Ver Orden en Proceso'),
-                  ),
-                ],
-              ),
-            );
-            return;
-          }
+        String errorMessage = 'Error al tomar la orden.';
+        if (e.toString().contains('No autorizado')) {
+          errorMessage = 'No tienes permiso para tomar esta orden.';
+        } else if (e.toString().contains('no se puede procesar')) {
+          errorMessage = 'La orden no está en un estado válido para ser tomada.';
         }
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Orden guardada localmente. Se sincronizará cuando haya conexión.'),
-            backgroundColor: Colors.orange,
+            content: Text(errorMessage),
+            backgroundColor: Colors.red,
           ),
         );
-        SyncService.instance.sync();
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -337,19 +157,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Orden rechazada.'), backgroundColor: Colors.orange),
         );
-        SyncService.instance.sync();
         Navigator.of(context).pop('refresh');
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Orden guardada localmente. Se sincronizará cuando haya conexión.'),
-            backgroundColor: Colors.orange,
-          ),
+         ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error al rechazar: ${e.toString()}'), backgroundColor: Colors.red),
         );
-        SyncService.instance.sync();
-        Navigator.of(context).pop('refresh');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -362,28 +176,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     setState(() => _isLoading = true);
     
     try {
-      // Actualizar UI inmediatamente (Optimistic)
-      if (_currentOrder != null) {
-        // ... (update _currentOrder status to EN_SITIO visually)
-        // For brevity in this diff, relying on setState refresh or repository return
-      }
-      
       final updatedOrder = await _orderRepo.reportOnSite(widget.orderNumber);
       if (mounted) {
         setState(() => _currentOrder = updatedOrder);
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Reportado en sitio exitosamente.'), backgroundColor: Colors.blue),
         );
-        SyncService.instance.sync();
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Guardado localmente. Se enviará al tener internet.'), backgroundColor: Colors.orange),
+          SnackBar(content: Text('Error al reportar en sitio: ${e.toString()}'), backgroundColor: Colors.red),
         );
-        SyncService.instance.sync();
-        // Force reload to see local state change if needed
-        _loadOrderDetails();
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -407,9 +211,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     final closingData = {
       'firma_tecnico': base64Encode(signatures['technician']), // Asume Uint8List
       'firma_suscriptor': base64Encode(signatures['subscriber']),
-      // Aquí se podrían agregar más datos del formulario de cierre si existiera
-      // 'articulos': ..., 
-      // 'mac_router': ...,
     };
 
     try {
@@ -419,16 +220,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Orden cerrada exitosamente.'), backgroundColor: Colors.green),
         );
-        SyncService.instance.sync();
         Navigator.of(context).pop('refresh');
       }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-           SnackBar(content: Text('Cierre guardado localmente.'), backgroundColor: Colors.orange),
+           SnackBar(content: Text('Error al cerrar orden: ${e.toString()}'), backgroundColor: Colors.red),
         );
-        SyncService.instance.sync();
-        Navigator.of(context).pop('refresh');
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -506,7 +304,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Widget _buildActionButtons(Orden orden) {
     final status = orden.status.toLowerCase().replaceAll(' ', '_');
     
-    if (status == Orden.ESTADO_ASIGNADA || status == 'abierta') {
+    if (status == Orden.ESTADO_ASIGNADA) {
        // ... (existing Accept/Reject logic)
        return Row(
         children: [
