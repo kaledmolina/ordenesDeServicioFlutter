@@ -412,23 +412,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
        return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          ElevatedButton.icon(
-            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-            label: const Text('Finalizar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
-            onPressed: _closeOrder, // Llama a firmas y cierre
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF34C759), // iOS Green
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(vertical: 16),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-              elevation: 4,
-               shadowColor: Colors.green.withOpacity(0.4),
-            ),
-          ),
-           const SizedBox(height: 12),
-           OutlinedButton.icon(
-            icon: const Icon(Icons.edit_note),
-            label: const Text('Gestionar Detalles'),
+           ElevatedButton.icon(
+            icon: const Icon(Icons.edit_note, color: Colors.white),
+            label: const Text('Gestionar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: () async {
                final result = await Navigator.of(context).push(
                 MaterialPageRoute(
@@ -437,11 +423,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               );
               if (result == 'refresh' && mounted) _loadOrderDetails();
             },
-            style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-               foregroundColor: Colors.blueGrey,
-               side: const BorderSide(color: Colors.black12),
-               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blueAccent,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 4,
+               shadowColor: Colors.blue.withOpacity(0.4),
             ),
           ),
         ],

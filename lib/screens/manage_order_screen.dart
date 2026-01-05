@@ -307,6 +307,26 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       return;
     }
 
+    // Validation: Photos are mandatory
+    if (_galleryPhotos.isEmpty) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Debes agregar al menos una foto de la orden.')),
+      );
+      return;
+    }
+
+    // Validation: Check if all photos are uploaded
+    final hasPendingUploads = _galleryPhotos.any((p) => p.status != PhotoStatusType.uploaded);
+    if (hasPendingUploads) {
+       ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Por favor espera a que todas las fotos se suban a la nube antes de finalizar.'),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+
     setState(() => _isLoading = true);
 
     try {
