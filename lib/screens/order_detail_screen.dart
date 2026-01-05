@@ -492,10 +492,56 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
          if (orden.articulos != null && orden.articulos!.isNotEmpty)
         _buildGlassCard(
           child: _buildDetailCard('Artículos', [
-             ...orden.articulos!.map((art) => Text('• $art', style: const TextStyle(color: Colors.black54))).toList(),
+             _buildArticleList(orden.articulos!),
           ]),
         ),
       ],
+    );
+  }
+
+  Widget _buildArticleList(List<dynamic> articulos) {
+    if (articulos.isEmpty) return const Text('Sin artículos registrados.');
+    
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: articulos.map<Widget>((art) {
+        // Safe casting and fallback
+        final map = art is Map ? art : {};
+        final nombre = map['grupo_articulo']?.toString() ?? map['articulo']?.toString() ?? 'Sin Nombre';
+        final cantidad = map['cantidad']?.toString() ?? '0';
+        final total = map['total']?.toString() ?? '0';
+        
+        // Skip if it looks like an empty template item (0 qty) - Optional preference, 
+        // but showing 14 empty items is noise. Let's filter > 0 or show all if specifically requested.
+        // For now, I'll show all but clean.
+        
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: Colors.white.withOpacity(0.5),
+            borderRadius: BorderRadius.circular(8),
+            border: Border.all(color: Colors.black12),
+          ),
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  nombre, 
+                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.black87)
+                ),
+              ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text('Cant: $cantidad', style: const TextStyle(fontSize: 12, color: Colors.black54)),
+                  Text('\$$total', style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.green)),
+                ],
+              )
+            ],
+          ),
+        );
+      }).toList(),
     );
   }
 
