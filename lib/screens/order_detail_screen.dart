@@ -205,8 +205,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     
     // Preparar datos de cierre
     final closingData = {
-      'firma_tecnico': base64Encode(signatures['technician']), // Asume Uint8List
-      'firma_suscriptor': base64Encode(signatures['subscriber']),
+      'firma_tecnico': 'data:image/png;base64,${base64Encode(signatures['technician'])}',
+      'firma_suscriptor': 'data:image/png;base64,${base64Encode(signatures['subscriber'])}',
     };
 
     try {
