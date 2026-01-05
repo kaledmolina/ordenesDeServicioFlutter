@@ -189,15 +189,27 @@ class _HomeScreenState extends State<HomeScreen> {
 
             // LIST VIEW CONTAINER
             Expanded(
-              child: _isLoading && _orders.isEmpty 
-                  ? const Center(child: CircularProgressIndicator()) 
-                  : ListView.builder(
-                      itemCount: _orders.length,
-                      itemBuilder: (context, index) {
-                        final order = _orders[index];
-                        return _buildOrderCard(order, cardColor, textColor, secondaryTextColor);
-                      },
-                    ),
+              child: _isLoading && _orders.isEmpty
+                  ? const Center(child: CircularProgressIndicator())
+                  : _orders.isEmpty
+                      ? _buildEmptyState()
+                      : RefreshIndicator(
+                          onRefresh: () => _fetchOrders(isRefresh: true),
+                          color: Colors.blue,
+                          backgroundColor: Colors.white,
+                          child: ListView.builder(
+                            physics: const AlwaysScrollableScrollPhysics(),
+                            itemCount: _orders.length,
+                            padding: const EdgeInsets.only(bottom: 80),
+                            itemBuilder: (context, index) {
+                              final order = _orders[index];
+                              return _buildOrderCard(order, cardColor, textColor, secondaryTextColor)
+                                  .animate(delay: (50 * index).clamp(0, 500).ms)
+                                  .fadeIn(duration: 400.ms, curve: Curves.easeOutQuad)
+                                  .slideY(begin: 0.1, end: 0, duration: 400.ms, curve: Curves.easeOutQuad);
+                            },
+                          ),
+                        ),
             ),
              // Footer info
             Padding(
@@ -211,6 +223,39 @@ class _HomeScreenState extends State<HomeScreen> {
             )
           ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.inbox_outlined, size: 80, color: Colors.grey.shade300),
+          const SizedBox(height: 16),
+          Text(
+            'No hay órdenes para mostrar',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.grey.shade600),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Intenta cambiar los filtros o busca algo diferente.',
+            style: TextStyle(color: Colors.grey.shade500),
+          ),
+          const SizedBox(height: 24),
+          OutlinedButton.icon(
+            onPressed: () => _fetchOrders(isRefresh: true),
+            icon: const Icon(Icons.refresh),
+            label: const Text('Recargar'),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: const Color(0xFF007AFF),
+              side: const BorderSide(color: Color(0xFF007AFF)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          const SizedBox(height: 50), // Spacing
+        ],
       ),
     );
   }
