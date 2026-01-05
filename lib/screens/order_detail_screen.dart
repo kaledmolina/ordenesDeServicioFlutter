@@ -114,7 +114,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _takeOrder() async {
-    if (_isLoading) return; // Prevenir múltiples llamadas
+    if (_isLoading) return; 
     
     setState(() => _isLoading = true);
     
@@ -123,24 +123,20 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (mounted) {
         setState(() => _currentOrder = updatedOrder);
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Orden tomada exitosamente.'), backgroundColor: Colors.green),
+          const SnackBar(content: Text('Orden tomada. Estado: En Proceso.'), backgroundColor: Colors.green),
         );
-        // Force refresh of the whole screen to reflect new state
         _loadOrderDetails();
       }
     } catch (e) {
       if (mounted) {
-        String errorMessage = 'Error al tomar la orden.';
-        if (e.toString().contains('No autorizado')) {
-          errorMessage = 'No tienes permiso para tomar esta orden.';
-        } else if (e.toString().contains('no se puede procesar')) {
-          errorMessage = 'La orden no está en un estado válido para ser tomada.';
-        }
-        
+        // Mostrar mensaje crudo del backend para mejorar debug
+        final msg = e.toString().replaceAll('Exception:', '').trim();
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(errorMessage),
+            content: Text(msg),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+            action: SnackBarAction(label: 'OK', onPressed: () {}, textColor: Colors.white),
           ),
         );
       }
@@ -302,54 +298,73 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildActionButtons(Orden orden) {
-    final status = orden.status.toLowerCase().replaceAll(' ', '_');
+    final status = orden.status.toLowerCase().trim().replaceAll(' ', '_');
     
+    // Flujo 1: Asignada -> Tomar Orden -> En Proceso
     if (status == Orden.ESTADO_ASIGNADA) {
-       // ... (existing Accept/Reject logic)
        return Row(
         children: [
           Expanded(
             child: ElevatedButton(
               onPressed: () => _showConfirmationDialog(
                 title: 'Rechazar Orden',
-                content: 'Si rechaza la orden, ya no podrá tomarla y se notificará al operador. ¿Está seguro?',
-                confirmText: 'Sí, Rechazar',
+                content: '¿Está seguro de rechazar la orden?',
+                confirmText: 'Rechazar',
                 onConfirm: _rejectOrder,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700,
+                backgroundColor: Colors.red.shade700, 
                 padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Rechazar', style: TextStyle(color: Colors.white)),
+              child: const Text('Rechazar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
-          const SizedBox(width: 10),
+          const SizedBox(width: 12),
           Expanded(
             child: ElevatedButton(
               onPressed: () => _showConfirmationDialog(
                 title: 'Tomar Orden',
-                content: '¿Está seguro de que desea tomar esta orden?',
-                confirmText: 'Sí, Tomar',
+                content: 'Al tomar la orden, pasará a estado "En Proceso".',
+                confirmText: 'Tomar Orden',
                 onConfirm: _takeOrder,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green,
+                backgroundColor: Colors.green, 
                 padding: const EdgeInsets.symmetric(vertical: 12),
+                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Tomar Orden', style: TextStyle(color: Colors.white)),
+              child: const Text('Tomar Orden', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
             ),
           ),
         ],
       );
     }
     
+    // Flujo 2: En Proceso -> Reportar En Sitio -> En Sitio
     if (status == Orden.ESTADO_EN_PROCESO) {
       return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ElevatedButton.icon(
-            icon: const Icon(Icons.edit_document, color: Colors.white),
-            label: const Text('Gestionar Orden', style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.location_on, color: Colors.white),
+            label: const Text('Llegué al Sitio (Reportar)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: () => _showConfirmationDialog(
+              title: 'Confirmar Llegada',
+              content: '¿Confirmas que has llegado al sitio del cliente?',
+              confirmText: 'Confirmar',
+              onConfirm: _reportOnSite,
+            ),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.blue, 
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+          const SizedBox(height: 12),
+           OutlinedButton.icon(
+            icon: const Icon(Icons.edit_note),
+            label: const Text('Agregar Observaciones'),
             onPressed: () async {
                final result = await Navigator.of(context).push(
                 MaterialPageRoute(
@@ -358,31 +373,31 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               );
               if (result == 'refresh' && mounted) _loadOrderDetails();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, padding: const EdgeInsets.symmetric(vertical: 12)),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.location_on, color: Colors.white),
-            label: const Text('Reportar En Sitio', style: TextStyle(color: Colors.white)),
-            onPressed: () => _showConfirmationDialog(
-              title: 'Reportar en Sitio',
-              content: '¿Confirmas que has llegado al sitio del cliente?',
-              confirmText: 'Sí, estoy aquí',
-              onConfirm: _reportOnSite,
-            ),
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, padding: const EdgeInsets.symmetric(vertical: 12)),
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
           ),
         ],
       );
     }
     
-    if (status == Orden.ESTADO_EN_SITIO) { // estado_en_sitio logic
+    // Flujo 3: En Sitio -> Finalizar -> Ejecutada
+    if (status == Orden.ESTADO_EN_SITIO) { 
        return Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           ElevatedButton.icon(
-            icon: const Icon(Icons.edit_document, color: Colors.white),
-            label: const Text('Gestionar Orden', style: TextStyle(color: Colors.white)),
+            icon: const Icon(Icons.check_circle_outline, color: Colors.white),
+            label: const Text('Finalizar Orden', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            onPressed: _closeOrder, // Llama a firmas y cierre
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.green.shade700, 
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+           const SizedBox(height: 12),
+           OutlinedButton.icon(
+            icon: const Icon(Icons.edit_note),
+            label: const Text('Gestionar Detalles'),
             onPressed: () async {
                final result = await Navigator.of(context).push(
                 MaterialPageRoute(
@@ -391,20 +406,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               );
               if (result == 'refresh' && mounted) _loadOrderDetails();
             },
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.orange, padding: const EdgeInsets.symmetric(vertical: 12)),
-          ),
-          const SizedBox(height: 10),
-          ElevatedButton.icon(
-            icon: const Icon(Icons.check_circle, color: Colors.white),
-            label: const Text('Finalizar Orden', style: TextStyle(color: Colors.white)),
-            onPressed: _closeOrder, // Calls signature flow
-            style: ElevatedButton.styleFrom(backgroundColor: Colors.green.shade700, padding: const EdgeInsets.symmetric(vertical: 12)),
+            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
           ),
         ],
       );
     }
 
-    return const SizedBox.shrink();
+    return Center(
+      child: Text(
+        'Orden ${orden.status.toUpperCase()}',
+        style: const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold),
+      ),
+    );
   }
 
   Widget _buildDetailSection(Orden orden) {
