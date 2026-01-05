@@ -14,6 +14,7 @@ import '../widgets/app_background.dart';
 import '../widgets/connection_status_indicator.dart';
 
 import 'debug_database_screen.dart';
+import 'ranking_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -473,6 +474,21 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildFilterTile('En Proceso', 'en_proceso'),
                 _buildFilterTile('En Sitio', 'en_sitio'),
                 _buildFilterTile('Ejecutada', 'ejecutada'),
+                
+                _buildFilterTile('Ejecutada', 'ejecutada'),
+
+                const Divider(),
+
+                ListTile(
+                  leading: const Icon(Icons.emoji_events, color: Colors.amber),
+                  title: const Text('Top Ranking', style: TextStyle(color: Colors.black87)),
+                  onTap: () {
+                    Navigator.pop(context); // Close drawer
+                    Navigator.of(context).push(
+                      MaterialPageRoute(builder: (_) => const RankingScreen()),
+                    );
+                  },
+                ),
                 
                 const Divider(),
                 

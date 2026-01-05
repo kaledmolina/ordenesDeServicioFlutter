@@ -145,6 +145,15 @@ class ApiService {
     return data as List<dynamic>;
   }
 
+  Future<Map<String, dynamic>> getRankings() async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/v1/rankings'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    return _handleResponse(response);
+  }
+
 
 
   dynamic _handleResponse(http.Response response) {
