@@ -121,9 +121,9 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // ESTILOS TIPO DASHBOARD DARK (Filament-like)
-    const backgroundColor = Color(0xFF000000); // Fondo negro total o muy oscuro
-    const cardColor = Color(0xFF111827); // Gris oscuro (Gray 900)
+    // Manteniendo el tema oscuro premium
+    const backgroundColor = Color(0xFF000000); 
+    const cardColor = Color(0xFF111827);
     const textColor = Colors.white;
     const secondaryTextColor = Colors.white70;
 
@@ -141,111 +141,52 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ],
       ),
-      drawer: _buildDrawer(), // Reutilizamos el drawer existente o simplificado
+      drawer: _buildDrawer(),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header / Breadcrumb visual
-            const Text(
-              'Gestión de Órdenes > Listado',
-              style: TextStyle(color: Colors.grey, fontSize: 12),
-            ),
-            const SizedBox(height: 5),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Orden De Servicios',
-                  style: TextStyle(color: textColor, fontSize: 24, fontWeight: FontWeight.bold),
+            // Search Bar
+            Container(
+              height: 50,
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade800),
+              ),
+              child: const TextField(
+                style: TextStyle(color: Colors.white),
+                decoration: InputDecoration(
+                  hintText: 'Buscar orden, cliente...',
+                  hintStyle: TextStyle(color: Colors.grey),
+                  prefixIcon: Icon(Icons.search, color: Colors.grey),
+                  border: InputBorder.none,
+                  contentPadding: EdgeInsets.symmetric(vertical: 15),
                 ),
-                // Search Bar simulada
-                Container(
-                  width: 200,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: cardColor,
-                    borderRadius: BorderRadius.circular(8),
-                    border: Border.all(color: Colors.grey.shade800),
-                  ),
-                  child: const TextField(
-                    style: TextStyle(color: Colors.white),
-                    decoration: InputDecoration(
-                      hintText: 'Buscar...',
-                      hintStyle: TextStyle(color: Colors.grey),
-                      prefixIcon: Icon(Icons.search, color: Colors.grey, size: 20),
-                      border: InputBorder.none,
-                      contentPadding: EdgeInsets.symmetric(vertical: 10),
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
             const SizedBox(height: 20),
 
-            // TABLE CONTAINER
+            // LIST VIEW CONTAINER
             Expanded(
-              child: Container(
-                width: double.infinity,
-                decoration: BoxDecoration(
-                  color: cardColor,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.grey.shade800),
-                ),
-                child: _isLoading && _orders.isEmpty 
+              child: _isLoading && _orders.isEmpty 
                   ? const Center(child: CircularProgressIndicator()) 
-                  : ClipRRect(
-                      borderRadius: BorderRadius.circular(12),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.vertical,
-                        child: SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: DataTable(
-                            headingRowColor: MaterialStateProperty.all(Colors.black.withOpacity(0.3)),
-                            dataRowColor: MaterialStateProperty.all(cardColor),
-                            dividerThickness: 0.5,
-                            horizontalMargin: 20,
-                            columnSpacing: 30,
-                            columns: const [
-                              DataColumn(label: Text('N° Orden', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Técnico', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Fecha', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Estado', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
-                              DataColumn(label: Text('Acciones', style: TextStyle(color: secondaryTextColor, fontWeight: FontWeight.bold))),
-                            ],
-                            rows: _orders.map((order) {
-                              return DataRow(
-                                onSelectChanged: (_) {
-                                   Navigator.of(context).push(
-                                    MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
-                                  ).then((_) => _fetchOrders(isRefresh: true));
-                                },
-                                cells: [
-                                  DataCell(Text(order.numeroOrden, style: const TextStyle(color: textColor))),
-                                  DataCell(Text('Técnico intalnet', style: const TextStyle(color: textColor))), // Placeholder o real si viene del modelo
-                                  DataCell(Text(
-                                    order.fechaHora.toString().split(' ')[0], // Formato simple YYYY-MM-DD
-                                    style: const TextStyle(color: textColor)
-                                  )),
-                                  DataCell(_buildStatusBadge(order.status)),
-                                  DataCell(_buildActions(order)),
-                                ],
-                              );
-                            }).toList(),
-                          ),
-                        ),
-                      ),
+                  : ListView.builder(
+                      itemCount: _orders.length,
+                      itemBuilder: (context, index) {
+                        final order = _orders[index];
+                        return _buildOrderCard(order, cardColor, textColor, secondaryTextColor);
+                      },
                     ),
-              ),
             ),
-            // Footer de paginación simulado
+             // Footer info
             Padding(
               padding: const EdgeInsets.only(top: 10),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  Text('Mostrando ${_orders.length} resultados', style: const TextStyle(color: Colors.grey)),
+                   Text('${_orders.length} resultados', style: const TextStyle(color: Colors.grey)),
                 ],
               ),
             )
@@ -255,18 +196,81 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
+  Widget _buildOrderCard(Orden order, Color cardColor, Color textColor, Color secondaryTextColor) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: cardColor,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.2),
+            blurRadius: 8,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // Header: Nro Orden y Status
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                '#${order.numeroOrden}',
+                style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              _buildStatusBadge(order.status),
+            ],
+          ),
+          const SizedBox(height: 12),
+          
+          // Info Cliente
+          _buildInfoRow(Icons.person, order.nombreCliente, textColor),
+          const SizedBox(height: 8),
+          
+          // Direccion
+          if (order.direccion != null)
+             _buildInfoRow(Icons.location_on, order.direccion!, secondaryTextColor),
+          
+          // Fecha
+          const SizedBox(height: 8),
+          _buildInfoRow(Icons.calendar_today, order.fechaHora.toString().split(' ')[0], secondaryTextColor),
+
+          const SizedBox(height: 16),
+          const Divider(color: Colors.grey, height: 1),
+          const SizedBox(height: 16),
+
+          // Actions
+          _buildCardActions(order),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInfoRow(IconData icon, String text, Color color) {
+    return Row(
+      children: [
+        Icon(icon, size: 16, color: Colors.grey),
+        const SizedBox(width: 8),
+        Expanded(child: Text(text, style: TextStyle(color: color, fontSize: 14))),
+      ],
+    );
+  }
+
   Widget _buildStatusBadge(String status) {
     Color color;
-    Color textColor = Colors.white;
     String label = status.toUpperCase();
 
     switch (status.toLowerCase()) {
       case 'asignada':
-        color = const Color(0xFFF59E0B); // Amber/Yellow
-        textColor = Colors.black;
+        color = const Color(0xFFF59E0B); // Amber
         break;
       case 'ejecutada':
-        color = const Color(0xFF10B981); // Emerald/Green
+        color = const Color(0xFF10B981); // Emerald
         break;
       case 'en_proceso':
         color = Colors.blue;
@@ -279,39 +283,34 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(
         color: color.withOpacity(0.2),
-        borderRadius: BorderRadius.circular(4),
+        borderRadius: BorderRadius.circular(20),
         border: Border.all(color: color.withOpacity(0.5)),
       ),
       child: Text(
         status, 
-        style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 12)
+        style: TextStyle(color: color, fontWeight: FontWeight.w600, fontSize: 12)
       ),
     );
   }
 
-  Widget _buildActions(Orden order) {
+  Widget _buildCardActions(Orden order) {
     String status = order.status.toLowerCase();
 
     // 1. Asignada -> Aceptar
     if (status == 'asignada') {
-      return InkWell(
-        onTap: () => _acceptOrder(order),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.blue.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.check, color: Colors.blue, size: 16),
-              SizedBox(width: 4),
-              Text('Aceptar Orden', style: TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 12)),
-            ],
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _acceptOrder(order),
+          icon: const Icon(Icons.check, color: Colors.white),
+          label: const Text('Aceptar Orden', style: TextStyle(color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.blue,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
       );
@@ -319,62 +318,55 @@ class _HomeScreenState extends State<HomeScreen> {
 
     // 2. En Proceso -> Reportar En Sitio
     if (status == 'en_proceso') {
-      return InkWell(
-        onTap: () => _reportOnSite(order),
-        child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.indigo.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.location_on, color: Colors.indigo, size: 16),
-              SizedBox(width: 4),
-              Text('Llegué a Sitio', style: TextStyle(color: Colors.indigo, fontWeight: FontWeight.bold, fontSize: 12)),
-            ],
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _reportOnSite(order),
+          icon: const Icon(Icons.location_on, color: Colors.white),
+          label: const Text('Llegué a Sitio', style: TextStyle(color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.indigo,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
       );
     }
 
-    // 3. En Sitio -> Finalizar (Redirige a detalle)
+    // 3. En Sitio -> Finalizar
     if (status == 'en_sitio') {
-      return InkWell(
-        onTap: () => _finishOrder(order),
-        child: Container(
-           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.green.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: const Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Icon(Icons.check_circle, color: Colors.green, size: 16),
-              SizedBox(width: 4),
-              Text('Finalizar Atención', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold, fontSize: 12)),
-            ],
+      return SizedBox(
+        width: double.infinity,
+        child: ElevatedButton.icon(
+          onPressed: () => _finishOrder(order),
+          icon: const Icon(Icons.check_circle, color: Colors.white),
+          label: const Text('Finalizar Atención', style: TextStyle(color: Colors.white)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.green,
+            padding: const EdgeInsets.symmetric(vertical: 12),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
           ),
         ),
       );
     }
 
-    // Default -> Ver detalles
-    return InkWell(
-      onTap: () {
-         Navigator.of(context).push(
+    // Default -> Ver detalles (Outline Button)
+    return SizedBox(
+      width: double.infinity,
+      child: OutlinedButton.icon(
+        onPressed: () {
+            Navigator.of(context).push(
             MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
           ).then((_) => _fetchOrders(isRefresh: true));
-      },
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.visibility, color: Colors.grey, size: 18),
-          SizedBox(width: 4),
-          Text('Ver', style: TextStyle(color: Colors.grey, fontSize: 12)),
-        ],
+        },
+        icon: const Icon(Icons.visibility),
+        label: const Text('Ver Detalles'),
+        style: OutlinedButton.styleFrom(
+          foregroundColor: Colors.grey,
+          side: const BorderSide(color: Colors.grey),
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
       ),
     );
   }
