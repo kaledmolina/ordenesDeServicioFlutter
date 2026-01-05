@@ -94,6 +94,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     if (widget.orden.articulos != null) {
         try {
            _articles = List<Map<String, dynamic>>.from(widget.orden.articulos!);
+           // Assign stable IDs for UI keys
+           for (var i = 0; i < _articles.length; i++) {
+             _articles[i]['uuid'] = 'existing_$i';
+           }
         } catch (e) {
            debugPrint('Error parsing existing articles: $e');
         }
@@ -101,6 +105,31 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
     _initialize();
   }
+
+  // ... (inside _addArticle)
+                      setState(() {
+                        _articles.add({
+                          'uuid': DateTime.now().millisecondsSinceEpoch.toString(), // Stable Local ID
+                          'articulo': selectedArticle,
+                          'grupo_articulo': selectedArticle, // Ensure consistency
+                          'descripcion': '', 
+                          'asoc': '', 
+                          'valor_unitario': 0.0,
+                          'cantidad': 0,
+                          'total': 0.0,
+                        });
+                      });
+
+  // ... (inside itemBuilder)
+                   final article = _articles[index];
+                   final qty = int.tryParse(article['cantidad']?.toString() ?? '0') ?? 0;
+                   final uuid = article['uuid'] ?? 'temp_$index'; // Fallback
+                   
+                   return Card(
+                     key: ValueKey(uuid),  // STABLE KEY FIXES FOCUS LOSS
+                     margin: const EdgeInsets.only(bottom: 12),
+                     elevation: 2,
+                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
   
   Future<void> _initialize() async {
     _authToken = await AuthService.instance.getToken();
@@ -226,9 +255,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     if (selectedArticle != null) {
                       setState(() {
                         _articles.add({
+                          'uuid': DateTime.now().millisecondsSinceEpoch.toString(),
                           'articulo': selectedArticle,
-                          'descripcion': '', // Optional
-                          'asoc': '', // Optional
+                          'grupo_articulo': selectedArticle,
+                          'descripcion': '', 
+                          'asoc': '', 
                           'valor_unitario': 0.0,
                           'cantidad': 0,
                           'total': 0.0,
@@ -435,9 +466,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                 itemBuilder: (context, index) {
                    final article = _articles[index];
                    final qty = int.tryParse(article['cantidad']?.toString() ?? '0') ?? 0;
+                   final uuid = article['uuid'] ?? 'temp_$index'; // Fallback
                    
                    return Card(
-                     key: UniqueKey(), 
+                     key: ValueKey(uuid), 
                      margin: const EdgeInsets.only(bottom: 12),
                      elevation: 2,
                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
