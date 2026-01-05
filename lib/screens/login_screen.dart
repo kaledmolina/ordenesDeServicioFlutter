@@ -93,7 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Bienvenido',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.white,
+                                color: Colors.black87,
                               ),
                         ),
                         const SizedBox(height: 8),
@@ -101,12 +101,16 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 24),
                         TextField(
                           controller: _emailController,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          style: const TextStyle(color: Colors.black87),
+                          decoration: InputDecoration(
                             labelText: 'Correo Electrónico',
-                            labelStyle: TextStyle(color: Colors.white70),
-                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
-                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
+                            labelStyle: const TextStyle(color: Colors.black54),
+                            filled: true,
+                            fillColor: Colors.white.withOpacity(0.8),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.black12)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
+                            prefixIcon: const Icon(Icons.email_outlined, color: Colors.blue),
                           ),
                           keyboardType: TextInputType.emailAddress,
                         ),
@@ -114,28 +118,35 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _passwordController,
                           obscureText: true,
-                          style: const TextStyle(color: Colors.white),
-                          decoration: const InputDecoration(
+                          style: const TextStyle(color: Colors.black87),
+                          decoration: InputDecoration(
                             labelText: 'Contraseña',
-                            labelStyle: TextStyle(color: Colors.white70),
-                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
-                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
+                            labelStyle: const TextStyle(color: Colors.black54),
+                             filled: true,
+                            fillColor: Colors.white.withOpacity(0.8),
+                            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                            enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.black12)),
+                            focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: const BorderSide(color: Colors.blue)),
+                            prefixIcon: const Icon(Icons.lock_outline, color: Colors.blue),
                           ),
                         ),
                         const SizedBox(height: 32),
                         _isLoading
                             ? const CircularProgressIndicator()
-                            : FilledButton(
-                                onPressed: _login,
-                                style: FilledButton.styleFrom(
-                                  backgroundColor: Colors.blue,
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 50,
-                                    vertical: 15,
+                            : SizedBox(
+                                width: double.infinity,
+                                child: FilledButton(
+                                  onPressed: _login,
+                                  style: FilledButton.styleFrom(
+                                    backgroundColor: const Color(0xFF007AFF), // iOS Blue
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(vertical: 16),
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    elevation: 5,
+                                    shadowColor: Colors.blue.withOpacity(0.4),
                                   ),
+                                  child: const Text('Ingresar', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
                                 ),
-                                child: const Text('Ingresar'),
                               ),
                       ],
                     ),
@@ -146,9 +157,9 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Desarrollado por Kaled Molina',
                   style: TextStyle(
-                    color: Colors.white54,
+                    color: Colors.black45,
                     fontSize: 12,
-                    fontWeight: FontWeight.w300,
+                    fontWeight: FontWeight.w500,
                   ),
                 ),
               ],

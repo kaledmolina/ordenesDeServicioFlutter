@@ -121,18 +121,19 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Manteniendo el tema oscuro premium
-    const backgroundColor = Color(0xFF000000); 
-    const cardColor = Color(0xFF111827);
-    const textColor = Colors.white;
-    const secondaryTextColor = Colors.white70;
+    // Tema iOS Light Blue Moderno
+    const backgroundColor = Color(0xFFF3F4F6); // Cool Gray 100
+    const cardColor = Colors.white;
+    const textColor = Color(0xFF111827); // Gray 900
+    const secondaryTextColor = Color(0xFF6B7280); // Gray 500
 
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBar(
-        title: const Text('Orden De Servicios', style: TextStyle(fontWeight: FontWeight.bold)),
-        backgroundColor: backgroundColor,
+        title: const Text('Orden De Servicios', style: TextStyle(fontWeight: FontWeight.bold, color: textColor)),
+        backgroundColor: Colors.transparent, 
         foregroundColor: textColor,
+        iconTheme: const IconThemeData(color: textColor),
         elevation: 0,
         actions: const [
           Padding(
@@ -151,16 +152,22 @@ class _HomeScreenState extends State<HomeScreen> {
             Container(
               height: 50,
               decoration: BoxDecoration(
-                color: cardColor,
+                color: Colors.white,
                 borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.grey.shade800),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.03),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
               ),
               child: const TextField(
-                style: TextStyle(color: Colors.white),
+                style: TextStyle(color: Colors.black87),
                 decoration: InputDecoration(
                   hintText: 'Buscar orden, cliente...',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  prefixIcon: Icon(Icons.search, color: Colors.grey),
+                  hintStyle: TextStyle(color: Colors.black38),
+                  prefixIcon: Icon(Icons.search, color: Colors.blueGrey),
                   border: InputBorder.none,
                   contentPadding: EdgeInsets.symmetric(vertical: 15),
                 ),
@@ -202,13 +209,12 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: cardColor,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.grey.withOpacity(0.1)),
+        borderRadius: BorderRadius.circular(20), // iOS style cleaner radius
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.2),
-            blurRadius: 8,
-            offset: const Offset(0, 4),
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 15,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -374,24 +380,24 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildDrawer() {
      // Drawer simple oscuro
     return Drawer(
-      backgroundColor: const Color(0xFF111827),
+      backgroundColor: Colors.white,
       child: ListView(
         children: [
           const DrawerHeader(
-             decoration: BoxDecoration(color: Colors.black),
-             child: Center(child: Text('Menú', style: TextStyle(color: Colors.white, fontSize: 24))),
+             decoration: BoxDecoration(color: Colors.blue), // Classic Blue Header
+             child: Center(child: Text('Menú', style: TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold))),
           ),
           ListTile(
-            leading: const Icon(Icons.list, color: Colors.white),
-            title: const Text('Órdenes', style: TextStyle(color: Colors.white)),
+            leading: const Icon(Icons.list, color: Colors.black87),
+            title: const Text('Órdenes', style: TextStyle(color: Colors.black87)),
             onTap: () {
                Navigator.pop(context);
                _fetchOrders(isRefresh: true);
             },
           ),
            ListTile(
-            leading: const Icon(Icons.logout, color: Colors.red),
-            title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.red)),
+            leading: const Icon(Icons.logout, color: Colors.redAccent),
+            title: const Text('Cerrar Sesión', style: TextStyle(color: Colors.redAccent)),
             onTap: () async {
                   await AuthService.instance.logout();
                   if (mounted) {

@@ -243,7 +243,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             title: Text('Detalles de Orden #${widget.orderNumber}'),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            foregroundColor: Colors.white, // White text for AppBar
+            foregroundColor: Colors.black87, // Black text for AppBar
             actions: const [
               Padding(
                 padding: EdgeInsets.only(right: 16.0),
@@ -259,13 +259,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   
   Widget _buildBody() {
     if (_isLoading && _currentOrder == null) {
-      return const Center(child: CircularProgressIndicator(color: Colors.white));
+      return const Center(child: CircularProgressIndicator(color: Colors.blue));
     }
     if (_error != null) {
       return Center(child: Text('Error al cargar detalles: $_error', style: const TextStyle(color: Colors.red)));
     }
     if (_currentOrder == null) {
-      return const Center(child: Text('No se encontraron datos.', style: TextStyle(color: Colors.white)));
+      return const Center(child: Text('No se encontraron datos.', style: TextStyle(color: Colors.black54)));
     }
     
     final orden = _currentOrder!;
@@ -273,8 +273,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       children: [
         RefreshIndicator(
           onRefresh: _loadOrderDetails,
-          color: Colors.white,
-          backgroundColor: Colors.grey.shade900,
+          color: Colors.blue,
+          backgroundColor: Colors.white,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 150),
@@ -283,8 +283,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         if (_isLoading)
           Container(
-            color: Colors.black.withOpacity(0.5),
-            child: const Center(child: CircularProgressIndicator(color: Colors.white)),
+            color: Colors.white.withOpacity(0.5),
+            child: const Center(child: CircularProgressIndicator(color: Colors.blue)),
           ),
         Positioned(
           bottom: 0,
@@ -297,8 +297,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 begin: Alignment.bottomCenter,
                 end: Alignment.topCenter,
                 colors: [
-                  Colors.black.withOpacity(0.9),
-                  Colors.transparent,
+                  Colors.white.withOpacity(0.95),
+                  Colors.white.withOpacity(0.0),
                 ],
               ),
             ),
@@ -328,10 +328,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 onConfirm: _rejectOrder,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade900, 
+                backgroundColor: Colors.redAccent, 
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                elevation: 2,
               ),
               child: const Text('Rechazar', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -346,10 +347,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 onConfirm: _takeOrder,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green.shade800, 
+                backgroundColor: const Color(0xFF007AFF), // iOS Blue
                 foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 12),
-                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                 elevation: 4,
+                 shadowColor: Colors.blue.withOpacity(0.4),
               ),
               child: const Text('Tomar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
@@ -373,10 +376,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               onConfirm: _reportOnSite,
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue.shade800, 
+              backgroundColor: const Color(0xFF007AFF), // iOS Blue
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 4,
+              shadowColor: Colors.blue.withOpacity(0.4),
             ),
           ),
           const SizedBox(height: 12),
@@ -392,9 +397,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               if (result == 'refresh' && mounted) _loadOrderDetails();
             },
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-              foregroundColor: Colors.white70,
-              side: const BorderSide(color: Colors.white30),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              foregroundColor: Colors.blueGrey,
+              side: const BorderSide(color: Colors.black12),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -411,10 +417,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             label: const Text('Finalizar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: _closeOrder, // Llama a firmas y cierre
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade800, 
+              backgroundColor: const Color(0xFF34C759), // iOS Green
               foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 4,
+               shadowColor: Colors.green.withOpacity(0.4),
             ),
           ),
            const SizedBox(height: 12),
@@ -430,9 +438,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               if (result == 'refresh' && mounted) _loadOrderDetails();
             },
             style: OutlinedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 12),
-               foregroundColor: Colors.white70,
-               side: const BorderSide(color: Colors.white30),
+              padding: const EdgeInsets.symmetric(vertical: 14),
+               foregroundColor: Colors.blueGrey,
+               side: const BorderSide(color: Colors.black12),
+               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
           ),
         ],
@@ -483,7 +492,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
          if (orden.articulos != null && orden.articulos!.isNotEmpty)
         _buildGlassCard(
           child: _buildDetailCard('Artículos', [
-             ...orden.articulos!.map((art) => Text('• $art', style: const TextStyle(color: Colors.white70))).toList(),
+             ...orden.articulos!.map((art) => Text('• $art', style: const TextStyle(color: Colors.black54))).toList(),
           ]),
         ),
       ],
@@ -494,10 +503,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     return Padding(
       padding: const EdgeInsets.only(bottom: 16),
       child: GlassCard(
-        borderRadius: 16.0,
+        borderRadius: 20.0,
         sigmaX: 10.0,
         sigmaY: 10.0,
-        color: Colors.white.withOpacity(0.05), // Very transparent white on dark bg
+        color: Colors.white.withOpacity(0.7), // Frosted White
         child: child,
       ),
     );
@@ -509,8 +518,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
-          const Divider(height: 20, thickness: 1, color: Colors.white24),
+          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.black87)),
+          const Divider(height: 20, thickness: 1, color: Colors.black12),
           ...children,
         ],
       ),
@@ -528,7 +537,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white60)),
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
           Expanded(
             child: isPhone
               ? InkWell(
@@ -537,7 +546,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     value,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.blue.shade300,
+                      color: Colors.blueAccent,
                       decoration: TextDecoration.underline,
                     ),
                   ),
@@ -547,7 +556,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
-                    color: highlight ? Colors.amber : Colors.white,
+                    color: highlight ? Colors.orangeAccent[700] : Colors.black87,
                   ),
                 ),
           ),
