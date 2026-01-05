@@ -93,6 +93,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           'Bienvenido',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
+                                color: Colors.white,
                               ),
                         ),
                         const SizedBox(height: 8),
@@ -100,9 +101,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 24),
                         TextField(
                           controller: _emailController,
+                          style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
                             labelText: 'Correo Electrónico',
-                            border: UnderlineInputBorder(),
+                            labelStyle: TextStyle(color: Colors.white70),
+                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
+                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
                           ),
                           keyboardType: TextInputType.emailAddress,
                         ),
@@ -110,9 +114,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextField(
                           controller: _passwordController,
                           obscureText: true,
+                          style: const TextStyle(color: Colors.white),
                           decoration: const InputDecoration(
                             labelText: 'Contraseña',
-                            border: UnderlineInputBorder(),
+                            labelStyle: TextStyle(color: Colors.white70),
+                            enabledBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.white30)),
+                            focusedBorder: UnderlineInputBorder(borderSide: BorderSide(color: Colors.blue)),
                           ),
                         ),
                         const SizedBox(height: 32),
@@ -121,6 +128,8 @@ class _LoginScreenState extends State<LoginScreen> {
                             : FilledButton(
                                 onPressed: _login,
                                 style: FilledButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 50,
                                     vertical: 15,
@@ -137,7 +146,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Text(
                   'Desarrollado por Kaled Molina',
                   style: TextStyle(
-                    color: Colors.white70,
+                    color: Colors.white54,
                     fontSize: 12,
                     fontWeight: FontWeight.w300,
                   ),

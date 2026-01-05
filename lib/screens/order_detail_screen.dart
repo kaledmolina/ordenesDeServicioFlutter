@@ -243,7 +243,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             title: Text('Detalles de Orden #${widget.orderNumber}'),
             backgroundColor: Colors.transparent,
             elevation: 0,
-            foregroundColor: Colors.black87,
+            foregroundColor: Colors.white, // White text for AppBar
             actions: const [
               Padding(
                 padding: EdgeInsets.only(right: 16.0),
@@ -259,13 +259,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   
   Widget _buildBody() {
     if (_isLoading && _currentOrder == null) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(child: CircularProgressIndicator(color: Colors.white));
     }
     if (_error != null) {
-      return Center(child: Text('Error al cargar detalles: $_error'));
+      return Center(child: Text('Error al cargar detalles: $_error', style: const TextStyle(color: Colors.red)));
     }
     if (_currentOrder == null) {
-      return const Center(child: Text('No se encontraron datos.'));
+      return const Center(child: Text('No se encontraron datos.', style: TextStyle(color: Colors.white)));
     }
     
     final orden = _currentOrder!;
@@ -273,6 +273,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       children: [
         RefreshIndicator(
           onRefresh: _loadOrderDetails,
+          color: Colors.white,
+          backgroundColor: Colors.grey.shade900,
           child: SingleChildScrollView(
             physics: const AlwaysScrollableScrollPhysics(),
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 150),
@@ -281,8 +283,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ),
         if (_isLoading)
           Container(
-            color: Colors.black.withOpacity(0.1),
-            child: const Center(child: CircularProgressIndicator()),
+            color: Colors.black.withOpacity(0.5),
+            child: const Center(child: CircularProgressIndicator(color: Colors.white)),
           ),
         Positioned(
           bottom: 0,
@@ -290,6 +292,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           right: 0,
           child: Container(
             padding: const EdgeInsets.all(16.0),
+             decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.bottomCenter,
+                end: Alignment.topCenter,
+                colors: [
+                  Colors.black.withOpacity(0.9),
+                  Colors.transparent,
+                ],
+              ),
+            ),
             child: _buildActionButtons(orden),
           ),
         ),
@@ -297,7 +309,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
+  // ... (Action buttons methods unchanged regarding colors as they use ElevatedButtons which are self-contained, except text styles if needed)
+
   Widget _buildActionButtons(Orden orden) {
+    // ... Copying logic but ensuring it matches
     final status = orden.status.toLowerCase().trim().replaceAll(' ', '_');
     
     // Flujo 1: Asignada -> Tomar Orden -> En Proceso
@@ -313,11 +328,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 onConfirm: _rejectOrder,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red.shade700, 
+                backgroundColor: Colors.red.shade900, 
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Rechazar', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Rechazar', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
           const SizedBox(width: 12),
@@ -330,11 +346,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                 onConfirm: _takeOrder,
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.green, 
+                backgroundColor: Colors.green.shade800, 
+                foregroundColor: Colors.white,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
               ),
-              child: const Text('Tomar Orden', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+              child: const Text('Tomar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
             ),
           ),
         ],
@@ -348,7 +365,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         children: [
           ElevatedButton.icon(
             icon: const Icon(Icons.location_on, color: Colors.white),
-            label: const Text('Llegué al Sitio (Reportar)', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: const Text('Llegué al Sitio (Reportar)', style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: () => _showConfirmationDialog(
               title: 'Confirmar Llegada',
               content: '¿Confirmas que has llegado al sitio del cliente?',
@@ -356,7 +373,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               onConfirm: _reportOnSite,
             ),
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.blue, 
+              backgroundColor: Colors.blue.shade800, 
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -373,7 +391,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               );
               if (result == 'refresh' && mounted) _loadOrderDetails();
             },
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              foregroundColor: Colors.white70,
+              side: const BorderSide(color: Colors.white30),
+            ),
           ),
         ],
       );
@@ -386,10 +408,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         children: [
           ElevatedButton.icon(
             icon: const Icon(Icons.check_circle_outline, color: Colors.white),
-            label: const Text('Finalizar Orden', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
+            label: const Text('Finalizar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
             onPressed: _closeOrder, // Llama a firmas y cierre
             style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.green.shade700, 
+              backgroundColor: Colors.green.shade800, 
+              foregroundColor: Colors.white,
               padding: const EdgeInsets.symmetric(vertical: 16),
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
@@ -406,7 +429,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               );
               if (result == 'refresh' && mounted) _loadOrderDetails();
             },
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12)),
+            style: OutlinedButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 12),
+               foregroundColor: Colors.white70,
+               side: const BorderSide(color: Colors.white30),
+            ),
           ),
         ],
       );
@@ -421,6 +448,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Widget _buildDetailSection(Orden orden) {
+    // ...
     final dateFormatter = DateFormat('dd/MM/yyyy hh:mm a', 'es_CO');
     
     return Column(
@@ -455,7 +483,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
          if (orden.articulos != null && orden.articulos!.isNotEmpty)
         _buildGlassCard(
           child: _buildDetailCard('Artículos', [
-             ...orden.articulos!.map((art) => Text('• $art')).toList(), // Simple list for now
+             ...orden.articulos!.map((art) => Text('• $art', style: const TextStyle(color: Colors.white70))).toList(),
           ]),
         ),
       ],
@@ -467,8 +495,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       padding: const EdgeInsets.only(bottom: 16),
       child: GlassCard(
         borderRadius: 16.0,
-        sigmaX: 5.0,
-        sigmaY: 5.0,
+        sigmaX: 10.0,
+        sigmaY: 10.0,
+        color: Colors.white.withOpacity(0.05), // Very transparent white on dark bg
         child: child,
       ),
     );
@@ -480,8 +509,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-          const Divider(height: 20, thickness: 1),
+          Text(title, style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold, color: Colors.white)),
+          const Divider(height: 20, thickness: 1, color: Colors.white24),
           ...children,
         ],
       ),
@@ -499,7 +528,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.black54)),
+          Text('$label: ', style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white60)),
           Expanded(
             child: isPhone
               ? InkWell(
@@ -508,7 +537,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     value,
                     style: TextStyle(
                       fontSize: 16,
-                      color: Colors.blue.shade800,
+                      color: Colors.blue.shade300,
                       decoration: TextDecoration.underline,
                     ),
                   ),
@@ -518,7 +547,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: highlight ? FontWeight.bold : FontWeight.normal,
-                    color: highlight ? Theme.of(context).primaryColor : Colors.black87,
+                    color: highlight ? Colors.amber : Colors.white,
                   ),
                 ),
           ),
