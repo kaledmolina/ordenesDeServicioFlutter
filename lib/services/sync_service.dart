@@ -23,11 +23,13 @@ class SyncService {
   SyncService._init();
 
   void start() {
-     _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
-       if (result.contains(ConnectivityResult.mobile) || 
-           result.contains(ConnectivityResult.wifi)) {
-         debugPrint("Conexión detectada. Modo Online.");
-       }
+     Future.delayed(const Duration(seconds: 3), () {
+       _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
+         if (result.contains(ConnectivityResult.mobile) || 
+             result.contains(ConnectivityResult.wifi)) {
+           debugPrint("Conexión detectada. Modo Online.");
+         }
+       });
      });
   }
 

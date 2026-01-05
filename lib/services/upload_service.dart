@@ -19,13 +19,17 @@ class UploadService {
   UploadService._init();
 
   void start() {
-    _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
-      if (result.contains(ConnectivityResult.mobile) || result.contains(ConnectivityResult.wifi)) {
-        debugPrint("Conexión detectada. Intentando sincronizar...");
-        syncPendingUploads();
-      }
+    // Delay initialization to avoid blocking app startup
+    Future.delayed(const Duration(seconds: 5), () {
+      _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
+        if (result.contains(ConnectivityResult.mobile) || result.contains(ConnectivityResult.wifi)) {
+          debugPrint("Conexión detectada. Intentando sincronizar...");
+          syncPendingUploads();
+        }
+      });
+      // Initial sync check after delay
+      syncPendingUploads();
     });
-    syncPendingUploads();
   }
 
   void dispose() {
