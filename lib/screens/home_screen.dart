@@ -484,7 +484,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildFilterTile('En Sitio', 'en_sitio'),
                 _buildFilterTile('Ejecutada', 'ejecutada'),
                 
-                _buildFilterTile('Ejecutada', 'ejecutada'),
+
 
                 const Divider(),
 
