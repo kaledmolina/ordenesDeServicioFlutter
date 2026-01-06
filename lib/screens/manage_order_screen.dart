@@ -203,9 +203,24 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         }
       }
       
-      setState(() {
-        _galleryPhotos.addAll(newImages.map((file) => PhotoDisplay(path: file.path, status: PhotoStatusType.local)));
-      });
+      for (var file in newImages) {
+        // 1. Guardar en DB inmediatamente y obtener ID
+        final localId = await _photoRepo.addPhoto(widget.orden.numeroOrden, file.path);
+        
+        // 2. Actualizar estado local
+        if (mounted) {
+          setState(() {
+            _galleryPhotos.add(PhotoDisplay(
+              localId: localId, 
+              path: file.path, 
+              status: PhotoStatusType.local
+            ));
+          });
+        }
+      }
+      
+      // 3. Iniciar subida inmediatamente
+      UploadService.instance.syncPendingUploads();
     }
   }
 
@@ -351,11 +366,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       await _orderRepo.closeOrder(widget.orden.numeroOrden, closingData);
 
       // 4. Handle Photos (Sync)
-      final newPhotos = _galleryPhotos.where((p) => p.status == PhotoStatusType.local && p.localId == null).toList();
-      for (var photo in newPhotos) {
-        await _photoRepo.addPhoto(widget.orden.numeroOrden, photo.path);
-      }
-      
+      // 4. Handle Photos (Sync) is now handled immediately upon selection
+      // Ensure sync is running just in case
       UploadService.instance.syncPendingUploads();
       SyncService.instance.sync();
 

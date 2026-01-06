@@ -254,9 +254,9 @@ class DatabaseService {
   }
 
   // ========== PENDING PHOTOS ==========
-  Future<void> addPendingPhoto(String orderNumber, String imagePath) async {
+  Future<int> addPendingPhoto(String orderNumber, String imagePath) async {
     final db = await database;
-    await db.insert('pending_photos', {
+    return await db.insert('pending_photos', {
       'order_number': orderNumber,
       'image_path': imagePath,
       'sync_status': 'pending',

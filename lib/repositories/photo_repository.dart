@@ -37,8 +37,8 @@ class PhotoRepository {
     return photos;
   }
 
-  Future<void> addPhoto(String orderNumber, String imagePath) async {
-    await _dbService.addPendingPhoto(orderNumber, imagePath);
+  Future<int> addPhoto(String orderNumber, String imagePath) async {
+    return await _dbService.addPendingPhoto(orderNumber, imagePath);
   }
 
   Future<List<Map<String, dynamic>>> getPendingPhotos() async {
