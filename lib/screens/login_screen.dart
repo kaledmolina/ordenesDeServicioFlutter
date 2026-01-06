@@ -152,16 +152,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     ),
                   ),
                 ),
-                const SizedBox(height: 40),
-                // Footer
-                const Text(
-                  'Desarrollado por Kaled Molina',
-                  style: TextStyle(
-                    color: Colors.black45,
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
