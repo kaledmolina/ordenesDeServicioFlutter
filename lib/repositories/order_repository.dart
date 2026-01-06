@@ -10,9 +10,9 @@ class OrderRepository {
   final ApiService _apiService = ApiService();
   final DatabaseService _dbService = DatabaseService.instance;
 
-  Future<List<Orden>> getOrders({int page = 1, String status = 'todas'}) async {
+  Future<List<Orden>> getOrders({int page = 1, String status = 'todas', String? search}) async {
     try {
-      final response = await _apiService.getOrders(page: page, status: status);
+      final response = await _apiService.getOrders(page: page, status: status, search: search);
       print('API Response Data Length: ${(response['data'] as List).length}');
       
       final ordersData = response['data'] as List;

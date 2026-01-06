@@ -48,10 +48,14 @@ class ApiService {
     _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> getOrders({int page = 1, String status = 'todas'}) async {
+  Future<Map<String, dynamic>> getOrders({int page = 1, String status = 'todas', String? search}) async {
     final token = await AuthService.instance.getToken();
+    String url = '$baseUrl/v1/orders?page=$page&status=$status';
+    if (search != null && search.isNotEmpty) {
+      url += '&search=$search';
+    }
     final response = await http.get(
-      Uri.parse('$baseUrl/v1/orders?page=$page&status=$status'),
+      Uri.parse(url),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
     return _handleResponse(response);

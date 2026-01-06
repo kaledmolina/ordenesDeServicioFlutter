@@ -63,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter);
+      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery);
       if (mounted) {
         setState(() {
           _orders = orders;
@@ -175,9 +175,18 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
-              child: const TextField(
-                style: TextStyle(color: Colors.black87),
-                decoration: InputDecoration(
+              child: TextField(
+                onChanged: (value) {
+                  if (_debounce?.isActive ?? false) _debounce!.cancel();
+                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                    setState(() {
+                      _searchQuery = value;
+                    });
+                    _fetchOrders(isRefresh: true);
+                  });
+                },
+                style: const TextStyle(color: Colors.black87),
+                decoration: const InputDecoration(
                   hintText: 'Buscar orden, cliente...',
                   hintStyle: TextStyle(color: Colors.black38),
                   prefixIcon: Icon(Icons.search, color: Colors.blueGrey),
