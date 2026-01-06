@@ -6,7 +6,7 @@ import '../models/orden_model.dart';
 import '../models/user_model.dart';
 
 class ApiService {
-  static const String _baseUrlDomain = 'https://healing-spanking-halloween-literary.trycloudflare.com';
+  static const String _baseUrlDomain = 'https://ordenes.intalnet.com';
   static const String baseUrl = '$_baseUrlDomain/api';
   static const String domain = _baseUrlDomain;
 
