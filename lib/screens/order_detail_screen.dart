@@ -119,6 +119,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     setState(() => _isLoading = true);
     
     try {
+      // Validar si ya tiene una orden activa
+      final hasActive = await _orderRepo.hasActiveOrder();
+      if (hasActive) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ya tienes una orden en proceso. Ejecútala para tomar otra.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
       final updatedOrder = await _orderRepo.acceptOrder(widget.orderNumber);
       if (mounted) {
         setState(() => _currentOrder = updatedOrder);
