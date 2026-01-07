@@ -495,6 +495,21 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                   ),
                 ),
 
+                const SizedBox(height: 16),
+
+                // Observations Field (Moved)
+                TextFormField(
+                  controller: _obsOrigenController,
+                  maxLines: 3,
+                  decoration: const InputDecoration(
+                    labelText: 'OBSERVACIONES',
+                    prefixIcon: Icon(Icons.comment),
+                    border: OutlineInputBorder(),
+                    filled: true,
+                    fillColor: Colors.white,
+                  ),
+                ),
+
                 const SizedBox(height: 32),
                 
                 FilledButton.icon(
@@ -557,17 +572,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             fillColor: Colors.grey, // Light grey fill
           ),
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _obsOrigenController,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Observaciones de Cierre',
-            prefixIcon: Icon(Icons.comment),
-            border: OutlineInputBorder(),
-            filled: true,
-            fillColor: Colors.grey,
-          ),
         ),
         // const SizedBox(height: 16),
         // TextFormField(
