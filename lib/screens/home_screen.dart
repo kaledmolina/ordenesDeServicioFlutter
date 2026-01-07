@@ -335,11 +335,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
            // Tipo Orden & Reporte (New)
           if (order.tipoOrden != null)
-            _buildInfoRow(Icons.assignment, 'Tipo: ${order.tipoOrden}', secondaryTextColor),
+            _buildInfoRow(Icons.assignment, 'Tipo: ${order.tipoOrdenLabel}', secondaryTextColor),
            if (order.tipoOrden != null) const SizedBox(height: 8),
 
           if (order.solicitudSuscriptor != null)
-            _buildInfoRow(Icons.report_problem, 'Reporte: ${order.solicitudSuscriptor}', Colors.redAccent.shade200),
+            _buildInfoRow(Icons.report_problem, 'Reporte: ${order.solicitudSuscriptorLabel}', Colors.redAccent.shade200),
           if (order.solicitudSuscriptor != null) const SizedBox(height: 8),
 
            // Observaciones (New)

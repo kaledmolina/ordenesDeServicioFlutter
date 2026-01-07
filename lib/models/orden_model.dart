@@ -56,8 +56,37 @@ class Orden {
   final String? firmaSuscriptor;
   final String? barrio;
 
+  // Option Maps (Mirrors PHP Constants)
+  static const Map<String, String> tipoOrdenOptions = {
+    '025': '025 REVISION TECNICA',
+    '037': '037 CAMBIO CONTRASEÑA',
+    '004': '004 SUSPENSION',
+    '005': '005 RECONEXION',
+    '010': '010 TRASLADO',
+    '018': '018 CAMBIO DE EQUIPO',
+    '001': '001 INSTALACION',
+    '002': '002 RETIRO',
+  };
+
+  static const Map<String, String> solicitudSuscriptorOptions = {
+    '1': 'SIN SEÑAL',
+    '2': 'IMAGEN CON LLUVIA O RAYAS',
+    '3': 'IMAGEN CONGELADA',
+    '4': 'SERVICIO INTERMITENTE',
+    '5': 'NAVEGACIÓN LENTA',
+    '6': 'SIN ACCESO A INTERNET',
+    '7': 'CAMBIO DE CLAVE WIFI',
+    '8': 'TRASLADO DE SERVICIO',
+    '9': 'RECONEXIÓN',
+    '10': 'OTRO',
+  };
+
   // Celular alias for UI compatibility (maps to telefono)
   String? get celular => telefono;
+
+  // Label Getters
+  String get tipoOrdenLabel => tipoOrdenOptions[tipoOrden] ?? tipoOrden ?? 'Desconocido';
+  String get solicitudSuscriptorLabel => solicitudSuscriptorOptions[solicitudSuscriptor] ?? solicitudSuscriptor ?? 'Sin Reporte';
 
   // Status alias for UI compatibility (maps to estadoOrden)
   String get status => estadoOrden?.toLowerCase() ?? 'pendiente';
