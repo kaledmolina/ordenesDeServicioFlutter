@@ -36,6 +36,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   // Basic Info
   late TextEditingController _celularController;
   late TextEditingController _obsOrigenController;
+  late TextEditingController _solucionController;
 
   // Equipment
   final _macRouterController = TextEditingController();
@@ -85,6 +86,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     super.initState();
     _celularController = TextEditingController(text: widget.orden.celular);
     _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
+    _solucionController = TextEditingController(text: widget.orden.solucionTecnico ?? '');
     _macRouterController.text = widget.orden.macRouter ?? '';
     _macBridgeController.text = widget.orden.macBridge ?? '';
     _macOntController.text = widget.orden.macOnt ?? '';
@@ -134,6 +136,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _uploadSubscription?.cancel();
     _celularController.dispose();
     _obsOrigenController.dispose();
+    _solucionController.dispose();
     _macRouterController.dispose();
     _macBridgeController.dispose();
     _macOntController.dispose();
@@ -322,8 +325,19 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       return;
     }
 
-    // Validation: Photos are mandatory
-    if (_galleryPhotos.isEmpty) {
+    // Validation: 025 REVISION TECNICA requires Solucion Tecnico
+    if (widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('025')) {
+      if (_solucionController.text.trim().isEmpty) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('La Solución Técnica es obligatoria para este tipo de orden.')),
+        );
+        return;
+      }
+    }
+
+    // Validation: Photos are mandatory unless it is 037 CAMBIO CONTRASEÑA
+    bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
+    if (_galleryPhotos.isEmpty && !isPasswordChange) {
        ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Debes agregar al menos una foto de la orden.')),
       );
@@ -353,6 +367,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final closingData = {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
+        'solucion_tecnico': _solucionController.text,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macOntController.text,
@@ -527,6 +542,18 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             border: OutlineInputBorder(),
             filled: true,
             fillColor: Colors.grey,
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _solucionController,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Solución Técnico',
+            prefixIcon: Icon(Icons.engineering),
+            border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.white,
           ),
         ),
       ],
