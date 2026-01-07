@@ -572,7 +572,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             fillColor: Colors.grey, // Light grey fill
           ),
         ),
-        ),
         // const SizedBox(height: 16),
         // TextFormField(
         //   controller: _solucionController,
