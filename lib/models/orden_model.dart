@@ -69,16 +69,20 @@ class Orden {
   };
 
   static const Map<String, String> solicitudSuscriptorOptions = {
-    '1': 'SIN SEÑAL',
-    '2': 'IMAGEN CON LLUVIA O RAYAS',
-    '3': 'IMAGEN CONGELADA',
-    '4': 'SERVICIO INTERMITENTE',
-    '5': 'NAVEGACIÓN LENTA',
-    '6': 'SIN ACCESO A INTERNET',
-    '7': 'CAMBIO DE CLAVE WIFI',
-    '8': 'TRASLADO DE SERVICIO',
-    '9': 'RECONEXIÓN',
-    '10': 'OTRO',
+    '1': '1 SERVICIO INTERMITENTE',
+    '2': '2 SIN SERVICIO DE INTERNET',
+    '3': '3 SIN ALCANCE POTENCIA',
+    '4': '4 SERVICIO LENTO',
+    '5': '5 SIN SERVICIO DE TELEVISION',
+    '132': '132 CAMBIO DE CUENTA EN WIM',
+    '133': '133 CAMBIO DE EQUIPO',
+    '136': '136 LUZ ROJA',
+    '137': '137 MANTENIMIENTO CORRECTIVO',
+    '139': '139 INSTALACION AUTOMONITOREO',
+    '140': '140 REVISION TCA AUTOMONITOREO',
+    '142': '142 GARANTIA INTERNET',
+    '143': '143 GARANTIA TV',
+    '144': '144 GARANTIA TV E INTERNET',
   };
 
   // Celular alias for UI compatibility (maps to telefono)
