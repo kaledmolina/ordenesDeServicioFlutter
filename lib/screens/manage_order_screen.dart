@@ -369,9 +369,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final closingData = {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
-      final closingData = {
-        'celular': _celularController.text,
-        'observaciones': _obsOrigenController.text,
         'solucion_tecnico': _selectedSolution,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
