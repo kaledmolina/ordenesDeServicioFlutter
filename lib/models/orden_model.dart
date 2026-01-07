@@ -54,6 +54,7 @@ class Orden {
   final String? otrosEquipos;
   final String? firmaTecnico;
   final String? firmaSuscriptor;
+  final String? barrio;
 
   // Celular alias for UI compatibility (maps to telefono)
   String? get celular => telefono;
@@ -103,6 +104,7 @@ class Orden {
     this.otrosEquipos,
     this.firmaTecnico,
     this.firmaSuscriptor,
+    this.barrio,
   });
 
   factory Orden.fromJson(Map<String, dynamic> json) {
@@ -148,6 +150,7 @@ class Orden {
       otrosEquipos: json['otros_equipos']?.toString(),
       firmaTecnico: json['firma_tecnico']?.toString(),
       firmaSuscriptor: json['firma_suscriptor']?.toString(),
+      barrio: json['cliente']?['barrio']?.toString(), // Parse barrio from relationship
     );
   }
 }

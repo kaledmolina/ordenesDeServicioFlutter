@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:url_launcher/url_launcher.dart'; // Add url_launcher
 import '../models/user_model.dart';
 import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
@@ -304,13 +305,49 @@ class _HomeScreenState extends State<HomeScreen> {
           // Info Cliente
           _buildInfoRow(Icons.person, order.nombreCliente, textColor),
           const SizedBox(height: 8),
+
+          // Barrio (New)
+          if (order.barrio != null)
+             _buildInfoRow(Icons.map, 'Barrio: ${order.barrio}', secondaryTextColor),
+          if (order.barrio != null) const SizedBox(height: 8),
           
           // Direccion
           if (order.direccion != null)
              _buildInfoRow(Icons.location_on, order.direccion!, secondaryTextColor),
+          const SizedBox(height: 8),
+
+          // Telefono (New with Action)
+           if (order.telefono != null)
+            InkWell(
+              onTap: () => _launchCaller(order.telefono!),
+              child: Row(
+                children: [
+                  Icon(Icons.phone, size: 16, color: Colors.blue),
+                  const SizedBox(width: 8),
+                  Text(
+                    order.telefono!,
+                    style: const TextStyle(color: Colors.blue, fontSize: 14, fontWeight: FontWeight.bold),
+                  ),
+                ],
+              ),
+            ),
+          if (order.telefono != null) const SizedBox(height: 8),
+
+           // Tipo Orden & Reporte (New)
+          if (order.tipoOrden != null)
+            _buildInfoRow(Icons.assignment, 'Tipo: ${order.tipoOrden}', secondaryTextColor),
+           if (order.tipoOrden != null) const SizedBox(height: 8),
+
+          if (order.solicitudSuscriptor != null)
+            _buildInfoRow(Icons.report_problem, 'Reporte: ${order.solicitudSuscriptor}', Colors.redAccent.shade200),
+          if (order.solicitudSuscriptor != null) const SizedBox(height: 8),
+
+           // Observaciones (New)
+          if (order.observaciones != null && order.observaciones!.isNotEmpty)
+            _buildInfoRow(Icons.comment, 'Obs: ${order.observaciones}', secondaryTextColor),
+          if (order.observaciones != null && order.observaciones!.isNotEmpty) const SizedBox(height: 8),
           
           // Fecha
-          const SizedBox(height: 8),
           _buildInfoRow(Icons.calendar_today, order.fechaHora.toString().split(' ')[0], secondaryTextColor),
 
           const SizedBox(height: 16),
@@ -558,5 +595,18 @@ class _HomeScreenState extends State<HomeScreen> {
       contentPadding: const EdgeInsets.symmetric(horizontal: 16),
       dense: true,
     );
+  }
+
+  Future<void> _launchCaller(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    } else {
+        if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text('No se puede realizar la llamada')),
+            );
+        }
+    }
   }
 }
