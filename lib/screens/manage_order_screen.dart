@@ -36,7 +36,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   // Basic Info
   late TextEditingController _celularController;
   late TextEditingController _obsOrigenController;
-  late TextEditingController _solucionController;
+  // late TextEditingController _solucionController; // Removed in favor of selection
+  String? _selectedSolution;
 
   // Equipment
   final _macRouterController = TextEditingController();
@@ -86,7 +87,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     super.initState();
     _celularController = TextEditingController(text: widget.orden.celular);
     _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
-    _solucionController = TextEditingController(text: widget.orden.solucionTecnico ?? '');
+    // _solucionController = TextEditingController(text: widget.orden.solucionTecnico ?? '');
+    _selectedSolution = widget.orden.solucionTecnico;
     _macRouterController.text = widget.orden.macRouter ?? '';
     _macBridgeController.text = widget.orden.macBridge ?? '';
     _macOntController.text = widget.orden.macOnt ?? '';
@@ -136,7 +138,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _uploadSubscription?.cancel();
     _celularController.dispose();
     _obsOrigenController.dispose();
-    _solucionController.dispose();
+    // _solucionController.dispose();
     _macRouterController.dispose();
     _macBridgeController.dispose();
     _macOntController.dispose();
@@ -327,7 +329,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
     // Validation: 025 REVISION TECNICA requires Solucion Tecnico
     if (widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('025')) {
-      if (_solucionController.text.trim().isEmpty) {
+      if (_selectedSolution == null || _selectedSolution!.isEmpty) {
          ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('La Solución Técnica es obligatoria para este tipo de orden.')),
         );
@@ -367,7 +369,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final closingData = {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
-        'solucion_tecnico': _solucionController.text,
+      final closingData = {
+        'celular': _celularController.text,
+        'observaciones': _obsOrigenController.text,
+        'solucion_tecnico': _selectedSolution,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macOntController.text,
@@ -469,6 +474,29 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                   child: _buildSignaturesContent(),
                   initiallyExpanded: false,
                 ).animate().fade(delay: 400.ms),
+                
+                const SizedBox(height: 16),
+
+                // Technical Solution Selection
+                Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.grey.shade300),
+                  ),
+                  child: ListTile(
+                     title: const Text('Solución Técnico', style: TextStyle(fontWeight: FontWeight.bold)),
+                     subtitle: Text(
+                       _selectedSolution ?? 'Seleccionar solución...',
+                       style: TextStyle(
+                         color: _selectedSolution != null ? Colors.black87 : Colors.grey,
+                         fontStyle: _selectedSolution != null ? FontStyle.normal : FontStyle.italic
+                        ),
+                     ),
+                     trailing: const Icon(Icons.arrow_drop_down_circle, color: Colors.blue),
+                     onTap: _showSolutionSelectionModal,
+                  ),
+                ),
 
                 const SizedBox(height: 32),
                 
@@ -544,19 +572,62 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             fillColor: Colors.grey,
           ),
         ),
-        const SizedBox(height: 16),
-        TextFormField(
-          controller: _solucionController,
-          maxLines: 3,
-          decoration: const InputDecoration(
-            labelText: 'Solución Técnico',
-            prefixIcon: Icon(Icons.engineering),
-            border: OutlineInputBorder(),
-            filled: true,
-            fillColor: Colors.white,
-          ),
-        ),
+        // const SizedBox(height: 16),
+        // TextFormField(
+        //   controller: _solucionController,
+        //   maxLines: 3,
+        //   decoration: const InputDecoration(
+        //     labelText: 'Solución Técnico',
+        //     prefixIcon: Icon(Icons.engineering),
+        //     border: OutlineInputBorder(),
+        //     filled: true,
+        //     fillColor: Colors.white,
+        //   ),
+        // ),
       ],
+    );
+  }
+
+  void _showSolutionSelectionModal() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Padding(
+              padding: EdgeInsets.all(16.0),
+              child: Text(
+                'Seleccione una Solución',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+            ),
+            const Divider(),
+            _buildSolutionOption('1 CAMBIO - CONECTOR'),
+            _buildSolutionOption('2 REINICIO EQUIPOS'),
+            _buildSolutionOption('3 CAMBIO EQUIPO'),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSolutionOption(String option) {
+    return ListTile(
+      title: Text(option),
+      onTap: () {
+        setState(() {
+          _selectedSolution = option;
+        });
+        Navigator.pop(context);
+      },
+      trailing: _selectedSolution == option ? const Icon(Icons.check, color: Colors.green) : null,
     );
   }
 
