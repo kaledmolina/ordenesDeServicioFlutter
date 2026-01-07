@@ -373,19 +373,43 @@ class _HomeScreenState extends State<HomeScreen> {
     String status = order.status.toLowerCase();
 
     // 1. Asignada -> Aceptar
+    // 1. Asignada -> Aceptar
     if (status == 'asignada') {
-      return SizedBox(
-        width: double.infinity,
-        child: ElevatedButton.icon(
-          onPressed: () => _acceptOrder(order),
-          icon: const Icon(Icons.check, color: Colors.white),
-          label: const Text('Aceptar Orden', style: TextStyle(color: Colors.white)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: Colors.blue,
-            padding: const EdgeInsets.symmetric(vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+      return Column(
+        children: [
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton.icon(
+              onPressed: () => _acceptOrder(order),
+              icon: const Icon(Icons.check, color: Colors.white),
+              label: const Text('Aceptar Orden', style: TextStyle(color: Colors.white)),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.blue,
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
           ),
-        ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: OutlinedButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
+                ).then((_) => _fetchOrders(isRefresh: true));
+              },
+              icon: const Icon(Icons.visibility),
+              label: const Text('Ver Orden'),
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.blue,
+                side: const BorderSide(color: Colors.blue),
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              ),
+            ),
+          ),
+        ],
       );
     }
 
