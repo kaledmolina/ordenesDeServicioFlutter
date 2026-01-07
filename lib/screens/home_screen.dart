@@ -83,6 +83,21 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _acceptOrder(Orden order) async {
     try {
+      // Validar si ya tiene una orden activa
+      final hasActive = await _orderRepo.hasActiveOrder();
+      if (hasActive) {
+        if (mounted) {
+           ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Ya tienes una orden en proceso. Ejecútala para tomar otra.'),
+              backgroundColor: Colors.orange,
+              duration: Duration(seconds: 4),
+            ),
+          );
+        }
+        return;
+      }
+
       await _orderRepo.acceptOrder(order.numeroOrden);
       if (mounted) {
          ScaffoldMessenger.of(context).showSnackBar(
@@ -418,8 +433,8 @@ class _HomeScreenState extends State<HomeScreen> {
             width: double.infinity,
             child: ElevatedButton.icon(
               onPressed: () => _acceptOrder(order),
-              icon: const Icon(Icons.check, color: Colors.white),
-              label: const Text('Aceptar Orden', style: TextStyle(color: Colors.white)),
+              icon: const Icon(Icons.handshake, color: Colors.white), // Changed icon slightly to differentiate
+              label: const Text('Tomar Orden', style: TextStyle(color: Colors.white)),
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.blue,
                 padding: const EdgeInsets.symmetric(vertical: 12),

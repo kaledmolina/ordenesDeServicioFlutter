@@ -24,6 +24,17 @@ class OrderRepository {
     }
   }
 
+  Future<bool> hasActiveOrder() async {
+    try {
+      final inProcess = await getOrders(status: 'en_proceso');
+      final onSite = await getOrders(status: 'en_sitio');
+      return inProcess.isNotEmpty || onSite.isNotEmpty;
+    } catch (e) {
+      print('Error checking active orders: $e');
+      return false; // Fail safe, assume no active order if error (or maybe true to be safe? but false lets user try)
+    }
+  }
+
   Future<Orden> getOrderDetails(String orderNumber) async {
     try {
       return await _apiService.getOrderDetails(orderNumber);
