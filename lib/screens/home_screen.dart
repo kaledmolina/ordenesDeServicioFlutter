@@ -338,14 +338,14 @@ class _HomeScreenState extends State<HomeScreen> {
             _buildInfoRow(Icons.assignment, 'Tipo: ${order.tipoOrdenLabel}', secondaryTextColor),
            if (order.tipoOrden != null) const SizedBox(height: 8),
 
-          if (order.solicitudSuscriptor != null)
-            _buildInfoRow(Icons.report_problem, 'Reporte: ${order.solicitudSuscriptorLabel}', Colors.redAccent.shade200),
-          if (order.solicitudSuscriptor != null) const SizedBox(height: 8),
-
-           // Observaciones (New)
-          if (order.observaciones != null && order.observaciones!.isNotEmpty)
-            _buildInfoRow(Icons.comment, 'Obs: ${order.observaciones}', secondaryTextColor),
-          if (order.observaciones != null && order.observaciones!.isNotEmpty) const SizedBox(height: 8),
+          // Reporte & Observaciones Combined
+          if (order.solicitudSuscriptor != null || (order.observaciones != null && order.observaciones!.isNotEmpty))
+            _buildInfoRow(
+              Icons.report_problem, 
+              'Reporte: ${order.solicitudSuscriptorLabel}\nObs: ${order.observaciones ?? "Sin observaciones"}', 
+              Colors.redAccent.shade200
+            ),
+          if (order.solicitudSuscriptor != null || (order.observaciones != null && order.observaciones!.isNotEmpty)) const SizedBox(height: 8),
           
           // Fecha
           _buildInfoRow(Icons.calendar_today, order.fechaHora.toString().split(' ')[0], secondaryTextColor),
