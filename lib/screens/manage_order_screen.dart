@@ -409,22 +409,52 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             ),
           ],
         ),
-        body: Form(
+      body: Form(
           key: _formKey,
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
-                // _buildBasicInfoSection().animate().fade().slideY(begin: 0.1, end: 0), // Removed as requested
-                // const SizedBox(height: 24),
-                _buildArticlesSection().animate().fade(delay: 100.ms).slideY(begin: 0.1, end: 0),
-                const SizedBox(height: 24),
-                _buildEquipmentSection().animate().fade(delay: 200.ms).slideY(begin: 0.1, end: 0),
-                const SizedBox(height: 24),
-                _buildPhotosSection().animate().fade(delay: 300.ms),
-                 const SizedBox(height: 24),
-                _buildSignaturesSection().animate().fade(delay: 400.ms),
+                _buildAccordionSection(
+                  title: 'Información General',
+                  icon: Icons.info_outline,
+                  child: _buildBasicInfoContent(),
+                  initiallyExpanded: false,
+                ).animate().fade().slideY(begin: 0.1, end: 0),
+                const SizedBox(height: 16),
+
+                _buildAccordionSection(
+                  title: 'Artículos y Materiales',
+                  icon: Icons.handyman, 
+                  child: _buildArticlesContent(),
+                  initiallyExpanded: false,
+                ).animate().fade(delay: 100.ms).slideY(begin: 0.1, end: 0),
+                const SizedBox(height: 16),
+                
+                _buildAccordionSection(
+                  title: 'Equipos Instalados/Retirados',
+                  icon: Icons.router,
+                  child: _buildEquipmentContent(),
+                  initiallyExpanded: false,
+                ).animate().fade(delay: 200.ms).slideY(begin: 0.1, end: 0),
+                const SizedBox(height: 16),
+
+                _buildAccordionSection(
+                  title: 'Evidencia Fotográfica',
+                  icon: Icons.camera_alt,
+                  child: _buildPhotosContent(),
+                  initiallyExpanded: false,
+                ).animate().fade(delay: 300.ms),
+                const SizedBox(height: 16),
+
+                _buildAccordionSection(
+                  title: 'Firmas',
+                  icon: Icons.draw,
+                  child: _buildSignaturesContent(),
+                  initiallyExpanded: false,
+                ).animate().fade(delay: 400.ms),
+
                 const SizedBox(height: 32),
                 
                 FilledButton.icon(
@@ -434,6 +464,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                   style: FilledButton.styleFrom(
                     padding: const EdgeInsets.symmetric(vertical: 16),
                     backgroundColor: Colors.green[700],
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                   ),
                 ).animate().scale(delay: 500.ms),
                 const SizedBox(height: 32),
@@ -445,297 +476,343 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     );
   }
 
-  // Widget _buildBasicInfoSection() { ... } // Removed
+  Widget _buildAccordionSection({
+    required String title,
+    required IconData icon,
+    required Widget child,
+    bool initiallyExpanded = false,
+  }) {
+    return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      clipBehavior: Clip.antiAlias,
+      color: Colors.white, // Opaque background for readability
+      child: ExpansionTile(
+        initiallyExpanded: initiallyExpanded,
+        leading: CircleAvatar(
+          backgroundColor: Colors.blue.shade50,
+          child: Icon(icon, color: Colors.blue),
+        ),
+        title: Text(
+          title,
+          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.black87),
+        ),
+        childrenPadding: const EdgeInsets.all(16),
+        children: [child],
+      ),
+    );
+  }
 
-  Widget _buildArticlesSection() {
-    return GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget _buildBasicInfoContent() {
+    return Column(
+      children: [
+        TextFormField(
+          controller: _celularController,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            labelText: 'Celular Contacto',
+            prefixIcon: Icon(Icons.phone),
+            border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.grey, // Light grey fill
+          ),
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          controller: _obsOrigenController,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Observaciones de Cierre',
+            prefixIcon: Icon(Icons.comment),
+            border: OutlineInputBorder(),
+            filled: true,
+            fillColor: Colors.grey,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildArticlesContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text('Detalle de Artículos', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                IconButton(onPressed: _addArticle, icon: const Icon(Icons.add_circle, color: Colors.blue)),
-              ],
+            const Text('Lista de Artículos', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.grey)),
+            TextButton.icon(
+              onPressed: _addArticle,
+              icon: const Icon(Icons.add_circle, size: 20),
+              label: const Text('Agregar'),
             ),
-            const Divider(),
-            if (_articles.isEmpty)
-              const Padding(
-                padding: EdgeInsets.symmetric(vertical: 16.0),
-                child: Center(child: Text('No hay artículos agregados', style: TextStyle(color: Colors.grey))),
-              )
-            else
-              ReorderableListView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: _articles.length,
-                onReorder: _moveArticle,
-                itemBuilder: (context, index) {
-                   final article = _articles[index];
-                   final qty = int.tryParse(article['cantidad']?.toString() ?? '0') ?? 0;
-                   final uuid = article['uuid'] ?? 'temp_$index'; // Fallback
-                   
-                   return Card(
-                     key: ValueKey(uuid), 
-                     margin: const EdgeInsets.only(bottom: 12),
-                     elevation: 2,
-                     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                     child: Padding(
-                       padding: const EdgeInsets.all(12.0),
-                       child: Column(
+          ],
+        ),
+        const Divider(),
+        if (_articles.isEmpty)
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 16.0),
+            child: Center(
+              child: Column(
+                children: [
+                  Icon(Icons.shopping_bag_outlined, size: 40, color: Colors.grey),
+                  SizedBox(height: 8),
+                  Text('No hay artículos agregados', style: TextStyle(color: Colors.grey)),
+                ],
+              ),
+            ),
+          )
+        else
+          ReorderableListView.builder(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: _articles.length,
+            onReorder: _moveArticle,
+            itemBuilder: (context, index) {
+               final article = _articles[index];
+               final qty = int.tryParse(article['cantidad']?.toString() ?? '0') ?? 0;
+               final uuid = article['uuid'] ?? 'temp_$index'; // Fallback
+               
+               return Card(
+                 key: ValueKey(uuid), 
+                 margin: const EdgeInsets.only(bottom: 12),
+                 elevation: 0,
+                 color: Colors.grey.shade50, // Slightly simpler card for inside accordion
+                 shape: RoundedRectangleBorder(
+                   borderRadius: BorderRadius.circular(12),
+                   side: BorderSide(color: Colors.grey.shade200)
+                  ),
+                 child: Padding(
+                   padding: const EdgeInsets.all(12.0),
+                   child: Column(
+                     crossAxisAlignment: CrossAxisAlignment.start,
+                     children: [
+                       // Header: Name and Delete
+                       Row(
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
-                           // Header: Name and Delete
-                           Row(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Expanded(
-                                 child: Text(
-                                   article['grupo_articulo']?.toString() ?? article['articulo']?.toString() ?? 'SIN NOMBRE',
-                                   style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.indigo),
-                                 ),
-                               ),
-                               IconButton(
-                                 icon: const Icon(Icons.delete, color: Colors.redAccent, size: 24),
-                                 onPressed: () => _removeArticle(index),
-                               ),
-                             ],
+                           Expanded(
+                             child: Text(
+                               article['grupo_articulo']?.toString() ?? article['articulo']?.toString() ?? 'SIN NOMBRE',
+                               style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16, color: Colors.indigo),
+                             ),
                            ),
-                           const Divider(),
-                           
-                           // Quantity Stepper and Unit Price
-                           Row(
-                             children: [
-                               // Stepper
-                               Container(
-                                 decoration: BoxDecoration(
-                                   border: Border.all(color: Colors.grey.shade300),
-                                   borderRadius: BorderRadius.circular(8),
-                                 ),
-                                 child: Row(
-                                   children: [
-                                     IconButton(
-                                       icon: const Icon(Icons.remove, color: Colors.indigo),
-                                       onPressed: () {
-                                         if (qty > 0) _updateArticle(index, 'cantidad', qty - 1);
-                                       },
-                                     ),
-                                     Text(
-                                       '$qty',
-                                       style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                                     ),
-                                     IconButton(
-                                       icon: const Icon(Icons.add, color: Colors.indigo),
-                                       onPressed: () => _updateArticle(index, 'cantidad', qty + 1),
-                                     ),
-                                   ],
-                                 ),
-                               ),
-                               const SizedBox(width: 16),
-                               
-                               // Unit Price Input
-                               Expanded(
-                                 child: TextFormField(
-                                   initialValue: article['valor_unitario']?.toString() ?? '0',
-                                   decoration: const InputDecoration(
-                                     labelText: 'Valor Unit.',
-                                     prefixText: '\$',
-                                     isDense: true,
-                                     border: OutlineInputBorder(),
-                                   ),
-                                   keyboardType: TextInputType.number,
-                                   onChanged: (val) => _updateArticle(index, 'valor_unitario', val),
-                                 ),
-                               ),
-                             ],
+                           IconButton(
+                             icon: const Icon(Icons.delete, color: Colors.redAccent, size: 20),
+                             onPressed: () => _removeArticle(index),
+                             padding: EdgeInsets.zero,
+                             constraints: const BoxConstraints(),
                            ),
-                           const SizedBox(height: 12),
-                           
-                           // Description and ASOC
-                           Row(
-                             children: [
-                               Expanded(
-                                 flex: 2,
-                                 child: TextFormField(
-                                   initialValue: article['descripcion']?.toString() ?? '',
-                                   decoration: const InputDecoration(
-                                     labelText: 'Descripción / Serial',
-                                     isDense: true,
-                                     border: OutlineInputBorder(),
-                                   ),
-                                   onChanged: (val) => _updateArticle(index, 'descripcion', val),
-                                 ),
-                               ),
-                               const SizedBox(width: 12),
-                               Expanded(
-                                 flex: 1,
-                                 child: TextFormField(
-                                   initialValue: article['asoc']?.toString() ?? '',
-                                    decoration: const InputDecoration(
-                                      labelText: 'ASOC',
-                                      isDense: true,
-                                      border: OutlineInputBorder(),
-                                    ),
-                                    onChanged: (val) => _updateArticle(index, 'asoc', val),
-                                 ),
-                               ),
-                             ],
-                           ),
-                           const SizedBox(height: 12),
-                           
-                           // Total Footer
+                         ],
+                       ),
+                       const Divider(),
+                       
+                       // Quantity Stepper and Unit Price
+                       Row(
+                         children: [
+                           // Stepper
                            Container(
-                             padding: const EdgeInsets.all(8),
                              decoration: BoxDecoration(
-                               color: Colors.grey.shade100,
+                               border: Border.all(color: Colors.grey.shade300),
                                borderRadius: BorderRadius.circular(8),
+                               color: Colors.white,
                              ),
                              child: Row(
-                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                               mainAxisSize: MainAxisSize.min,
                                children: [
-                                 const Text('Total:', style: TextStyle(fontWeight: FontWeight.bold)),
+                                 IconButton(
+                                   icon: const Icon(Icons.remove, color: Colors.indigo, size: 18),
+                                   onPressed: () {
+                                     if (qty > 0) _updateArticle(index, 'cantidad', qty - 1);
+                                   },
+                                   padding: const EdgeInsets.all(4),
+                                    constraints: const BoxConstraints(),
+                                 ),
                                  Text(
-                                   '\$${article['total']?.toString() ?? '0'}',
-                                   style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 16),
+                                   '$qty',
+                                   style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                 ),
+                                 IconButton(
+                                   icon: const Icon(Icons.add, color: Colors.indigo, size: 18),
+                                   onPressed: () => _updateArticle(index, 'cantidad', qty + 1),
+                                   padding: const EdgeInsets.all(4),
+                                    constraints: const BoxConstraints(),
                                  ),
                                ],
                              ),
                            ),
+                           const SizedBox(width: 12),
+                           
+                           // Unit Price Input
+                           Expanded(
+                             child: TextFormField(
+                               initialValue: article['valor_unitario']?.toString() ?? '0',
+                               decoration: const InputDecoration(
+                                 labelText: 'Valor Unit.',
+                                 prefixText: '\$',
+                                 isDense: true,
+                                 border: OutlineInputBorder(),
+                                 contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                               ),
+                               keyboardType: TextInputType.number,
+                               onChanged: (val) => _updateArticle(index, 'valor_unitario', val),
+                             ),
+                           ),
                          ],
                        ),
-                     ),
-                   );
-                },
-              ),
-              const SizedBox(height: 8),
-              OutlinedButton.icon(
-                onPressed: _addArticle,
-                icon: const Icon(Icons.add),
-                label: const Text('Añadir Artículo'),
-              ),
-          ],
-        ),
-      ),
+                       const SizedBox(height: 8),
+                       
+                       // Description and ASOC
+                       Row(
+                         children: [
+                           Expanded(
+                             flex: 2,
+                             child: TextFormField(
+                               initialValue: article['descripcion']?.toString() ?? '',
+                               decoration: const InputDecoration(
+                                 labelText: 'Serial/Desc',
+                                 isDense: true,
+                                 border: OutlineInputBorder(),
+                                 contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                               ),
+                               onChanged: (val) => _updateArticle(index, 'descripcion', val),
+                             ),
+                           ),
+                           const SizedBox(width: 8),
+                           Expanded(
+                             flex: 1,
+                             child: TextFormField(
+                               initialValue: article['asoc']?.toString() ?? '',
+                                decoration: const InputDecoration(
+                                  labelText: 'ASOC',
+                                  isDense: true,
+                                  border: OutlineInputBorder(),
+                                  contentPadding: EdgeInsets.symmetric(horizontal: 8, vertical: 8),
+                                ),
+                                onChanged: (val) => _updateArticle(index, 'asoc', val),
+                             ),
+                           ),
+                         ],
+                       ),
+                       const SizedBox(height: 8),
+                       
+                       // Total Footer
+                       Align(
+                         alignment: Alignment.centerRight,
+                         child: Text(
+                           'Total: \$${article['total']?.toString() ?? '0'}',
+                           style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.green, fontSize: 14),
+                         ),
+                       ),
+                     ],
+                   ),
+                 ),
+               );
+            },
+          ),
+      ],
     );
   }
 
-  Widget _buildEquipmentSection() {
-    return GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Equipos Instalados/Retirados', style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: _macRouterController,
-              decoration: const InputDecoration(labelText: 'Mac Router', border: OutlineInputBorder()),
-            ),
-            const SizedBox(height: 12),
-            TextFormField(
-              controller: _macBridgeController,
-              decoration: const InputDecoration(labelText: 'Mac Bridge', border: OutlineInputBorder()),
-            ),
-             const SizedBox(height: 12),
-            TextFormField(
-              controller: _macOntController,
-              decoration: const InputDecoration(labelText: 'Mac Ont', border: OutlineInputBorder()),
-            ),
-             const SizedBox(height: 12),
-            TextFormField(
-              controller: _otrosEquiposController,
-              decoration: const InputDecoration(labelText: 'Otros Equipos', border: OutlineInputBorder()),
-            ),
-          ],
+  Widget _buildEquipmentContent() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        TextFormField(
+          controller: _macRouterController,
+          decoration: const InputDecoration(labelText: 'Mac Router', border: OutlineInputBorder()),
         ),
-      ),
+        const SizedBox(height: 12),
+        TextFormField(
+          controller: _macBridgeController,
+          decoration: const InputDecoration(labelText: 'Mac Bridge', border: OutlineInputBorder()),
+        ),
+         const SizedBox(height: 12),
+        TextFormField(
+          controller: _macOntController,
+          decoration: const InputDecoration(labelText: 'Mac Ont', border: OutlineInputBorder()),
+        ),
+         const SizedBox(height: 12),
+        TextFormField(
+          controller: _otrosEquiposController,
+          decoration: const InputDecoration(labelText: 'Otros Equipos', border: OutlineInputBorder()),
+        ),
+      ],
     );
   }
 
-  Widget _buildPhotosSection() {
+  Widget _buildPhotosContent() {
       return Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-              Text('Fotos de la Orden', style: Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
               _isLoading && _galleryPhotos.isEmpty 
                   ? const Center(child: CircularProgressIndicator()) 
                   : _buildPhotoGrid(),
               const SizedBox(height: 16),
               OutlinedButton.icon(
-                icon: const Icon(Icons.add_a_photo),
+                icon: const Icon(Icons.add_a_photo, color: Colors.blue),
                 label: const Text('Añadir Foto'),
                 onPressed: _pickImage,
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 12),
-                  // foregroundColor: Theme.of(context).colorScheme.primary,
-                  // side: BorderSide(color: Theme.of(context).colorScheme.primary),
-                  backgroundColor: Colors.white.withOpacity(0.5)
+                  side: const BorderSide(color: Colors.blue),
+                  foregroundColor: Colors.blue,
                 ),
               ),
           ],
       );
   }
 
-  Widget _buildSignaturesSection() {
+  Widget _buildSignaturesContent() {
     return Column(
       children: [
-        _buildSignaturePad('Firma Técnico', _technicianSignatureController),
+        _buildSignaturePadContent('Firma Técnico', _technicianSignatureController),
         const SizedBox(height: 16),
-        _buildSignaturePad('Firma Suscriptor', _subscriberSignatureController),
+        _buildSignaturePadContent('Firma Suscriptor', _subscriberSignatureController),
       ],
     );
   }
 
-  Widget _buildSignaturePad(String title, SignatureController controller) {
-    return GlassCard(
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
+  Widget _buildSignaturePadContent(String title, SignatureController controller) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+         Row(
+           mainAxisAlignment: MainAxisAlignment.spaceBetween,
+           children: [
+             Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
              Row(
-               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                children: [
-                 Text(title, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold)),
-                 Row(
-                   children: [
-                     IconButton(
-                       icon: const Icon(Icons.undo), 
-                       onPressed: () => controller.undo(),
-                       tooltip: 'Deshacer',
-                     ),
-                     IconButton(
-                       icon: const Icon(Icons.clear, color: Colors.red), 
-                       onPressed: () => controller.clear(),
-                       tooltip: 'Limpiar',
-                     ),
-                   ],
-                 )
+                 IconButton(
+                   icon: const Icon(Icons.undo, size: 20), 
+                   onPressed: () => controller.undo(),
+                   tooltip: 'Deshacer',
+                 ),
+                 IconButton(
+                   icon: const Icon(Icons.clear, color: Colors.red, size: 20), 
+                   onPressed: () => controller.clear(),
+                   tooltip: 'Limpiar',
+                 ),
                ],
-             ),
-             Container(
-               height: 150,
-               decoration: BoxDecoration(
-                 border: Border.all(color: Colors.grey.shade400),
-                 borderRadius: BorderRadius.circular(8),
-                 color: Colors.white.withOpacity(0.8),
-               ),
-               clipBehavior: Clip.antiAlias,
-               child: Signature(
-                 controller: controller,
-                 backgroundColor: Colors.transparent,
-                 height: 150,
-                 width: double.infinity,
-               ),
-             ),
-          ],
-        ),
-      ),
+             )
+           ],
+         ),
+         Container(
+           height: 150,
+           decoration: BoxDecoration(
+             border: Border.all(color: Colors.grey.shade400),
+             borderRadius: BorderRadius.circular(8),
+             color: Colors.white,
+           ),
+           clipBehavior: Clip.antiAlias,
+           child: Signature(
+             controller: controller,
+             backgroundColor: Colors.transparent,
+             height: 150,
+             width: double.infinity,
+           ),
+         ),
+      ],
     );
   }
   
