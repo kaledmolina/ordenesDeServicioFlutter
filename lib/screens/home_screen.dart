@@ -13,6 +13,7 @@ import 'login_screen.dart';
 import 'order_detail_screen.dart';
 import '../widgets/app_background.dart';
 import '../widgets/connection_status_indicator.dart';
+import '../widgets/order_countdown.dart';
 
 import 'debug_database_screen.dart';
 import 'ranking_screen.dart';
@@ -65,6 +66,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery);
+      
+      // Sort: Oldest first (closest to deadline/most overdue)
+      // This ensures "las mas antiguas sin atender" are shown first/top.
+      orders.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+
       if (mounted) {
         setState(() {
           _orders = orders;
@@ -304,15 +310,26 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header: Nro Orden y Status
+          // Header: Nro Orden y Status & Countdown
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
                 '#${order.numeroOrden}',
                 style: TextStyle(color: textColor, fontSize: 18, fontWeight: FontWeight.bold),
               ),
-              _buildStatusBadge(order.status),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  _buildStatusBadge(order.status),
+                  const SizedBox(height: 4),
+                  OrderCountdown(
+                    creationDate: order.fechaHora,
+                    status: order.status,
+                  ),
+                ],
+              ),
             ],
           ),
           const SizedBox(height: 12),
@@ -560,8 +577,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 _buildFilterTile('En Sitio', 'en_sitio'),
                 _buildFilterTile('Ejecutada', 'ejecutada'),
                 
-
-
                 const Divider(),
 
                 ListTile(
