@@ -476,6 +476,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           ]),
         ),
         _buildGlassCard(
+          child: _buildDetailCard('Detalles del Usuario', [
+            _buildDetailRow('Saldo Total', orden.saldoCliente),
+            _buildDetailRow('Plan', orden.planInternet),
+          ]),
+        ),
+        _buildGlassCard(
           child: _buildDetailCard('Información de Contacto', [
             _buildDetailRow('Celular', orden.celular),
             _buildDetailRow('Dirección', orden.direccion),

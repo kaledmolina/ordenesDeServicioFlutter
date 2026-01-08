@@ -55,6 +55,7 @@ class Orden {
   final String? firmaTecnico;
   final String? firmaSuscriptor;
   final String? barrio;
+  final String? planInternet;
 
   // Option Maps (Mirrors PHP Constants)
   static const Map<String, String> tipoOrdenOptions = {
@@ -138,6 +139,7 @@ class Orden {
     this.firmaTecnico,
     this.firmaSuscriptor,
     this.barrio,
+    this.planInternet,
   });
 
   factory Orden.fromJson(Map<String, dynamic> json) {
@@ -163,7 +165,7 @@ class Orden {
       estadoInterno: json['estado_interno']?.toString(),
       direccionAsociado: json['direccion_asociado']?.toString(),
       telefono: json['telefono']?.toString(), 
-      saldoCliente: json['saldo_cliente']?.toString(),
+      saldoCliente: json['cliente']?['saldo_total']?.toString() ?? json['saldo_cliente']?.toString(),
       solicitadoPor: json['solicitado_por']?.toString(),
       estadoTv: json['estado_tv']?.toString(),
       tecnicoAuxiliarId: int.tryParse(json['tecnico_auxiliar_id']?.toString() ?? ''),
@@ -183,7 +185,8 @@ class Orden {
       otrosEquipos: json['otros_equipos']?.toString(),
       firmaTecnico: json['firma_tecnico']?.toString(),
       firmaSuscriptor: json['firma_suscriptor']?.toString(),
-      barrio: json['cliente']?['barrio']?.toString(), // Parse barrio from relationship
+      barrio: json['cliente']?['barrio']?.toString(), 
+      planInternet: json['cliente']?['plan_internet']?.toString(),
     );
   }
 }
