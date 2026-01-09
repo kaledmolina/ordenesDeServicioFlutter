@@ -42,13 +42,23 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'ordenes intalnet',
       theme: ThemeData(
+        primaryColor: const Color(0xFF10447E),
         colorScheme: ColorScheme.fromSeed(
-          seedColor: Colors.lightBlue.shade300,
+          seedColor: const Color(0xFF10447E),
+          primary: const Color(0xFF10447E),
           brightness: Brightness.light,
         ),
+        scaffoldBackgroundColor: const Color(0xFFF3F4F6),
         useMaterial3: true,
         textTheme: GoogleFonts.poppinsTextTheme(textTheme).copyWith(
           bodyMedium: GoogleFonts.poppins(textStyle: textTheme.bodyMedium),
+        ),
+        appBarTheme: const AppBarTheme(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          centerTitle: true,
+          iconTheme: IconThemeData(color: Color(0xFF111827)),
+          titleTextStyle: TextStyle(color: Color(0xFF111827), fontSize: 20, fontWeight: FontWeight.bold),
         ),
       ),
       debugShowCheckedModeBanner: false,
