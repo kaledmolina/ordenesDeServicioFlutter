@@ -38,7 +38,87 @@ class _HomeScreenState extends State<HomeScreen> {
     const ProfileScreen(),
   ];
 
-// ... (existing helper methods)
+  @override
+  void initState() {
+    super.initState();
+    _loadUser();
+    _fetchOrders();
+  }
+
+  Future<void> _loadUser() async {
+    final user = await AuthService.instance.getCurrentUser();
+    if (mounted) setState(() => _currentUser = user);
+  }
+
+  // Filter Logic (Chip based now)
+  void _applyFilter(String status) {
+    if (_currentStatusFilter == status) return;
+    setState(() {
+      _currentStatusFilter = status;
+    });
+    _fetchOrders(isRefresh: true);
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _fetchOrders({bool isRefresh = false}) async {
+    if (_isLoading && !isRefresh) return;
+    setState(() => _isLoading = true);
+
+    try {
+      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery);
+      orders.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+      if (mounted) {
+        setState(() {
+          _orders = orders;
+        });
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // --- ACTIONS ---
+
+  Future<void> _reportOnSite(Orden order) async {
+    try {
+      await _orderRepo.reportOnSite(order.numeroOrden);
+      if (mounted) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Reportado en sitio'), backgroundColor: Colors.green),
+        );
+        _fetchOrders(isRefresh: true);
+      }
+    } catch (e) {
+      if (mounted) {
+        String msg = e.toString().replaceAll('Exception:', '').trim();
+        ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(msg), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
+  void _finishOrder(Orden order) {
+      Navigator.of(context).push(
+        MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
+      ).then((_) => _fetchOrders(isRefresh: true));
+  }
+
+  Future<void> _launchCaller(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    }
+  }
 
   // --- BUILD UI ---
 
@@ -256,8 +336,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
                     const SizedBox(width: 8),
                     Text('#${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                  ],
-                ),
                   ],
                 ),
                 Row(
