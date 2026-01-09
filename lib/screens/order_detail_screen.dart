@@ -465,13 +465,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
      return Column(
       children: articulos.map<Widget>((art) {
         final map = art is Map ? art : {};
+        final nombre = map['articulo']?.toString() ?? map['grupo_articulo']?.toString() ?? 'Artículo';
+        final cantidad = map['cantidad']?.toString() ?? '0';
+        
         return Padding(
           padding: const EdgeInsets.only(bottom: 8.0),
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-               Expanded(child: Text(map['articulo']?.toString() ?? 'Item', style: const TextStyle(fontWeight: FontWeight.w500))),
-               Text('x${map['cantidad']}', style: const TextStyle(color: Colors.grey)),
+               Expanded(child: Text(nombre, style: const TextStyle(fontWeight: FontWeight.w500))),
+               Text('x$cantidad', style: const TextStyle(color: Colors.grey)),
             ],
           ),
         );

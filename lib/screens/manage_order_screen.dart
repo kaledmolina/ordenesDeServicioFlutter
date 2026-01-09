@@ -397,11 +397,18 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
   Widget _buildArticlesList() {
     if (_articles.isEmpty) return const SizedBox.shrink();
-    return Column(children: _articles.map((a) => ListTile(
-      title: Text(a['articulo']), 
-      subtitle: Text('Cant: ${a['cantidad']}'),
-      trailing: IconButton(icon: const Icon(Icons.delete, color: Colors.red), onPressed: () => setState(() => _articles.remove(a))),
-    )).toList());
+    return Column(children: _articles.map((a) {
+      final nombre = a['grupo_articulo']?.toString() ?? a['articulo']?.toString() ?? 'Sin Nombre';
+      final cantidad = a['cantidad']?.toString() ?? '0';
+      return ListTile(
+        title: Text(nombre), 
+        subtitle: Text('Cant: $cantidad'),
+        trailing: IconButton(
+          icon: const Icon(Icons.delete, color: Colors.red), 
+          onPressed: () => setState(() => _articles.remove(a))
+        ),
+      );
+    }).toList());
   }
 
   void _showSolutionSelectionModal() {
