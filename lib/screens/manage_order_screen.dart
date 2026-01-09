@@ -304,7 +304,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     children: [
                       Text(widget.orden.nombreCliente, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16), textAlign: TextAlign.center),
                       const SizedBox(height: 4),
-                      Text(widget.orden.direccion, style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                      Text(widget.orden.direccion ?? 'Sin Dirección', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
                     ],
                   ),
                 ),
