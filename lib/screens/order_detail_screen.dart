@@ -395,42 +395,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           style: TextStyle(color: Colors.grey, fontSize: 13),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-             Expanded(
-               child: OutlinedButton(
-                 onPressed: () => _promptForObservationAndClose('Reprogramar', 'Reprogramar Orden', 'Reprogramar'),
-                 style: OutlinedButton.styleFrom(
-                   foregroundColor: Colors.orange,
-                   side: const BorderSide(color: Colors.orange),
-                   padding: const EdgeInsets.symmetric(vertical: 16),
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                 ),
-                 child: const Text('Reprogramar'),
-               ),
-             ),
-             const SizedBox(width: 12),
-             Expanded(
-               flex: 2,
-               child: ElevatedButton.icon(
-                 onPressed: () => _showConfirmationDialog(
-                   title: 'Llegada a Sitio',
-                   content: '¿Has llegado a la ubicación del cliente?',
-                   confirmText: 'Sí, estoy aquí',
-                   onConfirm: _reportOnSite,
-                 ),
-                 icon: const Icon(Icons.location_on, color: Colors.white),
-                 label: const Text('CONFIRMAR LLEGADA', style: TextStyle(fontWeight: FontWeight.bold)),
-                 style: ElevatedButton.styleFrom(
-                   backgroundColor: const Color(0xFF10447E), 
-                   foregroundColor: Colors.white,
-                   padding: const EdgeInsets.symmetric(vertical: 16),
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                   elevation: 5,
-                 ),
-               ),
-             ),
-          ],
+        ElevatedButton.icon(
+          onPressed: () => _showConfirmationDialog(
+            title: 'Llegada a Sitio',
+            content: '¿Has llegado a la ubicación del cliente?',
+            confirmText: 'Sí, estoy aquí',
+            onConfirm: _reportOnSite,
+          ),
+          icon: const Icon(Icons.location_on, color: Colors.white),
+          label: const Text('CONFIRMAR LLEGADA', style: TextStyle(fontWeight: FontWeight.bold)),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: const Color(0xFF10447E), 
+            foregroundColor: Colors.white,
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            elevation: 5,
+          ),
         ),
       ];
     }
@@ -444,22 +424,42 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           style: TextStyle(color: Colors.grey, fontSize: 13),
         ),
         const SizedBox(height: 10),
-        ElevatedButton.icon(
-          onPressed: () async {
-            final result = await Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => ManageOrderScreen(orden: orden)),
-            );
-            if (result == 'refresh' && mounted) _loadOrderDetails();
-          },
-          icon: const Icon(Icons.assignment_turned_in, color: Colors.white),
-          label: const Text('GESTIONAR Y FINALIZAR', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF10447E),
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 5,
-          ),
+        Row(
+          children: [
+             Expanded(
+               child: OutlinedButton(
+                 onPressed: () => _promptForObservationAndClose('Reprogramar', 'Reprogramar Orden', 'Reprogramar'),
+                 style: OutlinedButton.styleFrom(
+                   foregroundColor: Colors.orange,
+                   side: const BorderSide(color: Colors.orange),
+                   padding: const EdgeInsets.symmetric(vertical: 16),
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                 ),
+                 child: const Text('Reprogramar', style: TextStyle(fontSize: 12)),
+               ),
+             ),
+             const SizedBox(width: 12),
+             Expanded(
+               flex: 2,
+               child: ElevatedButton.icon(
+                 onPressed: () async {
+                   final result = await Navigator.of(context).push(
+                     MaterialPageRoute(builder: (_) => ManageOrderScreen(orden: orden)),
+                   );
+                   if (result == 'refresh' && mounted) _loadOrderDetails();
+                 },
+                 icon: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
+                 label: const Text('GESTIONAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+                 style: ElevatedButton.styleFrom(
+                   backgroundColor: const Color(0xFF10447E),
+                   foregroundColor: Colors.white,
+                   padding: const EdgeInsets.symmetric(vertical: 16),
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                   elevation: 5,
+                 ),
+               ),
+             ),
+          ],
         ),
       ];
     }
