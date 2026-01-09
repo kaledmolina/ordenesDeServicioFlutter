@@ -166,27 +166,90 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   
   void _addArticle() {
     String? selected = _predefinedArticles.first;
-    showDialog(context: context, builder: (_) => StatefulBuilder(builder: (ctx, setS) => AlertDialog(
-      title: const Text('Agregar Artículo'),
-      content: DropdownButton<String>(
-        value: selected, isExpanded: true,
-        items: _predefinedArticles.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
-        onChanged: (v) => setS(() => selected = v),
+    final quantityCtrl = TextEditingController();
+    final valueCtrl = TextEditingController();
+    final descCtrl = TextEditingController();
+    final asocCtrl = TextEditingController();
+
+    showDialog(
+      context: context, 
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setS) => AlertDialog(
+          title: const Text('Agregar Artículo'),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                DropdownButtonFormField<String>(
+                  value: selected,
+                  isExpanded: true,
+                  decoration: const InputDecoration(labelText: 'Artículo', border: OutlineInputBorder()),
+                  items: _predefinedArticles.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                  onChanged: (v) => setS(() => selected = v),
+                ),
+                if (selected != null) ...[
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: descCtrl,
+                    decoration: const InputDecoration(labelText: 'Descripción', border: OutlineInputBorder()),
+                  ),
+                  const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: TextField(
+                          controller: quantityCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Cant.', border: OutlineInputBorder()),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: TextField(
+                          controller: valueCtrl,
+                          keyboardType: TextInputType.number,
+                          decoration: const InputDecoration(labelText: 'Valor Unit.', border: OutlineInputBorder()),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  TextField(
+                    controller: asocCtrl,
+                    decoration: const InputDecoration(labelText: 'ASOC', border: OutlineInputBorder()),
+                  ),
+                ],
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar', style: TextStyle(color: Colors.grey))),
+            ElevatedButton(
+              onPressed: () {
+                if (selected != null) {
+                  final qty = int.tryParse(quantityCtrl.text) ?? 1;
+                  final val = double.tryParse(valueCtrl.text) ?? 0.0;
+                  
+                  setState(() => _articles.add({
+                    'uuid': DateTime.now().millisecondsSinceEpoch.toString(),
+                    'articulo': selected, 
+                    'grupo_articulo': selected,
+                    'descripcion': descCtrl.text,
+                    'asoc': asocCtrl.text,
+                    'valor_unitario': val,
+                    'cantidad': qty,
+                    'total': qty * val
+                  }));
+                  Navigator.pop(ctx);
+                }
+              },
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
+              child: const Text('Agregar'),
+            ),
+          ],
+        ),
       ),
-      actions: [
-        TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancelar')),
-        ElevatedButton(onPressed: () {
-          if (selected != null) {
-            setState(() => _articles.add({
-              'uuid': DateTime.now().millisecondsSinceEpoch.toString(),
-              'articulo': selected, 'grupo_articulo': selected,
-              'descripcion': '', 'asoc': '', 'valor_unitario': 0.0, 'cantidad': 0, 'total': 0.0
-            }));
-            Navigator.pop(ctx);
-          }
-        }, child: const Text('Agregar')),
-      ],
-    )));
+    );
   }
 
   // --- VALIDATION AND FINALIZE ---

@@ -279,6 +279,63 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
+  // --- DIALOGS FOR SPECIAL ACTIONS ---
+  Future<void> _promptForObservationAndClose(String solutionType, String title, String confirmText) async {
+      final obsController = TextEditingController();
+      await showDialog(
+        context: context, 
+        builder: (_) => AlertDialog(
+          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+             mainAxisSize: MainAxisSize.min,
+             children: [
+               const Text('Por favor, indica el motivo:'),
+               const SizedBox(height: 10),
+               TextField(
+                 controller: obsController,
+                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Escribe el motivo aquí...'),
+                 maxLines: 3,
+               )
+             ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () async {
+                  if (obsController.text.trim().isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo es obligatorio'), backgroundColor: Colors.orange));
+                      return;
+                  }
+                  Navigator.pop(context); // Close dialog
+                  
+                  setState(() => _isLoading = true);
+                  try {
+                     final closingData = {
+                        'solucion_tecnico': solutionType,
+                        'observaciones': obsController.text.trim(),
+                        // Minimal required fields to pass validation if any
+                        'firma_tecnico': null,
+                        'firma_suscriptor': null,
+                     };
+                     await _orderRepo.closeOrder(widget.orderNumber, closingData);
+                     if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Orden procesada: $solutionType'), backgroundColor: Colors.green));
+                        Navigator.of(context).popUntil((route) => route.isFirst);
+                     }
+                  } catch (e) {
+                     if (mounted) _msg('Error: $e', Colors.red);
+                  } finally {
+                     if (mounted) setState(() => _isLoading = false);
+                  }
+              }, 
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
+              child: Text(confirmText)
+            ),
+          ],
+        )
+      );
+  }
+
   List<Widget> _buildActionButtons(Orden orden, String status) {
     // 1. ASIGNADA
     if (status == Orden.ESTADO_ASIGNADA) {
@@ -293,19 +350,14 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           children: [
             Expanded(
               child: OutlinedButton(
-                onPressed: () => _showConfirmationDialog(
-                  title: 'Rechazar Orden',
-                  content: '¿No puedes atender esta orden? Se notificará al supervisor.',
-                  confirmText: 'Rechazar',
-                  onConfirm: _rejectOrder,
-                ),
+                onPressed: () => _promptForObservationAndClose('Solicitar Cierre', 'Solicitar Cierre', 'Enviar Solicitud'),
                 style: OutlinedButton.styleFrom(
                   foregroundColor: Colors.redAccent,
                   side: const BorderSide(color: Colors.redAccent),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Rechazar'),
+                child: const Text('Solicitar Cierre'),
               ),
             ),
             const SizedBox(width: 12),
@@ -343,22 +395,42 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           style: TextStyle(color: Colors.grey, fontSize: 13),
         ),
         const SizedBox(height: 10),
-        ElevatedButton.icon(
-          onPressed: () => _showConfirmationDialog(
-            title: 'Llegada a Sitio',
-            content: '¿Has llegado a la ubicación del cliente?',
-            confirmText: 'Sí, estoy aquí',
-            onConfirm: _reportOnSite,
-          ),
-          icon: const Icon(Icons.location_on, color: Colors.white),
-          label: const Text('CONFIRMAR LLEGADA', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF10447E), 
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 5,
-          ),
+        Row(
+          children: [
+             Expanded(
+               child: OutlinedButton(
+                 onPressed: () => _promptForObservationAndClose('Reprogramar', 'Reprogramar Orden', 'Reprogramar'),
+                 style: OutlinedButton.styleFrom(
+                   foregroundColor: Colors.orange,
+                   side: const BorderSide(color: Colors.orange),
+                   padding: const EdgeInsets.symmetric(vertical: 16),
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                 ),
+                 child: const Text('Reprogramar'),
+               ),
+             ),
+             const SizedBox(width: 12),
+             Expanded(
+               flex: 2,
+               child: ElevatedButton.icon(
+                 onPressed: () => _showConfirmationDialog(
+                   title: 'Llegada a Sitio',
+                   content: '¿Has llegado a la ubicación del cliente?',
+                   confirmText: 'Sí, estoy aquí',
+                   onConfirm: _reportOnSite,
+                 ),
+                 icon: const Icon(Icons.location_on, color: Colors.white),
+                 label: const Text('CONFIRMAR LLEGADA', style: TextStyle(fontWeight: FontWeight.bold)),
+                 style: ElevatedButton.styleFrom(
+                   backgroundColor: const Color(0xFF10447E), 
+                   foregroundColor: Colors.white,
+                   padding: const EdgeInsets.symmetric(vertical: 16),
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                   elevation: 5,
+                 ),
+               ),
+             ),
+          ],
         ),
       ];
     }
