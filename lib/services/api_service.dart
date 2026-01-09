@@ -152,8 +152,8 @@ class ApiService {
   Future<Map<String, dynamic>> getPendingOrders({int page = 1}) async {
     final token = await AuthService.instance.getToken();
     final response = await http.get(
-      Uri.parse('$baseUrl/v1/pending-orders?page=\$page'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer \$token'},
+      Uri.parse('$baseUrl/v1/pending-orders?page=$page'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
     return _handleResponse(response);
   }
@@ -161,8 +161,8 @@ class ApiService {
   Future<void> claimOrder(String orderNumber) async {
     final token = await AuthService.instance.getToken();
     final response = await http.post(
-      Uri.parse('$baseUrl/v1/orders/\$orderNumber/claim'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer \$token'},
+      Uri.parse('$baseUrl/v1/orders/$orderNumber/claim'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
     _handleResponse(response);
   }
