@@ -11,7 +11,7 @@ import 'login_screen.dart';
 import 'order_detail_screen.dart';
 import '../widgets/connection_status_indicator.dart';
 import '../widgets/order_countdown.dart';
-import 'ranking_screen.dart';
+import 'pending_orders_screen.dart';
 import 'profile_screen.dart'; // Import ProfileScreen
 
 class HomeScreen extends StatefulWidget {
@@ -34,91 +34,11 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _tabs = [
     // Placeholder for Home Tab (Built dynamically)
     const SizedBox(), 
-    const RankingScreen(),
+    const PendingOrdersScreen(),
     const ProfileScreen(),
   ];
 
-  @override
-  void initState() {
-    super.initState();
-    _loadUser();
-    _fetchOrders();
-  }
-
-  Future<void> _loadUser() async {
-    final user = await AuthService.instance.getCurrentUser();
-    if (mounted) setState(() => _currentUser = user);
-  }
-
-  // Filter Logic (Chip based now)
-  void _applyFilter(String status) {
-    if (_currentStatusFilter == status) return;
-    setState(() {
-      _currentStatusFilter = status;
-    });
-    _fetchOrders(isRefresh: true);
-  }
-
-  @override
-  void dispose() {
-    _debounce?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _fetchOrders({bool isRefresh = false}) async {
-    if (_isLoading && !isRefresh) return;
-    setState(() => _isLoading = true);
-
-    try {
-      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery);
-      orders.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
-      if (mounted) {
-        setState(() {
-          _orders = orders;
-        });
-      }
-    } catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // --- ACTIONS ---
-
-  Future<void> _reportOnSite(Orden order) async {
-    try {
-      await _orderRepo.reportOnSite(order.numeroOrden);
-      if (mounted) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Reportado en sitio'), backgroundColor: Colors.green),
-        );
-        _fetchOrders(isRefresh: true);
-      }
-    } catch (e) {
-      if (mounted) {
-        String msg = e.toString().replaceAll('Exception:', '').trim();
-        ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text(msg), backgroundColor: Colors.red),
-        );
-      }
-    }
-  }
-
-  void _finishOrder(Orden order) {
-      Navigator.of(context).push(
-        MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
-      ).then((_) => _fetchOrders(isRefresh: true));
-  }
-
-  Future<void> _launchCaller(String phoneNumber) async {
-    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(launchUri)) {
-      await launchUrl(launchUri);
-    }
-  }
+// ... (existing helper methods)
 
   // --- BUILD UI ---
 
@@ -155,9 +75,9 @@ class _HomeScreenState extends State<HomeScreen> {
               label: 'Ordenes',
             ),
             NavigationDestination(
-              icon: Icon(Icons.emoji_events_outlined),
-              selectedIcon: Icon(Icons.emoji_events, color: Color(0xFF10447E)),
-              label: 'Ranking',
+              icon: Icon(Icons.assignment_add),
+              selectedIcon: Icon(Icons.assignment_add, color: Color(0xFF10447E)),
+              label: 'Pendientes',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),
@@ -338,7 +258,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     Text('#${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
-                _buildStatusBadge(order.status),
+                  ],
+                ),
+                Row(
+                  children: [
+                    _buildClassificationBadge(order.clasificacion),
+                    _buildStatusBadge(order.status),
+                  ],
+                ),
               ],
             ),
           ),
@@ -434,6 +361,24 @@ class _HomeScreenState extends State<HomeScreen> {
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
       decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(12)),
       child: Text(status.toUpperCase(), style: TextStyle(color: color, fontSize: 10, fontWeight: FontWeight.bold)),
+    );
+  }
+
+  Widget _buildClassificationBadge(String? clasificacion) {
+    if (clasificacion == null || (clasificacion != 'rapidas' && clasificacion != 'cuadrilla')) return const SizedBox();
+    
+    Color color = clasificacion == 'rapidas' ? Colors.green : Colors.orange;
+    String label = clasificacion == 'rapidas' ? 'RÁPIDA' : 'CUADRILLA';
+
+    return Container(
+      margin: const EdgeInsets.only(right: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: color.withOpacity(0.5), width: 0.5),
+      ),
+      child: Text(label, style: TextStyle(color: color, fontSize: 9, fontWeight: FontWeight.bold)),
     );
   }
 

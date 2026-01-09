@@ -56,6 +56,7 @@ class Orden {
   final String? firmaSuscriptor;
   final String? barrio;
   final String? planInternet;
+  final String? clasificacion;
 
   // Option Maps (Mirrors PHP Constants)
   static const Map<String, String> tipoOrdenOptions = {
@@ -140,6 +141,7 @@ class Orden {
     this.firmaSuscriptor,
     this.barrio,
     this.planInternet,
+    this.clasificacion,
   });
 
   factory Orden.fromJson(Map<String, dynamic> json) {
@@ -187,6 +189,7 @@ class Orden {
       firmaSuscriptor: json['firma_suscriptor']?.toString(),
       barrio: json['cliente']?['barrio']?.toString(), 
       planInternet: json['cliente']?['plan_internet']?.toString(),
+      clasificacion: json['clasificacion']?.toString(),
     );
   }
 }
