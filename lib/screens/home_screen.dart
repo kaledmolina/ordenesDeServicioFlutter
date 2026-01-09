@@ -407,7 +407,13 @@ class _HomeScreenState extends State<HomeScreen> {
       children: [
         Icon(icon, size: 14, color: color.withOpacity(0.7)),
         const SizedBox(width: 6),
-        Text(text, style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500)),
+        Flexible(
+          child: Text(
+            text, 
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
       ],
     );
   }
