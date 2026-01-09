@@ -265,8 +265,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       SyncService.instance.sync();
 
       if (mounted) {
-        _showSnackbar('Orden finalizada exitosamente.', Colors.green);
-        Navigator.of(context).pop('refresh');
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('¡Orden finalizada exitosamente!'), backgroundColor: Colors.green),
+        );
+        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) _showSnackbar('Error: $e', Colors.red);
