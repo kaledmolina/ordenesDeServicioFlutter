@@ -196,8 +196,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   // --- STEPPER WIDGET ---
   Widget _buildStatusStepper(String currentStatus) {
     final steps = ['Asignada', 'En Proceso', 'En Sitio', 'Ejecutada'];
-    int currentStepIndex = steps.indexWhere((s) => s.toLowerCase() == currentStatus.toLowerCase());
-    if (currentStepIndex == -1) currentStepIndex = 0;
+    
+    // Normalize status for comparison
+    String normalizedStatus = currentStatus.toLowerCase().trim().replaceAll('_', ' ');
+    if (normalizedStatus == 'pendiente') normalizedStatus = 'asignada'; // Fallback mapping if needed
+
+    int currentStepIndex = steps.indexWhere((s) => s.toLowerCase() == normalizedStatus);
+    
+    // Fallback if not found (e.g., 'cerrada' maps to 'ejecutada' visually)
+    if (currentStepIndex == -1) {
+        if (normalizedStatus.contains('cerrada') || normalizedStatus.contains('terminada')) {
+            currentStepIndex = 3;
+        } else {
+            currentStepIndex = 0;
+        }
+    }
 
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),

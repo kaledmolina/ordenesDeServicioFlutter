@@ -291,6 +291,24 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           padding: const EdgeInsets.all(16),
           child: Column(
             children: [
+                // Persistent Header
+                Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF10447E),
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+                  ),
+                  child: Column(
+                    children: [
+                      Text(widget.orden.nombreCliente, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16), textAlign: TextAlign.center),
+                      const SizedBox(height: 4),
+                      Text(widget.orden.direccion, style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                    ],
+                  ),
+                ),
+
                _buildCard('Información', Icons.info, [
                   _buildTextField(_celularController, 'Celular', Icons.phone),
                ]),
@@ -301,7 +319,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                _buildCard('Equipos', Icons.router, [
                   _buildTextField(_macRouterController, 'MAC Router', Icons.router),
                   const SizedBox(height: 10),
+                  _buildTextField(_macBridgeController, 'MAC Bridge', Icons.settings_ethernet),
+                  const SizedBox(height: 10),
                   _buildTextField(_macOntController, 'MAC ONT', Icons.router),
+                  const SizedBox(height: 10),
+                  _buildTextField(_otrosEquiposController, 'Otros Equipos', Icons.devices_other),
                ]),
                _buildCard('Evidencia Fotográfica', Icons.camera_alt, [
                   _buildPhotoGallery(),
@@ -329,8 +351,14 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                    child: ElevatedButton.icon(
                      onPressed: _isLoading ? null : _finalizeOrder,
                      icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check),
-                     label: const Text('FINALIZAR ORDEN'),
-                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white, padding: const EdgeInsets.symmetric(vertical: 16)),
+                     label: const Text('FINALIZAR ORDEN', style: TextStyle(fontWeight: FontWeight.bold)),
+                     style: ElevatedButton.styleFrom(
+                       backgroundColor: const Color(0xFF10447E),
+                       foregroundColor: Colors.white,
+                       padding: const EdgeInsets.symmetric(vertical: 16),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                       elevation: 5,
+                     ),
                    ),
                  )
                ]),
