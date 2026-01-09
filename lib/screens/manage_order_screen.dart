@@ -320,42 +320,57 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       return;
     }
     
-    if (_technicianSignatureController.isEmpty || _subscriberSignatureController.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Ambas firmas son obligatorias para finalizar.')),
-      );
-      return;
-    }
+    // Validation: Check if "Solicitar Cierre" OR "Reprogramar" is selected
+    bool isSpecialCase = _selectedSolution == 'Solicitar Cierre' || _selectedSolution == 'Reprogramar';
 
-    // Validation: 025 REVISION TECNICA requires Solucion Tecnico
-    if (widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('025')) {
-      if (_selectedSolution == null || _selectedSolution!.isEmpty) {
-         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('La Solución Técnica es obligatoria para este tipo de orden.')),
+    if (isSpecialCase) {
+      // Logic for Special Cases:
+      // 1. Observations are MANDATORY
+      if (_obsOrigenController.text.trim().isEmpty) {
+        String msg = _selectedSolution == 'Reprogramar' 
+            ? 'Por favor ingrese el motivo de reprogramación en observaciones.'
+            : 'Por favor ingrese el motivo del cierre en observaciones.';
+            
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(msg),
+            backgroundColor: Colors.orange,
+          ),
         );
         return;
       }
-    }
+      // 2. Photos and Signatures are OPTIONAL (skip checks)
+    } else {
+      // Logic for Normal Closure:
+      // 1. Signatures are MANDATORY
+      if (_technicianSignatureController.isEmpty || _subscriberSignatureController.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Ambas firmas son obligatorias para finalizar.')),
+        );
+        return;
+      }
 
-    // Validation: Photos are mandatory unless it is 037 CAMBIO CONTRASEÑA
-    bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
-    if (_galleryPhotos.isEmpty && !isPasswordChange) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Debes agregar al menos una foto de la orden.')),
-      );
-      return;
-    }
+      // 2. Photos are MANDATORY (unless 037)
+      // Validation: Photos are mandatory unless it is 037 CAMBIO CONTRASEÑA
+      bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
+      if (_galleryPhotos.isEmpty && !isPasswordChange) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Debes agregar al menos una foto de la orden.')),
+        );
+        return;
+      }
 
-    // Validation: Check if all photos are uploaded
-    final hasPendingUploads = _galleryPhotos.any((p) => p.status != PhotoStatusType.uploaded);
-    if (hasPendingUploads) {
-       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Por favor espera a que todas las fotos se suban a la nube antes de finalizar.'),
-          backgroundColor: Colors.orange,
-        ),
-      );
-      return;
+      // 3. Validation: Check if all photos are uploaded
+      final hasPendingUploads = _galleryPhotos.any((p) => p.status != PhotoStatusType.uploaded);
+      if (hasPendingUploads) {
+         ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Por favor espera a que todas las fotos se suban a la nube antes de finalizar.'),
+            backgroundColor: Colors.orange,
+          ),
+        );
+        return;
+      }
     }
 
     setState(() => _isLoading = true);
@@ -501,9 +516,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                 TextFormField(
                   controller: _obsOrigenController,
                   maxLines: 3,
-                  decoration: const InputDecoration(
-                    labelText: 'OBSERVACIONES',
-                    prefixIcon: Icon(Icons.comment),
+                  decoration: InputDecoration(
+                    labelText: _getObservationsLabel(),
+                    prefixIcon: const Icon(Icons.comment),
                     border: OutlineInputBorder(),
                     filled: true,
                     fillColor: Colors.white,
@@ -611,6 +626,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             _buildSolutionOption('1 CAMBIO - CONECTOR'),
             _buildSolutionOption('2 REINICIO EQUIPOS'),
             _buildSolutionOption('3 CAMBIO EQUIPO'),
+            _buildSolutionOption('3 CAMBIO EQUIPO'),
+            _buildSolutionOption('Solicitar Cierre'),
+            _buildSolutionOption('Reprogramar'),
             const SizedBox(height: 20),
           ],
         ),
@@ -629,6 +647,12 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       },
       trailing: _selectedSolution == option ? const Icon(Icons.check, color: Colors.green) : null,
     );
+  }
+
+  String _getObservationsLabel() {
+     if (_selectedSolution == 'Solicitar Cierre') return 'MOTIVO DE CIERRE (Obligatorio)';
+     if (_selectedSolution == 'Reprogramar') return 'MOTIVO DE REPROGRAMACIÓN (Obligatorio)';
+     return 'OBSERVACIONES';
   }
 
   Widget _buildArticlesContent() {
