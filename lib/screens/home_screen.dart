@@ -83,10 +83,44 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery, barrio: _selectedBarrio);
-      orders.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
+      
+      // Custom Sorting Logic
+      final now = DateTime.now();
+      final activeStatuses = ['asignada', 'en_proceso', 'en_sitio', 'pendiente'];
+      
+      final activeOrders = <Orden>[];
+      final inactiveOrders = <Orden>[];
+
+      for (var order in orders) {
+        if (activeStatuses.contains(order.status.toLowerCase())) {
+          activeOrders.add(order);
+        } else {
+          inactiveOrders.add(order);
+        }
+      }
+
+      // Sort Active Orders
+      activeOrders.sort((a, b) {
+        // 1. Criticality Check ( > 48 hours old)
+        final aDuration = now.difference(a.fechaHora).inHours;
+        final bDuration = now.difference(b.fechaHora).inHours;
+        final aIsCritical = aDuration >= 48;
+        final bIsCritical = bDuration >= 48;
+
+        if (aIsCritical && !bIsCritical) return -1; // a comes first
+        if (!aIsCritical && bIsCritical) return 1;  // b comes first
+
+        // 2. Expiring soon (if fechaVencimiento exists) - Optional refinement
+        // For now, secondary sort by creation date (Oldest first)
+        return a.fechaHora.compareTo(b.fechaHora);
+      });
+
+      // Sort Inactive Orders (Newest first)
+      inactiveOrders.sort((a, b) => b.fechaHora.compareTo(a.fechaHora));
+
       if (mounted) {
         setState(() {
-          _orders = orders;
+          _orders = [...activeOrders, ...inactiveOrders];
         });
       }
     } catch (e) {
@@ -261,9 +295,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 8),
                     _buildFilterChip('Asignadas', 'asignada', color: Colors.orange),
                     const SizedBox(width: 8),
-                    _buildFilterChip('En Proceso', 'en_proceso', color: Colors.blue),
+                    _buildFilterChip('Ejecutadas', 'ejecutada', color: Colors.green),
                     const SizedBox(width: 8),
-                    _buildFilterChip('En Sitio', 'en_sitio', color: Colors.indigo),
+                    _buildFilterChip('Cerradas', 'cerrada', color: Colors.grey),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Anuladas', 'anulada', color: Colors.red),
                   ],
                 ),
               ),
