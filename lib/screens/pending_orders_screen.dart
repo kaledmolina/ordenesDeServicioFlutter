@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
 import '../models/orden_model.dart';
+import '../widgets/barrio_search_modal.dart';
 
 class PendingOrdersScreen extends StatefulWidget {
   const PendingOrdersScreen({super.key});
@@ -90,24 +91,33 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
       body: Column(
         children: [
           // Barrio Filter
+          // Barrio Filter (Searchable)
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
             color: Colors.white,
-            child: DropdownButtonFormField<String>(
-              decoration: InputDecoration(
-                labelText: 'Filtrar por Barrio',
-                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            child: GestureDetector(
+              onTap: _showBarrioSearchDialog,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF3F4F6),
+                  borderRadius: BorderRadius.circular(10),
+                  border: Border.all(color: Colors.grey.shade300),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      _selectedBarrio ?? 'Todos los Barrios',
+                      style: TextStyle(
+                        color: _selectedBarrio == null ? Colors.grey.shade600 : Colors.black87,
+                        fontSize: 16
+                      ),
+                    ),
+                    const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                  ],
+                ),
               ),
-              value: _selectedBarrio,
-              items: [
-                const DropdownMenuItem(value: null, child: Text('Todos los Barrios')),
-                ..._barrios.map((b) => DropdownMenuItem(value: b, child: Text(b))),
-              ],
-              onChanged: (val) {
-                setState(() => _selectedBarrio = val);
-                _fetchOrders();
-              },
             ),
           ),
           Expanded(
@@ -253,6 +263,32 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  void _showBarrioSearchDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (_, controller) {
+            return BarrioSearchModal(
+              barrios: _barrios, 
+              onSelected: (barrio) {
+                setState(() => _selectedBarrio = barrio);
+                _fetchOrders();
+                Navigator.pop(context);
+              }
+            );
+          }
+        );
+      },
     );
   }
 }
