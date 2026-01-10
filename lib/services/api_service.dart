@@ -48,11 +48,14 @@ class ApiService {
     _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> getOrders({int page = 1, String status = 'todas', String? search}) async {
+  Future<Map<String, dynamic>> getOrders({int page = 1, String status = 'todas', String? search, String? barrio}) async {
     final token = await AuthService.instance.getToken();
     String url = '$baseUrl/v1/orders?page=$page&status=$status';
     if (search != null && search.isNotEmpty) {
       url += '&search=$search';
+    }
+    if (barrio != null && barrio.isNotEmpty) {
+      url += '&barrio=$barrio';
     }
     final response = await http.get(
       Uri.parse(url),
@@ -149,10 +152,24 @@ class ApiService {
     return data as List<dynamic>;
   }
 
-  Future<Map<String, dynamic>> getPendingOrders({int page = 1}) async {
+  Future<List<String>> getBarrios() async {
     final token = await AuthService.instance.getToken();
     final response = await http.get(
-      Uri.parse('$baseUrl/v1/pending-orders?page=$page'),
+      Uri.parse('$baseUrl/v1/barrios'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    final data = _handleResponse(response);
+    return List<String>.from(data);
+  }
+
+  Future<Map<String, dynamic>> getPendingOrders({int page = 1, String? barrio}) async {
+    final token = await AuthService.instance.getToken();
+    String url = '$baseUrl/v1/pending-orders?page=$page';
+    if (barrio != null && barrio.isNotEmpty) {
+      url += '&barrio=$barrio';
+    }
+    final response = await http.get(
+      Uri.parse(url),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
     return _handleResponse(response);

@@ -29,6 +29,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _searchQuery = '';
   Timer? _debounce;
   User? _currentUser;
+  List<String> _barrios = [];
+  String? _selectedBarrio;
 
   // Tabs
   final List<Widget> _tabs = [
@@ -42,7 +44,17 @@ class _HomeScreenState extends State<HomeScreen> {
   void initState() {
     super.initState();
     _loadUser();
+    _fetchBarrios();
     _fetchOrders();
+  }
+
+  Future<void> _fetchBarrios() async {
+    try {
+      final barrios = await _orderRepo.getBarrios();
+      if (mounted) setState(() => _barrios = barrios);
+    } catch (e) {
+      debugPrint('Error fetching barrios: $e');
+    }
   }
 
   Future<void> _loadUser() async {
@@ -70,7 +82,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery);
+      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery, barrio: _selectedBarrio);
       orders.sort((a, b) => a.fechaHora.compareTo(b.fechaHora));
       if (mounted) {
         setState(() {
@@ -218,6 +230,26 @@ class _HomeScreenState extends State<HomeScreen> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
                   contentPadding: const EdgeInsets.symmetric(vertical: 0),
                 ),
+              ),
+              const SizedBox(height: 12),
+              // Barrio Filter
+              DropdownButtonFormField<String>(
+                decoration: InputDecoration(
+                  labelText: 'Filtrar por Barrio',
+                   filled: true,
+                   fillColor: const Color(0xFFF3F4F6),
+                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+                ),
+                value: _selectedBarrio,
+                items: [
+                  const DropdownMenuItem(value: null, child: Text('Todos los Barrios')),
+                  ..._barrios.map((b) => DropdownMenuItem(value: b, child: Text(b))),
+                ],
+                onChanged: (val) {
+                  setState(() => _selectedBarrio = val);
+                  _fetchOrders(isRefresh: true);
+                },
               ),
               const SizedBox(height: 12),
               // Filter Chips Carousel

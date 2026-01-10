@@ -14,17 +14,31 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
   bool _isLoading = true;
   List<dynamic> _orders = [];
   String? _error;
+  List<String> _barrios = [];
+  String? _selectedBarrio;
 
   @override
   void initState() {
     super.initState();
+    super.initState();
+    _fetchBarrios();
     _fetchOrders();
+  }
+
+  Future<void> _fetchBarrios() async {
+    try {
+      final barrios = await _apiService.getBarrios();
+      if (mounted) setState(() => _barrios = barrios);
+    } catch (e) {
+      debugPrint('Error fetching barrios: $e');
+    }
   }
 
   Future<void> _fetchOrders() async {
     setState(() => _isLoading = true);
+    setState(() => _isLoading = true);
     try {
-      final data = await _apiService.getPendingOrders();
+      final data = await _apiService.getPendingOrders(barrio: _selectedBarrio);
       setState(() {
         _orders = data['data'] ?? []; // Pagination returns data inside 'data'
         _isLoading = false;
@@ -73,27 +87,54 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
           )
         ],
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _error != null
-              ? Center(child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Text('Error: $_error'),
-                    ElevatedButton(onPressed: _fetchOrders, child: const Text('Reintentar'))
-                  ],
-                ))
-              : _orders.isEmpty
-                  ? const Center(child: Text('No hay órdenes pendientes para asignar', style: TextStyle( fontSize: 16, color: Colors.grey)))
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      itemCount: _orders.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 12),
-                      itemBuilder: (context, index) {
-                        final order = Orden.fromJson(_orders[index]);
-                        return _buildOrderCard(order);
-                      },
-                    ),
+      body: Column(
+        children: [
+          // Barrio Filter
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            color: Colors.white,
+            child: DropdownButtonFormField<String>(
+              decoration: InputDecoration(
+                labelText: 'Filtrar por Barrio',
+                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+                 contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              ),
+              value: _selectedBarrio,
+              items: [
+                const DropdownMenuItem(value: null, child: Text('Todos los Barrios')),
+                ..._barrios.map((b) => DropdownMenuItem(value: b, child: Text(b))),
+              ],
+              onChanged: (val) {
+                setState(() => _selectedBarrio = val);
+                _fetchOrders();
+              },
+            ),
+          ),
+          Expanded(
+            child: _isLoading
+                ? const Center(child: CircularProgressIndicator())
+                : _error != null
+                    ? Center(child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text('Error: $_error'),
+                          ElevatedButton(onPressed: _fetchOrders, child: const Text('Reintentar'))
+                        ],
+                      ))
+                    : _orders.isEmpty
+                        ? const Center(child: Text('No hay órdenes pendientes para asignar', style: TextStyle( fontSize: 16, color: Colors.grey)))
+                        : ListView.separated(
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _orders.length,
+                            separatorBuilder: (_, __) => const SizedBox(height: 12),
+                            itemBuilder: (context, index) {
+                              final order = Orden.fromJson(_orders[index]);
+                              return _buildOrderCard(order);
+                            },
+                          ),
+          ),
+        ],
+      ),
     );
   }
 
