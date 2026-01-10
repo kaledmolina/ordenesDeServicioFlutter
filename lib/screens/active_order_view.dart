@@ -14,6 +14,7 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
   final OrderRepository _orderRepo = OrderRepository();
   bool _isLoading = true;
   Orden? _activeOrder;
+  String? _error;
   Orden? _suggestedOrder;
 
   @override

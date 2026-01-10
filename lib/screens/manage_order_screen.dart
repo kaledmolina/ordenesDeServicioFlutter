@@ -338,7 +338,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           barrierDismissible: false,
           builder: (ctx) => AlertDialog(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const colum(
+            title: const Column(
               mainAxisSize: MainAxisSize.min,
               children: [
                 Icon(Icons.check_circle, size: 60, color: Colors.green),
