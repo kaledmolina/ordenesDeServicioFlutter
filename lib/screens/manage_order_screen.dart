@@ -328,10 +328,47 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       SyncService.instance.sync();
 
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('¡Orden finalizada exitosamente!'), backgroundColor: Colors.green),
+        // ScaffoldMessenger.of(context).showSnackBar(
+        //   const SnackBar(content: Text('¡Orden finalizada exitosamente!'), backgroundColor: Colors.green),
+        // );
+        // Navigator.of(context).popUntil((route) => route.isFirst);
+
+        await showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (ctx) => AlertDialog(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+            title: const colum(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.check_circle, size: 60, color: Colors.green),
+                SizedBox(height: 10),
+                Text('Orden Finalizada', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
+              ],
+            ),
+            content: const Text(
+              'La orden ha sido finalizada y sincronizada correctamente.',
+              textAlign: TextAlign.center,
+            ),
+            actions: [
+              Center(
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx); // Close dialog
+                    Navigator.of(context).popUntil((route) => route.isFirst); // Go to home
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.green,
+                    foregroundColor: Colors.white,
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+                  ),
+                  child: const Text('Volver al Menú'),
+                ),
+              ),
+            ],
+          ),
         );
-        Navigator.of(context).popUntil((route) => route.isFirst);
       }
     } catch (e) {
       if (mounted) _showSnackbar('Error: $e', Colors.red);
