@@ -144,7 +144,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         child: Scaffold(
           backgroundColor: const Color(0xFFF3F4F6),
           appBar: AppBar(
-            title: Text('Orden #${widget.orderNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
+            title: Text('Orden N° ${widget.orderNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
             backgroundColor: Colors.transparent,
             elevation: 0,
             centerTitle: true,
@@ -475,15 +475,18 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       children: [
         _buildInfoContainer('Información General', [
             _buildDetailRow('Cliente', orden.nombreCliente, isTitle: true),
+            if (orden.cedula != null) _buildDetailRow('Cédula', orden.cedula),
             _buildDetailRow('Dirección', orden.direccion, icon: Icons.map),
+            if (orden.barrio != null) _buildDetailRow('Barrio', orden.barrio),
             _buildDetailRow('Celular', orden.celular, icon: Icons.phone, isPhone: true),
         ]),
         const SizedBox(height: 16),
         _buildInfoContainer('Detalles Técnicos', [
+             if (orden.codigoContrato != null) _buildDetailRow('Código', orden.codigoContrato),
              _buildDetailRow('Plan', orden.planInternet),
              _buildDetailRow('Saldo', orden.saldoCliente),
              if (orden.macRouter != null) _buildDetailRow('MAC Router', orden.macRouter),
-             if (orden.observaciones != null) _buildDetailRow('Obs.', orden.observaciones),
+             if (orden.observaciones != null) _buildDetailRow('Observaciones', orden.observaciones),
         ]),
          const SizedBox(height: 16),
          if (orden.articulos != null && orden.articulos!.isNotEmpty)

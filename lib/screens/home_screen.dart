@@ -367,7 +367,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Text('#${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                    const SizedBox(width: 8),
+                    Text('Orden N° ${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
                 Row(
@@ -395,12 +396,26 @@ class _HomeScreenState extends State<HomeScreen> {
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
                            Text(order.nombreCliente, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                           if (order.cedula != null)
+                             Padding(
+                               padding: const EdgeInsets.only(top: 2),
+                               child: Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                             ),
                            const SizedBox(height: 4),
                            Row(
                              children: [
                                const Icon(Icons.location_on, size: 14, color: Colors.grey),
                                const SizedBox(width: 4),
-                               Expanded(child: Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis)),
+                               Expanded(
+                                 child: Column(
+                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                   children: [
+                                      Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      if (order.barrio != null)
+                                        Text(order.barrio!, style: TextStyle(color: Colors.grey[500], fontSize: 12, fontStyle: FontStyle.italic)),
+                                   ],
+                                 ),
+                               ),
                              ],
                            ),
                          ],
@@ -419,13 +434,40 @@ class _HomeScreenState extends State<HomeScreen> {
                      Expanded(child: _buildMiniDetail(Icons.assignment, order.tipoOrdenLabel ?? 'General')),
                    ],
                  ),
-                 const SizedBox(height: 12),
-                 if (order.telefono != null)
-                   InkWell(
-                     onTap: () => _launchCaller(order.telefono!),
-                     child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     if (order.codigoContrato != null)
+                        Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
+                     if (order.telefono != null)
+                       Expanded(
+                         child: InkWell(
+                           onTap: () => _launchCaller(order.telefono!),
+                           child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue),
+                         ),
+                       ),
+                   ],
+                 ),
+                 
+                 // Observaciones
+                 if (order.observaciones != null && order.observaciones!.isNotEmpty) ...[
+                   const SizedBox(height: 12),
+                   Container(
+                     width: double.infinity,
+                     padding: const EdgeInsets.all(8),
+                     decoration: BoxDecoration(
+                       color: Colors.grey[50],
+                       borderRadius: BorderRadius.circular(8),
+                       border: Border.all(color: Colors.grey.shade200),
+                     ),
+                     child: Text(
+                       order.observaciones!,
+                       style: TextStyle(color: Colors.grey[700], fontSize: 12, fontStyle: FontStyle.italic),
+                       maxLines: 2,
+                       overflow: TextOverflow.ellipsis,
+                     ),
                    ),
-              ],
+                 ],
             ),
           ),
 
