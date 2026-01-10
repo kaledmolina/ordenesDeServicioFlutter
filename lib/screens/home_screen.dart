@@ -12,7 +12,9 @@ import 'order_detail_screen.dart';
 import '../widgets/connection_status_indicator.dart';
 import '../widgets/order_countdown.dart';
 import 'pending_orders_screen.dart';
+import 'pending_orders_screen.dart';
 import 'profile_screen.dart'; // Import ProfileScreen
+import 'active_order_view.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -36,6 +38,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _tabs = [
     // Placeholder for Home Tab (Built dynamically)
     const SizedBox(), 
+    const ActiveOrderView(),
     const PendingOrdersScreen(),
     const ProfileScreen(),
   ];
@@ -166,6 +169,32 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  void _showBarrioSearchDialog() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.7,
+          minChildSize: 0.5,
+          maxChildSize: 0.9,
+          expand: false,
+          builder: (_, controller) {
+            return _BarrioSearchModal(
+              barrios: _barrios, 
+              onSelected: (barrio) {
+                setState(() => _selectedBarrio = barrio);
+                _fetchOrders(isRefresh: true);
+                Navigator.pop(context);
+              }
+            );
+          }
+        );
+      },
+    );
+  }
+
   // --- BUILD UI ---
 
   @override
@@ -198,7 +227,12 @@ class _HomeScreenState extends State<HomeScreen> {
             NavigationDestination(
               icon: Icon(Icons.home_outlined),
               selectedIcon: Icon(Icons.home, color: Color(0xFF10447E)),
-              label: 'Ordenes',
+              label: 'Mis Ordenes',
+            ),
+             NavigationDestination(
+              icon: Icon(Icons.work_history_outlined),
+              selectedIcon: Icon(Icons.work_history, color: Color(0xFF10447E)),
+              label: 'En Curso',
             ),
             NavigationDestination(
               icon: Icon(Icons.assignment_add),
@@ -267,23 +301,30 @@ class _HomeScreenState extends State<HomeScreen> {
               ),
               const SizedBox(height: 12),
               // Barrio Filter
-              DropdownButtonFormField<String>(
-                decoration: InputDecoration(
-                  labelText: 'Filtrar por Barrio',
-                   filled: true,
-                   fillColor: const Color(0xFFF3F4F6),
-                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
-                   contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+              // Barrio Filter (Searchable)
+              GestureDetector(
+                onTap: _showBarrioSearchDialog,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF3F4F6),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: Colors.transparent),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        _selectedBarrio ?? 'Todos los Barrios',
+                        style: TextStyle(
+                          color: _selectedBarrio == null ? Colors.grey.shade600 : Colors.black87,
+                          fontSize: 16
+                        ),
+                      ),
+                      const Icon(Icons.arrow_drop_down, color: Colors.grey),
+                    ],
+                  ),
                 ),
-                value: _selectedBarrio,
-                items: [
-                  const DropdownMenuItem(value: null, child: Text('Todos los Barrios')),
-                  ..._barrios.map((b) => DropdownMenuItem(value: b, child: Text(b))),
-                ],
-                onChanged: (val) {
-                  setState(() => _selectedBarrio = val);
-                  _fetchOrders(isRefresh: true);
-                },
               ),
               const SizedBox(height: 12),
               // Filter Chips Carousel
@@ -629,5 +670,89 @@ class _HomeScreenState extends State<HomeScreen> {
     }
 
     return Container(); // No actions for other states in list
+  }
+}
+
+class _BarrioSearchModal extends StatefulWidget {
+  final List<String> barrios;
+  final Function(String?) onSelected;
+
+  const _BarrioSearchModal({required this.barrios, required this.onSelected});
+
+  @override
+  __BarrioSearchModalState createState() => __BarrioSearchModalState();
+}
+
+class __BarrioSearchModalState extends State<_BarrioSearchModal> {
+  List<String> _filteredBarrios = [];
+  final TextEditingController _searchController = TextEditingController();
+
+  @override
+  void initState() {
+    super.initState();
+    _filteredBarrios = widget.barrios;
+  }
+
+  void _filter(String query) {
+    setState(() {
+      if (query.isEmpty) {
+        _filteredBarrios = widget.barrios;
+      } else {
+        _filteredBarrios = widget.barrios
+            .where((b) => b.toLowerCase().contains(query.toLowerCase()))
+            .toList();
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        // Handle
+        Container(
+          margin: const EdgeInsets.only(top: 8),
+          width: 40, height: 4,
+          decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(2)),
+        ),
+        
+        // Search Bar
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: TextField(
+            controller: _searchController,
+            onChanged: _filter,
+            decoration: InputDecoration(
+              hintText: 'Buscar barrio...',
+              prefixIcon: const Icon(Icons.search),
+              filled: true,
+              fillColor: Colors.grey[100],
+              border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+            ),
+          ),
+        ),
+
+        // List
+        Expanded(
+          child: ListView.separated(
+            itemCount: _filteredBarrios.length + 1,
+            separatorBuilder: (_, __) => const Divider(height: 1),
+            itemBuilder: (context, index) {
+              if (index == 0) {
+                return ListTile(
+                  title: const Text('Todos los Barrios', style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF10447E))),
+                  onTap: () => widget.onSelected(null),
+                );
+              }
+              final barrio = _filteredBarrios[index - 1];
+              return ListTile(
+                title: Text(barrio),
+                onTap: () => widget.onSelected(barrio),
+              );
+            },
+          ),
+        ),
+      ],
+    );
   }
 }
