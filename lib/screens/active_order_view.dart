@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
 import 'order_detail_screen.dart';
+import '../widgets/order_countdown.dart';
 
 class ActiveOrderView extends StatefulWidget {
   const ActiveOrderView({super.key});
@@ -138,68 +139,177 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
   }
 
   Widget _buildSuggestionCard(Orden order) {
-      return Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        child: InkWell(
-          onTap: () {
-             Navigator.of(context).push(
-                MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
-             ).then((_) => _findActiveOrder());
-          },
-          borderRadius: BorderRadius.circular(16),
-          child: Padding(
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF10447E).withOpacity(0.08),
+            blurRadius: 15,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          // 1. Header (Status Color Strip + Info)
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: Colors.orange.withOpacity(0.1), // Suggestion is always "Alert/Attention"
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+            ),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                 Row(
+                  children: [
+                    Container(
+                      width: 4, height: 24,
+                      decoration: BoxDecoration(
+                        color: Colors.orange, 
+                        borderRadius: BorderRadius.circular(2)
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text('Orden N° ${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                  ],
+                ),
+                Container(
+                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                   decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                   child: const Text('SUGERIDA', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                ),
+              ],
+            ),
+          ),
+          
+          // 2. Body
+          Padding(
             padding: const EdgeInsets.all(16),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                      decoration: BoxDecoration(color: Colors.orange.withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                      child: Text('SUGERIDA', style: TextStyle(color: Colors.orange[800], fontSize: 10, fontWeight: FontWeight.bold)),
-                    ),
-                    const Spacer(),
-                    Text('Orden N° ${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold)),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Text(order.nombreCliente, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-                const SizedBox(height: 4),
-                Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-                 const SizedBox(height: 12),
+                 // Client & Countdown
                  Row(
+                   crossAxisAlignment: CrossAxisAlignment.start,
                    children: [
-                     Icon(Icons.access_time, size: 14, color: Colors.grey[500]),
-                     const SizedBox(width: 4),
-                     Text(
-                       order.fechaHora.toString().split('.')[0], 
-                       style: TextStyle(color: Colors.grey[600], fontSize: 12)
+                     Expanded(
+                       child: Column(
+                         crossAxisAlignment: CrossAxisAlignment.start,
+                         children: [
+                           Text(order.nombreCliente, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+                           if (order.cedula != null)
+                             Padding(
+                               padding: const EdgeInsets.only(top: 2),
+                               child: Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                             ),
+                           const SizedBox(height: 4),
+                           Row(
+                             children: [
+                               const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                               const SizedBox(width: 4),
+                               Expanded(
+                                 child: Column(
+                                   crossAxisAlignment: CrossAxisAlignment.start,
+                                   children: [
+                                      Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                      if (order.barrio != null)
+                                        Text(order.barrio!, style: TextStyle(color: Colors.grey[500], fontSize: 12, fontStyle: FontStyle.italic)),
+                                   ],
+                                 ),
+                               ),
+                             ],
+                           ),
+                         ],
+                       ),
                      ),
+                     // Note: We need to import OrderCountdown or just show date if not available
+                     OrderCountdown(creationDate: order.fechaHora, status: order.status),
                    ],
                  ),
-                 const SizedBox(height: 16),
-                 SizedBox(
-                   width: double.infinity,
-                   child: OutlinedButton(
-                     onPressed: () {
-                         Navigator.of(context).push(
-                            MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
-                         ).then((_) => _findActiveOrder());
-                     },
-                     style: OutlinedButton.styleFrom(
-                       foregroundColor: const Color(0xFF10447E),
-                       side: const BorderSide(color: Color(0xFF10447E)),
-                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8))
+                 
+                 const Divider(height: 24),
+
+                 // Details Grid
+                 Row(
+                   children: [
+                     Expanded(child: _buildMiniDetail(Icons.calendar_today, order.fechaHora.toString().split(' ')[0])),
+                     Expanded(child: _buildMiniDetail(Icons.assignment, order.tipoOrdenLabel ?? 'General')),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     if (order.codigoContrato != null)
+                        Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
+                     if (order.telefono != null)
+                       Expanded(child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue)),
+                   ],
+                 ),
+                 
+                 // Observaciones
+                 if (order.observaciones != null && order.observaciones!.isNotEmpty) ...[
+                   const SizedBox(height: 12),
+                   Container(
+                     width: double.infinity,
+                     padding: const EdgeInsets.all(8),
+                     decoration: BoxDecoration(
+                       color: Colors.grey[50],
+                       borderRadius: BorderRadius.circular(8),
+                       border: Border.all(color: Colors.grey.shade200),
                      ),
-                     child: const Text('VER ORDEN'),
+                     child: Text(
+                       order.observaciones!,
+                       style: TextStyle(color: Colors.grey[700], fontSize: 12, fontStyle: FontStyle.italic),
+                       maxLines: 2,
+                       overflow: TextOverflow.ellipsis,
+                     ),
                    ),
-                 )
+                 ],
               ],
             ),
           ),
+
+          // 3. Actions Footer
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+            child: SizedBox(
+               width: double.infinity,
+               child: OutlinedButton(
+                 onPressed: () {
+                     Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => OrderDetailScreen(orderNumber: order.numeroOrden)),
+                     ).then((_) => _findActiveOrder());
+                 },
+                 style: OutlinedButton.styleFrom(
+                   foregroundColor: const Color(0xFF10447E),
+                   side: const BorderSide(color: Color(0xFF10447E)),
+                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10))
+                 ),
+                 child: const Text('VER DETALLES'),
+               ),
+           ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniDetail(IconData icon, String text, {Color color = const Color(0xFF6B7280)}) {
+    return Row(
+      children: [
+        Icon(icon, size: 14, color: color.withOpacity(0.7)),
+        const SizedBox(width: 6),
+        Flexible(
+          child: Text(
+            text, 
+            style: TextStyle(color: color, fontSize: 13, fontWeight: FontWeight.w500),
+            overflow: TextOverflow.ellipsis,
+          ),
         ),
-      );
+      ],
+    );
   }
 }
