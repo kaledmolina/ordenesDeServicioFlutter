@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import '../models/orden_model.dart';
+import '../utils/business_hours.dart';
 
 class OrderCountdown extends StatefulWidget {
   final DateTime creationDate;
@@ -41,8 +42,11 @@ class _OrderCountdownState extends State<OrderCountdown> {
            s == Orden.ESTADO_ANULADA;
   }
 
+
+
   void _calculateTime() {
-    final deadline = widget.creationDate.add(_deadlineDuration);
+    // Calculate deadline using Business Hours Logic (48h excluding weekends/holidays)
+    final deadline = BusinessHours.add(widget.creationDate, 48);
     final now = DateTime.now();
     final difference = deadline.difference(now);
 

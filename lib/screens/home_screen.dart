@@ -16,7 +16,9 @@ import 'pending_orders_screen.dart';
 import 'profile_screen.dart'; // Import ProfileScreen
 import 'active_order_view.dart';
 import '../widgets/barrio_search_modal.dart';
+import '../widgets/barrio_search_modal.dart';
 import '../widgets/processing_overlay.dart';
+import '../utils/business_hours.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -105,13 +107,16 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
+
+
       // Sort Active Orders
       activeOrders.sort((a, b) {
-        // 1. Criticality Check ( > 48 hours old)
-        final aDuration = now.difference(a.fechaHora).inHours;
-        final bDuration = now.difference(b.fechaHora).inHours;
-        final aIsCritical = aDuration >= 48;
-        final bIsCritical = bDuration >= 48;
+        // 1. Criticality Check ( > 48 Business hours old)
+        final aElapsed = BusinessHours.getElapsedHours(a.fechaHora, now);
+        final bElapsed = BusinessHours.getElapsedHours(b.fechaHora, now);
+        
+        final aIsCritical = aElapsed >= 48;
+        final bIsCritical = bElapsed >= 48;
 
         if (aIsCritical && !bIsCritical) return -1; // a comes first
         if (!aIsCritical && bIsCritical) return 1;  // b comes first
