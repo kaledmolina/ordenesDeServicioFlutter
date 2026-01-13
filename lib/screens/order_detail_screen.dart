@@ -172,7 +172,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               bottomNavigationBar: _currentOrder != null ? _buildBottomActionArea(_currentOrder!) : null,
             ),
           ),
-        ),
       ),
     );
   }
