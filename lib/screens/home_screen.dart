@@ -526,6 +526,19 @@ class _HomeScreenState extends State<HomeScreen> {
                        ),
                    ],
                  ),
+                 if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                         Expanded(
+                           child: InkWell(
+                             onTap: () => _launchCaller(order.otroTelefono!),
+                             child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent),
+                           ),
+                         ),
+                      ],
+                    ),
+                 ],
                  
                  // Novedades NOC
                  if (order.novedadesNoc != null && order.novedadesNoc!.isNotEmpty) ...[
