@@ -18,6 +18,7 @@ import '../services/sync_service.dart';
 import '../services/upload_service.dart';
 import '../widgets/connection_status_indicator.dart';
 import '../widgets/app_background.dart';
+import '../widgets/processing_overlay.dart';
 import 'photo_view_screen.dart';
 
 class ManageOrderScreen extends StatefulWidget {
@@ -49,6 +50,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   // Photos
   List<PhotoDisplay> _galleryPhotos = [];
   bool _isLoading = false;
+  String _loadingMessage = 'Procesando...';
   StreamSubscription? _uploadSubscription;
 
   // Articles
@@ -134,28 +136,41 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     final pickedFiles = await picker.pickMultiImage(imageQuality: 80);
 
     if (pickedFiles.isNotEmpty) {
-      int remainingSlots = 12 - _galleryPhotos.length;
-      final filesToProcess = pickedFiles.take(remainingSlots);
-      final appDir = await getApplicationDocumentsDirectory();
-      
-      for (var pickedFile in filesToProcess) {
-        final fileName = p.basename(pickedFile.path);
-        final targetPath = '${appDir.path}/$fileName';
-        File finalFile;
+      setState(() {
+         _isLoading = true;
+         _loadingMessage = 'Preparando imágenes...';
+      });
+
+      try {
+        int remainingSlots = 12 - _galleryPhotos.length;
+        final filesToProcess = pickedFiles.take(remainingSlots);
+        final appDir = await getApplicationDocumentsDirectory();
         
-        final result = await FlutterImageCompress.compressAndGetFile(
-          pickedFile.path, targetPath, quality: 70, minWidth: 1920, minHeight: 1080,
-        );
-        finalFile = result != null ? File(result.path) : await File(pickedFile.path).copy(targetPath);
-        
-        final localId = await _photoRepo.addPhoto(widget.orden.numeroOrden, finalFile.path);
-        if (mounted) {
-          setState(() {
-            _galleryPhotos.add(PhotoDisplay(localId: localId, path: finalFile.path, status: PhotoStatusType.local));
-          });
+        for (var pickedFile in filesToProcess) {
+          final fileName = p.basename(pickedFile.path);
+          final targetPath = '${appDir.path}/$fileName';
+          File finalFile;
+          
+          final result = await FlutterImageCompress.compressAndGetFile(
+            pickedFile.path, targetPath, quality: 70, minWidth: 1920, minHeight: 1080,
+          );
+          finalFile = result != null ? File(result.path) : await File(pickedFile.path).copy(targetPath);
+          
+          final localId = await _photoRepo.addPhoto(widget.orden.numeroOrden, finalFile.path);
+          if (mounted) {
+            setState(() {
+              _galleryPhotos.add(PhotoDisplay(localId: localId, path: finalFile.path, status: PhotoStatusType.local));
+            });
+          }
         }
+        UploadService.instance.syncPendingUploads();
+        // Give a little visual time if it was too fast
+        await Future.delayed(const Duration(milliseconds: 500));
+      } catch (e) {
+        if (mounted) _showSnackbar('Error al procesar imágenes: $e', Colors.red);
+      } finally {
+        if (mounted) setState(() => _isLoading = false);
       }
-      UploadService.instance.syncPendingUploads();
     }
   }
 
@@ -305,7 +320,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     }
 
     // Proceed to Close
-    setState(() => _isLoading = true);
+    setState(() {
+       _isLoading = true;
+       _loadingMessage = 'Finalizando y Sincronizando...';
+    });
+
     try {
       final techSig = await _technicianSignatureController.toPngBytes();
       final subSig = await _subscriberSignatureController.toPngBytes();
@@ -325,7 +344,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
       await _orderRepo.closeOrder(widget.orden.numeroOrden, closingData);
       UploadService.instance.syncPendingUploads();
-      SyncService.instance.sync();
+      await SyncService.instance.sync();
+      
+      // Artificial delay to ensure user sees the "Finishing" status and feels the "server process" time
+      await Future.delayed(const Duration(seconds: 2));
 
       if (mounted) {
         // ScaffoldMessenger.of(context).showSnackBar(
@@ -389,82 +411,87 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           elevation: 0,
           foregroundColor: Colors.black87,
         ),
-        body: SingleChildScrollView(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-                // Persistent Header
-                Container(
-                  padding: const EdgeInsets.all(16),
-                  margin: const EdgeInsets.only(bottom: 16),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF10447E),
-                    borderRadius: BorderRadius.circular(16),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+        body: ProcessingOverlay(
+          isLoading: _isLoading,
+          message: _loadingMessage,
+          icon: _loadingMessage.contains('imágenes') ? Icons.photo_library : Icons.cloud_sync,
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                  // Persistent Header
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF10447E),
+                      borderRadius: BorderRadius.circular(16),
+                      boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 10, offset: const Offset(0, 4))],
+                    ),
+                    child: Column(
+                      children: [
+                        Text(widget.orden.nombreCliente, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16), textAlign: TextAlign.center),
+                        const SizedBox(height: 4),
+                        Text(widget.orden.direccion ?? 'Sin Dirección', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                      ],
+                    ),
                   ),
-                  child: Column(
-                    children: [
-                      Text(widget.orden.nombreCliente, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16), textAlign: TextAlign.center),
-                      const SizedBox(height: 4),
-                      Text(widget.orden.direccion ?? 'Sin Dirección', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
-                    ],
-                  ),
-                ),
-
-               _buildCard('Información', Icons.info, [
-                  _buildTextField(_celularController, 'Celular', Icons.phone),
-               ]),
-               _buildCard('Artículos', Icons.handyman, [
-                  _buildArticlesList(),
-                  TextButton.icon(onPressed: _addArticle, icon: const Icon(Icons.add), label: const Text('Agregar Artículo')),
-               ]),
-               _buildCard('Equipos', Icons.router, [
-                  _buildTextField(_macRouterController, 'MAC Router', Icons.router),
-                  const SizedBox(height: 10),
-                  _buildTextField(_macBridgeController, 'MAC Bridge', Icons.settings_ethernet),
-                  const SizedBox(height: 10),
-                  _buildTextField(_macOntController, 'MAC ONT', Icons.router),
-                  const SizedBox(height: 10),
-                  _buildTextField(_otrosEquiposController, 'Otros Equipos', Icons.devices_other),
-               ]),
-               _buildCard('Evidencia Fotográfica', Icons.camera_alt, [
-                  _buildPhotoGallery(),
-               ]),
-               _buildCard('Firmas', Icons.draw, [
-                  const Text('Técnico', style: TextStyle(fontWeight: FontWeight.bold)),
-                  _buildSignaturePad(_technicianSignatureController),
-                  const SizedBox(height: 10),
-                  const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
-                  _buildSignaturePad(_subscriberSignatureController),
-               ]),
-               _buildCard('Cierre', Icons.check_circle, [
-                 ListTile(
-                   title: const Text('Solución Técnico'),
-                   subtitle: Text(_selectedSolution ?? 'Seleccionar...', style: const TextStyle(color: Colors.blue)),
-                   trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                   onTap: _showSolutionSelectionModal,
-                   contentPadding: EdgeInsets.zero,
-                 ),
-                 const Divider(),
-                 _buildTextField(_obsOrigenController, _selectedSolution == 'Reprogramar' ? 'Motivo Reprogramación' : 'Observaciones', Icons.comment, maxLines: 3),
-                 const SizedBox(height: 20),
-                 SizedBox(
-                   width: double.infinity,
-                   child: ElevatedButton.icon(
-                     onPressed: _isLoading ? null : _finalizeOrder,
-                     icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check),
-                     label: const Text('FINALIZAR ORDEN', style: TextStyle(fontWeight: FontWeight.bold)),
-                     style: ElevatedButton.styleFrom(
-                       backgroundColor: const Color(0xFF10447E),
-                       foregroundColor: Colors.white,
-                       padding: const EdgeInsets.symmetric(vertical: 16),
-                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                       elevation: 5,
-                     ),
+  
+                 _buildCard('Información', Icons.info, [
+                    _buildTextField(_celularController, 'Celular', Icons.phone),
+                 ]),
+                 _buildCard('Artículos', Icons.handyman, [
+                    _buildArticlesList(),
+                    TextButton.icon(onPressed: _addArticle, icon: const Icon(Icons.add), label: const Text('Agregar Artículo')),
+                 ]),
+                 _buildCard('Equipos', Icons.router, [
+                    _buildTextField(_macRouterController, 'MAC Router', Icons.router),
+                    const SizedBox(height: 10),
+                    _buildTextField(_macBridgeController, 'MAC Bridge', Icons.settings_ethernet),
+                    const SizedBox(height: 10),
+                    _buildTextField(_macOntController, 'MAC ONT', Icons.router),
+                    const SizedBox(height: 10),
+                    _buildTextField(_otrosEquiposController, 'Otros Equipos', Icons.devices_other),
+                 ]),
+                 _buildCard('Evidencia Fotográfica', Icons.camera_alt, [
+                    _buildPhotoGallery(),
+                 ]),
+                 _buildCard('Firmas', Icons.draw, [
+                    const Text('Técnico', style: TextStyle(fontWeight: FontWeight.bold)),
+                    _buildSignaturePad(_technicianSignatureController),
+                    const SizedBox(height: 10),
+                    const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
+                    _buildSignaturePad(_subscriberSignatureController),
+                 ]),
+                 _buildCard('Cierre', Icons.check_circle, [
+                   ListTile(
+                     title: const Text('Solución Técnico'),
+                     subtitle: Text(_selectedSolution ?? 'Seleccionar...', style: const TextStyle(color: Colors.blue)),
+                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                     onTap: _showSolutionSelectionModal,
+                     contentPadding: EdgeInsets.zero,
                    ),
-                 )
-               ]),
-            ],
+                   const Divider(),
+                   _buildTextField(_obsOrigenController, _selectedSolution == 'Reprogramar' ? 'Motivo Reprogramación' : 'Observaciones', Icons.comment, maxLines: 3),
+                   const SizedBox(height: 20),
+                   SizedBox(
+                     width: double.infinity,
+                     child: ElevatedButton.icon(
+                       onPressed: _isLoading ? null : _finalizeOrder,
+                       icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check),
+                       label: const Text('FINALIZAR ORDEN', style: TextStyle(fontWeight: FontWeight.bold)),
+                       style: ElevatedButton.styleFrom(
+                         backgroundColor: const Color(0xFF10447E),
+                         foregroundColor: Colors.white,
+                         padding: const EdgeInsets.symmetric(vertical: 16),
+                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                         elevation: 5,
+                       ),
+                     ),
+                   )
+                 ]),
+              ],
+            ),
           ),
         ),
       ),
