@@ -24,7 +24,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Orden? _currentOrder;
   bool _isLoading = true;
   String? _error;
-  String? _error;
+
   bool _hasStateChanged = false;
   String _loadingMessage = 'Procesando...';
 
