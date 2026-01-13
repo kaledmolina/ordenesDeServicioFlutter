@@ -487,6 +487,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
              _buildDetailRow('Saldo', orden.saldoCliente),
              if (orden.macRouter != null) _buildDetailRow('MAC Router', orden.macRouter),
              if (orden.observaciones != null) _buildDetailRow('Observaciones', orden.observaciones),
+             if (orden.novedadesNoc != null) _buildNocRow(orden.novedadesNoc!),
         ]),
          const SizedBox(height: 16),
          if (orden.articulos != null && orden.articulos!.isNotEmpty)
@@ -569,4 +570,30 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       }).toList(),
     );
   }
+
+  Widget _buildNocRow(String message) {
+    if (message.isEmpty) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: Colors.red[50], 
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.red.shade200),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+            Row(children: [
+                Icon(Icons.warning_amber_rounded, size: 16, color: Colors.red[800]),
+                const SizedBox(width: 8),
+                Text('NOVEDADES NOC', style: TextStyle(color: Colors.red[800], fontWeight: FontWeight.bold, fontSize: 12)),
+            ]),
+            const SizedBox(height: 6),
+            Text(message, style: TextStyle(color: Colors.red[900], fontSize: 14)),
+        ],
+      ),
+    );
+  }
+}
 }

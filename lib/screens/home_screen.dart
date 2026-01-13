@@ -527,6 +527,37 @@ class _HomeScreenState extends State<HomeScreen> {
                    ],
                  ),
                  
+                 // Novedades NOC
+                 if (order.novedadesNoc != null && order.novedadesNoc!.isNotEmpty) ...[
+                   const SizedBox(height: 12),
+                   Container(
+                     width: double.infinity,
+                     padding: const EdgeInsets.all(8),
+                     decoration: BoxDecoration(
+                       color: Colors.red[50],
+                       borderRadius: BorderRadius.circular(8),
+                       border: Border.all(color: Colors.red.shade200),
+                     ),
+                     child: Column(
+                       crossAxisAlignment: CrossAxisAlignment.start,
+                       children: [
+                         Row(
+                           children: [
+                             Icon(Icons.warning_amber_rounded, size: 14, color: Colors.red[800]),
+                             const SizedBox(width: 4),
+                             Text('NOVEDADES NOC', style: TextStyle(color: Colors.red[800], fontSize: 11, fontWeight: FontWeight.bold)),
+                           ],
+                         ),
+                         const SizedBox(height: 4),
+                         Text(
+                           order.novedadesNoc!,
+                           style: TextStyle(color: Colors.red[900], fontSize: 13, height: 1.2),
+                         ),
+                       ],
+                     ),
+                   ),
+                 ],
+
                  // Observaciones
                  if (order.observaciones != null && order.observaciones!.isNotEmpty) ...[
                    const SizedBox(height: 12),
