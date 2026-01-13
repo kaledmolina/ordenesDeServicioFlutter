@@ -61,6 +61,66 @@ class Orden {
   final String? novedadesNoc;
   final String? otroTelefono;
 
+  // Celular alias for UI compatibility (maps to telefono)
+  String? get celular => telefono;
+
+  // Label Getters
+  String get tipoOrdenLabel => tipoOrdenOptions[tipoOrden] ?? tipoOrden ?? 'Desconocido';
+  String get solicitudSuscriptorLabel => solicitudSuscriptorOptions[solicitudSuscriptor] ?? solicitudSuscriptor ?? 'Sin Reporte';
+
+  // Status alias for UI compatibility (maps to estadoOrden)
+  String get status => estadoOrden?.toLowerCase() ?? 'pendiente';
+
+  Orden({
+    required this.id,
+    required this.numeroOrden,
+    required this.nombreCliente,
+    this.technicianId,
+    // required this.status, REMOVED
+    required this.fechaHora,
+    this.updatedAt,
+    this.fechaProgramada,
+    this.clienteId,
+    this.direccion,
+    this.cedula,
+    this.precinto,
+    this.tipoOrden,
+    this.tipoFuncion,
+    this.fechaTrn,
+    this.fechaVencimiento,
+    this.estadoOrden,
+    this.tipo,
+    this.estadoInterno,
+    this.direccionAsociado,
+    this.telefono,
+    this.saldoCliente,
+    this.solicitadoPor,
+    this.estadoTv,
+    this.tecnicoAuxiliarId,
+    this.solicitudSuscriptor,
+    this.solucionTecnico,
+    this.valorServicio,
+    this.observaciones,
+    this.articulos,
+    this.fechaInicioAtencion,
+    this.fechaFinAtencion,
+    this.fechaCierre,
+    this.fechaLlegada,
+    this.fechaAsignacion,
+    this.macRouter,
+    this.macBridge,
+    this.macOnt,
+    this.otrosEquipos,
+    this.firmaTecnico,
+    this.firmaSuscriptor,
+    this.barrio,
+    this.planInternet,
+    this.clasificacion,
+    this.codigoContrato,
+    this.novedadesNoc,
+    this.otroTelefono,
+  });
+
   // Option Maps (Mirrors PHP Constants)
   static const Map<String, String> tipoOrdenOptions = {
     '025': '025 REVISION TECNICA',
