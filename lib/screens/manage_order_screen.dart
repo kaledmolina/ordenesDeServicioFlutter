@@ -332,7 +332,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final closingData = {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
-        'solucion_tecnico': _selectedSolution,
+        'observaciones': _obsOrigenController.text,
+        'solucion_tecnico': _selectedSolution?.split(', ').map((e) => e.trim()).toList(),
+        'mac_router': _macRouterController.text,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macOntController.text,
@@ -569,14 +571,79 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   }
 
   void _showSolutionSelectionModal() {
-      showModalBottomSheet(context: context, builder: (_) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          '1 CAMBIO - CONECTOR', '2 REINICIO EQUIPOS', '3 CAMBIO EQUIPO', 'Solicitar Cierre', 'Reprogramar'
-        ].map((e) => ListTile(
-          title: Text(e),
-          onTap: () { setState(() => _selectedSolution = e); Navigator.pop(context); },
-        )).toList(),
-      ));
+    // Parse current selection into a list
+    List<String> currentSelections = [];
+    if (_selectedSolution != null && _selectedSolution!.isNotEmpty) {
+       currentSelections = _selectedSolution!.split(', ').map((e) => e.trim()).toList();
+    }
+    
+    // Sort options to match the ID order if possible or just values
+    final options = Orden.solucionTecnicoOptions.values.toList();
+    // Add special options
+    final allOptions = [...options, 'Solicitar Cierre', 'Reprogramar'];
+
+    showDialog(
+      context: context,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return AlertDialog(
+              title: const Text('Seleccionar Solución'),
+              content: SizedBox(
+                width: double.maxFinite,
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: allOptions.length,
+                  itemBuilder: (context, index) {
+                    final option = allOptions[index];
+                    final isSelected = currentSelections.contains(option);
+                    return CheckboxListTile(
+                      title: Text(option, style: const TextStyle(fontSize: 14)),
+                      value: isSelected,
+                      onChanged: (bool? checked) {
+                        setModalState(() {
+                          if (checked == true) {
+                             // Special cases are exclusive? Or just normal tags? Let's treat them as normal for now or exclusive if needed.
+                             // Usually "Reprogramar" is exclusive.
+                             if (option == 'Solicitar Cierre' || option == 'Reprogramar') {
+                                currentSelections = [option];
+                             } else {
+                                // Remove exclusive ones if selecting normal ones
+                                currentSelections.remove('Solicitar Cierre');
+                                currentSelections.remove('Reprogramar');
+                                currentSelections.add(option);
+                             }
+                          } else {
+                            currentSelections.remove(option);
+                          }
+                        });
+                      },
+                      dense: true,
+                      activeColor: const Color(0xFF10447E),
+                    );
+                  },
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: const Text('Cancelar', style: TextStyle(color: Colors.grey)),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    setState(() {
+                       _selectedSolution = currentSelections.join(', ');
+                    });
+                    Navigator.pop(context);
+                  },
+                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
+                  child: const Text('Confirmar'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 }
