@@ -16,6 +16,7 @@ import 'pending_orders_screen.dart';
 import 'profile_screen.dart'; // Import ProfileScreen
 import 'active_order_view.dart';
 import '../widgets/barrio_search_modal.dart';
+import '../widgets/processing_overlay.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,6 +31,7 @@ class _HomeScreenState extends State<HomeScreen> {
   bool _isLoading = false;
   String _currentStatusFilter = 'todas';
   String _searchQuery = '';
+  String _loadingMessage = 'Procesando...';
   Timer? _debounce;
   User? _currentUser;
   List<String> _barrios = [];
@@ -139,13 +141,17 @@ class _HomeScreenState extends State<HomeScreen> {
   // --- ACTIONS ---
 
   Future<void> _reportOnSite(Orden order) async {
+    setState(() {
+       _isLoading = true;
+       _loadingMessage = 'Reportando llegada...';
+    });
     try {
       await _orderRepo.reportOnSite(order.numeroOrden);
       if (mounted) {
          ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Reportado en sitio'), backgroundColor: Colors.green),
         );
-        _fetchOrders(isRefresh: true);
+        await _fetchOrders(isRefresh: true);
       }
     } catch (e) {
       if (mounted) {
@@ -154,6 +160,8 @@ class _HomeScreenState extends State<HomeScreen> {
             SnackBar(content: Text(msg), backgroundColor: Colors.red),
         );
       }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -270,7 +278,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeBody() {
-    return Column(
+    final body = Column(
       children: [
         // 1. Search & Filter Section
         Container(
@@ -371,6 +379,11 @@ class _HomeScreenState extends State<HomeScreen> {
                     ),
         ),
       ],
+    );
+    return ProcessingOverlay(
+      isLoading: _isLoading,
+      message: _loadingMessage,
+      child: body,
     );
   }
 

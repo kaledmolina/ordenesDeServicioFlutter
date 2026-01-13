@@ -9,6 +9,7 @@ import 'manage_order_screen.dart';
 import '../widgets/app_background.dart';
 import '../widgets/connection_status_indicator.dart';
 import 'signature_screen.dart';
+import '../widgets/processing_overlay.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String orderNumber;
@@ -23,7 +24,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Orden? _currentOrder;
   bool _isLoading = true;
   String? _error;
+  String? _error;
   bool _hasStateChanged = false;
+  String _loadingMessage = 'Procesando...';
 
   @override
   void initState() {
@@ -52,7 +55,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   // --- ACTIONS ---
   Future<void> _takeOrder() async {
-    setState(() => _isLoading = true);
+    setState(() {
+       _isLoading = true;
+       _loadingMessage = 'Iniciando ruta...';
+    });
     try {
       final hasActive = await _orderRepo.hasActiveOrder();
       if (hasActive) {
@@ -73,7 +79,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _rejectOrder() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadingMessage = 'Rechazando orden...';
+    });
     try {
       await _orderRepo.rejectOrder(widget.orderNumber);
       if (mounted) {
@@ -88,7 +97,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   Future<void> _reportOnSite() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _loadingMessage = 'Confirmando llegada...';
+    });
     try {
       final updatedOrder = await _orderRepo.reportOnSite(widget.orderNumber);
       if (mounted) {
@@ -153,7 +165,11 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               Padding(padding: EdgeInsets.only(right: 16.0), child: ConnectionStatusIndicator()),
             ],
           ),
-          body: _buildBody(),
+          body: ProcessingOverlay(
+            isLoading: _isLoading && _currentOrder != null,
+            message: _loadingMessage,
+            child: _buildBody(),
+          ),
           bottomNavigationBar: _currentOrder != null ? _buildBottomActionArea(_currentOrder!) : null,
         ),
       ),
@@ -307,8 +323,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       return;
                   }
                   Navigator.pop(context); // Close dialog
-                  
-                  setState(() => _isLoading = true);
+                  setState(() {
+                     _isLoading = true;
+                     _loadingMessage = 'Procesando solicitud...';
+                  });
                   try {
                      final closingData = {
                         'solucion_tecnico': solutionType,
