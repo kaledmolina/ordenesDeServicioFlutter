@@ -498,6 +498,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             if (orden.barrio != null) _buildDetailRow('Barrio', orden.barrio),
             _buildDetailRow('Celular', orden.celular, icon: Icons.phone, isPhone: true),
             if (orden.otroTelefono != null && orden.otroTelefono!.isNotEmpty) _buildDetailRow('Otro Teléfono', orden.otroTelefono, icon: Icons.phone_android, isPhone: true),
+            if (orden.solicitudSuscriptor != null) _buildDetailRow('Reporte', orden.solicitudSuscriptorLabel, icon: Icons.report_problem),
         ]),
         const SizedBox(height: 16),
         _buildInfoContainer('Detalles Técnicos', [

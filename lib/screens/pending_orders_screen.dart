@@ -190,8 +190,11 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                  const SizedBox(height: 8),
                  _buildInfoRow(Icons.map, order.barrio ?? 'Sin barrio'),
                  const SizedBox(height: 8),
-                 _buildInfoRow(Icons.assignment, order.tipoOrdenLabel),
-                 const SizedBox(height: 16),
+                  _buildInfoRow(Icons.assignment, order.tipoOrdenLabel),
+                  const SizedBox(height: 8),
+                  if (order.solicitudSuscriptor != null)
+                    _buildInfoRow(Icons.report_problem, order.solicitudSuscriptorLabel),
+                  const SizedBox(height: 16),
                  SizedBox(
                    width: double.infinity,
                    child: ElevatedButton(

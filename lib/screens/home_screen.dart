@@ -522,10 +522,14 @@ class _HomeScreenState extends State<HomeScreen> {
                  Row(
                    children: [
                      Expanded(child: _buildMiniDetail(Icons.calendar_today, order.fechaHora.toString().split(' ')[0])),
-                     Expanded(child: _buildMiniDetail(Icons.assignment, order.tipoOrdenLabel ?? 'General')),
-                   ],
-                 ),
-                 const SizedBox(height: 8),
+                      Expanded(child: _buildMiniDetail(Icons.assignment, order.tipoOrdenLabel ?? 'General')),
+                    ],
+                  ),
+                  if (order.solicitudSuscriptor != null) ...[
+                    const SizedBox(height: 8),
+                    _buildMiniDetail(Icons.report_problem, 'Reporte: ${order.solicitudSuscriptorLabel}', color: Colors.orange[800]!),
+                  ],
+                  const SizedBox(height: 8),
                  Row(
                    children: [
                      if (order.codigoContrato != null)
