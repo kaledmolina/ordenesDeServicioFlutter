@@ -153,24 +153,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         return false;
       },
       child: AppBackground(
-        child: Scaffold(
-          backgroundColor: const Color(0xFFF3F4F6),
-          appBar: AppBar(
-            title: Text('Orden N° ${widget.orderNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
-            backgroundColor: Colors.transparent,
-            elevation: 0,
-            centerTitle: true,
-            foregroundColor: const Color(0xFF111827),
-            actions: const [
-              Padding(padding: EdgeInsets.only(right: 16.0), child: ConnectionStatusIndicator()),
-            ],
-          ),
-          body: ProcessingOverlay(
+          child: ProcessingOverlay(
             isLoading: _isLoading && _currentOrder != null,
             message: _loadingMessage,
-            child: _buildBody(),
+            child: Scaffold(
+              backgroundColor: const Color(0xFFF3F4F6),
+              appBar: AppBar(
+                title: Text('Orden N° ${widget.orderNumber}', style: const TextStyle(fontWeight: FontWeight.bold)),
+                backgroundColor: Colors.transparent,
+                elevation: 0,
+                centerTitle: true,
+                foregroundColor: const Color(0xFF111827),
+                actions: const [
+                  Padding(padding: EdgeInsets.only(right: 16.0), child: ConnectionStatusIndicator()),
+                ],
+              ),
+              body: _buildBody(),
+              bottomNavigationBar: _currentOrder != null ? _buildBottomActionArea(_currentOrder!) : null,
+            ),
           ),
-          bottomNavigationBar: _currentOrder != null ? _buildBottomActionArea(_currentOrder!) : null,
         ),
       ),
     );
