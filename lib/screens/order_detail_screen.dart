@@ -596,4 +596,3 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 }
-}

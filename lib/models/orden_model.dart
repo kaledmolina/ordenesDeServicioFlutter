@@ -57,7 +57,7 @@ class Orden {
   final String? barrio;
   final String? planInternet;
   final String? clasificacion;
-  final String? clasificacion;
+
   final String? codigoContrato;
   final String? novedadesNoc;
 
