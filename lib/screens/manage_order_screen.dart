@@ -273,6 +273,39 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     }
   }
 
+  Widget _buildFinalizeButton() {
+    // Check if any photo is still uploading or waiting to upload (local status)
+    bool isUploadingPhotos = _galleryPhotos.any((p) => p.status != PhotoStatusType.uploaded);
+
+    String buttonText = 'FINALIZAR ORDEN';
+    if (_isLoading) {
+      buttonText = 'PROCESANDO...';
+    } else if (isUploadingPhotos) {
+      buttonText = 'SUBIENDO FOTOS...';
+    }
+
+    return SizedBox(
+      width: double.infinity,
+      child: ElevatedButton.icon(
+        onPressed: (_isLoading || isUploadingPhotos) ? null : _finalizeOrder,
+        icon: _isLoading 
+            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) 
+            : (isUploadingPhotos 
+                ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.grey, strokeWidth: 2))
+                : const Icon(Icons.check)),
+        label: Text(buttonText, style: const TextStyle(fontWeight: FontWeight.bold)),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: const Color(0xFF10447E),
+          disabledBackgroundColor: Colors.grey[300], // Visible disabled state
+          foregroundColor: Colors.white,
+          padding: const EdgeInsets.symmetric(vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          elevation: 5,
+        ),
+      ),
+    );
+  }
+
   // --- Logic Helpers ---
   void _showSnackbar(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
@@ -545,7 +578,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     _buildArticlesList(),
                     TextButton.icon(onPressed: _addArticle, icon: const Icon(Icons.add), label: const Text('Agregar Artículo')),
                  ]),
-                 _buildCard('Equipos', Icons.router, [
+                 _buildCard('Equipos Retirados', Icons.router, [
                     _buildTextField(_macRouterController, 'MAC Router', Icons.router),
                     const SizedBox(height: 10),
                     _buildTextField(_macBridgeController, 'MAC Bridge', Icons.settings_ethernet),
@@ -575,21 +608,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                    const Divider(),
                    _buildTextField(_obsOrigenController, _selectedSolution == 'Reprogramar' ? 'Motivo Reprogramación' : 'Observaciones', Icons.comment, maxLines: 3),
                    const SizedBox(height: 20),
-                   SizedBox(
-                     width: double.infinity,
-                     child: ElevatedButton.icon(
-                       onPressed: _isLoading ? null : _finalizeOrder,
-                       icon: _isLoading ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)) : const Icon(Icons.check),
-                       label: const Text('FINALIZAR ORDEN', style: TextStyle(fontWeight: FontWeight.bold)),
-                       style: ElevatedButton.styleFrom(
-                         backgroundColor: const Color(0xFF10447E),
-                         foregroundColor: Colors.white,
-                         padding: const EdgeInsets.symmetric(vertical: 16),
-                         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                         elevation: 5,
-                       ),
-                     ),
-                   )
+                   _buildFinalizeButton(),
                  ]),
               ],
             ),
