@@ -54,8 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUser();
     _fetchBarrios();
-    _loadUser();
-    _fetchBarrios();
+
     _fetchOrders();
     UploadService.instance.start(); // Ensure service is running
   }
@@ -277,7 +276,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Text(_currentUser?.name ?? 'Bienvenido', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF10447E))),
         ],
       ),
-      actions: const [
+      actions: [
         Padding(
           padding: EdgeInsets.only(right: 16.0),
           child: ConnectionStatusIndicator(),
