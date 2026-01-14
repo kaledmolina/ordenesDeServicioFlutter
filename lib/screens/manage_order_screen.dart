@@ -60,7 +60,13 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   final List<String> _predefinedArticles = [
     'Esclavo con wifi (unidad)', 'Mecanico sc/apc', 'Cable drop 1 hilo', 'Grapas de muro', 'Ont',
     'Canaleta plastica', 'Abrazadera metalicas', 'Chazos(unidad)', 'Tornillos(unidad)', 
-    'Amarres plasticos (unidad)', 'Cinta bandi(centimetro)', 'Clavos', 'Conector RG6', 'Cable coaxial',
+    'Amarres plasticos (unidad)', 'Cinta bandi(centimetro)', 'Clavos',    'Conector RG6',
+    'Cable coaxial',
+    'Router',
+    'Bridge',
+    'Camara',
+    'Onu',
+    'Otros',
   ];
 
   @override
