@@ -635,10 +635,38 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
            child: ListView.builder(
              scrollDirection: Axis.horizontal,
              itemCount: _galleryPhotos.length,
-             itemBuilder: (ctx, i) => Padding(
-               padding: const EdgeInsets.only(right: 8),
-               child: Image.file(File(_galleryPhotos[i].path), width: 100, height: 100, fit: BoxFit.cover),
-             ),
+             itemBuilder: (ctx, i) {
+               final photo = _galleryPhotos[i];
+               Widget imageWidget;
+               if (photo.url != null && photo.url!.isNotEmpty) {
+                 imageWidget = Image.network(photo.url!, width: 100, height: 100, fit: BoxFit.cover,
+                   errorBuilder: (context, error, stackTrace) => Container(
+                     width: 100, height: 100, color: Colors.grey[300], 
+                     child: const Icon(Icons.broken_image, color: Colors.grey)
+                   ),
+                 );
+               } else {
+                 imageWidget = Image.file(File(photo.path), width: 100, height: 100, fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                     width: 100, height: 100, color: Colors.grey[300], 
+                     child: const Icon(Icons.image_not_supported, color: Colors.grey)
+                   ),
+                 );
+               }
+
+               return Padding(
+                 padding: const EdgeInsets.only(right: 8),
+                 child: Stack(
+                   children: [
+                     imageWidget,
+                     if (photo.status == PhotoStatusType.uploading)
+                       const Positioned.fill(child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))),
+                     if (photo.status == PhotoStatusType.uploaded)
+                       const Positioned(right: 0, top: 0, child: Icon(Icons.check_circle, color: Colors.green, size: 20)),
+                   ],
+                 ),
+               );
+             },
            ),
          ),
          TextButton.icon(onPressed: _showSourceSelection, icon: const Icon(Icons.add_a_photo), label: const Text('Agregar Fotos'))
