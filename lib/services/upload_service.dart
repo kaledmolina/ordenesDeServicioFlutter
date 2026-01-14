@@ -81,7 +81,7 @@ class UploadService {
           errorMessage: e.toString(),
         ));
       }
-      } finally {
+      finally {
         remaining--;
         _pendingCountController.add(remaining);
       }
