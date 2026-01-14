@@ -7,6 +7,7 @@ import '../models/user_model.dart';
 import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
 import '../services/auth_service.dart';
+import '../services/upload_service.dart';
 import 'login_screen.dart';
 import 'order_detail_screen.dart';
 import '../widgets/connection_status_indicator.dart';
@@ -53,7 +54,10 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
     _loadUser();
     _fetchBarrios();
+    _loadUser();
+    _fetchBarrios();
     _fetchOrders();
+    UploadService.instance.start(); // Ensure service is running
   }
 
   Future<void> _fetchBarrios() async {
@@ -278,7 +282,41 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.only(right: 16.0),
           child: ConnectionStatusIndicator(),
         ),
+        Padding(
+          padding: EdgeInsets.only(right: 16.0),
+          child: _buildUploadProgress(),
+        ),
       ],
+    );
+  }
+
+  Widget _buildUploadProgress() {
+    return StreamBuilder<int>(
+      stream: UploadService.instance.pendingCountStream,
+      initialData: 0,
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 0;
+        if (count == 0) return const SizedBox();
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          decoration: BoxDecoration(
+            color: Colors.blue.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: Colors.blue.withOpacity(0.3)),
+          ),
+          child: Row(
+            children: [
+              const SizedBox(width: 12, height: 12, child: CircularProgressIndicator(strokeWidth: 2)),
+              const SizedBox(width: 8),
+              Text(
+                'Subiendo $count...',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Colors.blue),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 

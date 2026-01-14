@@ -16,6 +16,9 @@ class UploadService {
   final _uploadStatusController = StreamController<PhotoDisplay>.broadcast();
   Stream<PhotoDisplay> get uploadStatusStream => _uploadStatusController.stream;
 
+  final _pendingCountController = StreamController<int>.broadcast();
+  Stream<int> get pendingCountStream => _pendingCountController.stream;
+
   UploadService._init();
 
   void start() {
@@ -35,6 +38,7 @@ class UploadService {
   void dispose() {
     _connectivitySubscription?.cancel();
     _uploadStatusController.close();
+    _pendingCountController.close();
   }
 
   Future<void> syncPendingUploads() async {
@@ -45,7 +49,9 @@ class UploadService {
     final pendingPhotos = await db.getPendingPhotos();
     
     debugPrint("Se encontraron ${pendingPhotos.length} fotos pendientes.");
+    _pendingCountController.add(pendingPhotos.length);
 
+    int remaining = pendingPhotos.length;
     for (var photo in pendingPhotos) {
       final photoId = photo['id'] as int;
       final photoPath = photo['image_path'] as String;
@@ -74,6 +80,10 @@ class UploadService {
           status: PhotoStatusType.error,
           errorMessage: e.toString(),
         ));
+      }
+      } finally {
+        remaining--;
+        _pendingCountController.add(remaining);
       }
     }
     _isSyncing = false;
