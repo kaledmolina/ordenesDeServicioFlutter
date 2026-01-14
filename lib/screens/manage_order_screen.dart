@@ -94,11 +94,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         setState(() {
           final index = _galleryPhotos.indexWhere((p) => p.localId == status.localId);
           if (index != -1) {
-            if (status.status == PhotoStatusType.uploaded) {
-              _loadPhotos();
-            } else {
-              _galleryPhotos[index] = status;
-            }
+             // PREVIOUS BUG: _loadPhotos() here caused the photo to vanish if API wasn't updated yet.
+             // FIX: Just update the local object status.
+             _galleryPhotos[index] = status;
           }
         });
       }
