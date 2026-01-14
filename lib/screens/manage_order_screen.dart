@@ -255,6 +255,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         // image package >= 4.0 uses different font handling.
         // Let's use standard default font (arial_24) provided by library if available, or just render.
         
+        // Resize if too big (Max 1600px) to prevent upload errors
+        if (image.width > 1600 || image.height > 1600) {
+           image = img.copyResize(image, width: image.width > image.height ? 1600 : null, height: image.height > image.width ? 1600 : null);
+        }
+
         img.drawString(
           image,
           text,
@@ -418,10 +423,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
            missingFields.add('Al menos 1 foto como evidencia');
         }
         
-        // Pending Uploads
-        if (_galleryPhotos.any((p) => p.status != PhotoStatusType.uploaded)) {
-            missingFields.add('Esperar subida de todas las fotos');
-        }
+        // REMOVED: Blocking check for pending uploads. 
+        // Background service manages uploads now.
     }
 
     // SHOW DETAILED ERROR DIALOG

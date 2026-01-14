@@ -3,6 +3,8 @@ import 'package:flutter_animate/flutter_animate.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import 'login_screen.dart';
+import '../services/upload_service.dart';
+import '../models/photo_status_model.dart';
 
 class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
@@ -113,6 +115,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
 
+            const SizedBox(height: 20),
+            
+            // Upload Status Card
+            const _UploadStatusCard(),
+
             const SizedBox(height: 40),
 
             // Logout Button
@@ -169,6 +176,76 @@ class _ProfileScreenState extends State<ProfileScreen> {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _UploadStatusCard extends StatelessWidget {
+  const _UploadStatusCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return StreamBuilder<int>(
+      stream: UploadService.instance.pendingCountStream,
+      initialData: 0,
+      builder: (context, snapshot) {
+        final count = snapshot.data ?? 0;
+        
+        if (count == 0) {
+           return Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(16),
+                border: Border.all(color: Colors.green.withOpacity(0.3)),
+              ),
+              child: const Row(
+                children: [
+                  Icon(Icons.cloud_done, color: Colors.green),
+                  SizedBox(width: 12),
+                  Text('Todo sincronizado', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                ],
+              ),
+           );
+        }
+
+        return Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: Colors.orange.withOpacity(0.1),
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(color: Colors.orange.withOpacity(0.3)),
+          ),
+          child: Column(
+            children: [
+              Row(
+                children: [
+                  const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      '$count fotos pendientes de subir...', 
+                      style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.bold)
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton(
+                  onPressed: () => UploadService.instance.syncPendingUploads(),
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: Colors.orange[900],
+                    side: BorderSide(color: Colors.orange[900]!),
+                  ),
+                  child: const Text('Forzar Sincronización'),
+                ),
+              )
+            ],
+          ),
+        );
+      },
     );
   }
 }
