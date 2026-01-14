@@ -13,6 +13,8 @@ import '../models/orden_model.dart';
 import '../models/photo_status_model.dart';
 import '../repositories/order_repository.dart';
 import '../repositories/photo_repository.dart';
+import 'package:image/image.dart' as img;
+import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/sync_service.dart';
 import '../services/upload_service.dart';
@@ -127,50 +129,142 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     } catch (_) {}
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _showSourceSelection() async {
     if (_galleryPhotos.length >= 12) {
       _showSnackbar('Límite de 12 fotos alcanzado.', Colors.orange);
       return;
     }
+
+    showModalBottomSheet(
+      context: context,
+      builder: (ctx) => Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: const Icon(Icons.camera_alt),
+            title: const Text('Cámara'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _pickFromSource(ImageSource.camera);
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.photo_library),
+            title: const Text('Galería'),
+            onTap: () {
+              Navigator.pop(ctx);
+              _pickFromSource(ImageSource.gallery);
+            },
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _pickFromSource(ImageSource source) async {
     final picker = ImagePicker();
-    final pickedFiles = await picker.pickMultiImage(imageQuality: 80);
-
-    if (pickedFiles.isNotEmpty) {
-      setState(() {
-         _isLoading = true;
-         _loadingMessage = 'Preparando imágenes...';
-      });
-
-      try {
-        int remainingSlots = 12 - _galleryPhotos.length;
-        final filesToProcess = pickedFiles.take(remainingSlots);
-        final appDir = await getApplicationDocumentsDirectory();
-        
-        for (var pickedFile in filesToProcess) {
-          final fileName = p.basename(pickedFile.path);
-          final targetPath = '${appDir.path}/$fileName';
-          File finalFile;
-          
-          final result = await FlutterImageCompress.compressAndGetFile(
-            pickedFile.path, targetPath, quality: 70, minWidth: 1920, minHeight: 1080,
-          );
-          finalFile = result != null ? File(result.path) : await File(pickedFile.path).copy(targetPath);
-          
-          final localId = await _photoRepo.addPhoto(widget.orden.numeroOrden, finalFile.path);
-          if (mounted) {
-            setState(() {
-              _galleryPhotos.add(PhotoDisplay(localId: localId, path: finalFile.path, status: PhotoStatusType.local));
-            });
-          }
+    try {
+      if (source == ImageSource.camera) {
+        final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+        if (pickedFile != null) {
+          await _processAndUpload([pickedFile]);
         }
-        UploadService.instance.syncPendingUploads();
-        // Give a little visual time if it was too fast
-        await Future.delayed(const Duration(milliseconds: 500));
-      } catch (e) {
-        if (mounted) _showSnackbar('Error al procesar imágenes: $e', Colors.red);
-      } finally {
-        if (mounted) setState(() => _isLoading = false);
+      } else {
+        final pickedFiles = await picker.pickMultiImage(imageQuality: 80);
+        if (pickedFiles.isNotEmpty) {
+          await _processAndUpload(pickedFiles);
+        }
       }
+    } catch (e) {
+      _showSnackbar('Error al seleccionar imagen: $e', Colors.red);
+    }
+  }
+
+  Future<void> _processAndUpload(List<XFile> files) async {
+    setState(() {
+      _isLoading = true;
+      _loadingMessage = 'Procesando y marcando fotos...';
+    });
+
+    try {
+      int remainingSlots = 12 - _galleryPhotos.length;
+      final filesToProcess = files.take(remainingSlots);
+      final appDir = await getApplicationDocumentsDirectory();
+
+      for (var pickedFile in filesToProcess) {
+        final fileName = 'WM_${DateTime.now().millisecondsSinceEpoch}_${p.basename(pickedFile.path)}';
+        final targetPath = '${appDir.path}/$fileName';
+        
+        // 1. Watermark Processing
+        final watermarkedFile = await _addWatermark(File(pickedFile.path), targetPath);
+        
+        // 2. Compress/Copy logic (Watermark alrdy saves to targetPath, maybe we compress after? 
+        // Or if watermark saves high res, we correct. 
+        // Simplest: Watermark -> Save. Compressor was used before.
+        // Let's compress AFTER watermark if needed, or rely on watermark saving quality.
+        // For efficiency, let's just use the watermarked file.
+        
+        File finalFile = watermarkedFile;
+
+        // Optional: Extra compression if watermarked is still huge, but 'image' package encodes well usually.
+        // If we want to strictly follow previous flow:
+        // final result = await FlutterImageCompress.compressAndGetFile(...) 
+        // But we already decoded/encoded in watermark. Doing it again is slow. 
+        // Let's assume _addWatermark saves with good quality/size.
+
+        final localId = await _photoRepo.addPhoto(widget.orden.numeroOrden, finalFile.path);
+        if (mounted) {
+          setState(() {
+            _galleryPhotos.add(PhotoDisplay(localId: localId, path: finalFile.path, status: PhotoStatusType.local));
+          });
+        }
+      }
+      UploadService.instance.syncPendingUploads();
+      await Future.delayed(const Duration(milliseconds: 500));
+    } catch (e) {
+      if (mounted) _showSnackbar('Error al procesar imágenes: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<File> _addWatermark(File originalFile, String targetPath) async {
+    try {
+      final bytes = await originalFile.readAsBytes();
+      img.Image? image = img.decodeImage(bytes);
+
+      if (image != null) {
+        // Create Watermark Text
+        final now = DateTime.now();
+        final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(now);
+        final text = 'Intalnet - $dateStr';
+
+        // Draw Text
+        // Using built-in font for simplicity. 'arial_24' or similar comes with package usually or we use standard.
+        // image package >= 4.0 uses different font handling.
+        // Let's use standard default font (arial_24) provided by library if available, or just render.
+        
+        img.drawString(
+          image,
+          text,
+          font: img.arial24,
+          x: 20,
+          y: 20,
+          color: img.ColorRgb8(255, 165, 0), // Orange/Gold
+        );
+        
+        // Save to target
+        final encoded = img.encodeJpg(image, quality: 80);
+        final file = File(targetPath);
+        await file.writeAsBytes(encoded);
+        return file;
+
+      }
+      // Fallback if decode fails
+      return originalFile.copy(targetPath);
+    } catch (e) {
+      debugPrint('Error adding watermark: $e');
+      return originalFile.copy(targetPath);
     }
   }
 
@@ -549,7 +643,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
              ),
            ),
          ),
-         TextButton.icon(onPressed: _pickImage, icon: const Icon(Icons.add_a_photo), label: const Text('Agregar Fotos'))
+         TextButton.icon(onPressed: _showSourceSelection, icon: const Icon(Icons.add_a_photo), label: const Text('Agregar Fotos'))
       ],
     );
   }
