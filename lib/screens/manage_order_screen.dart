@@ -69,6 +69,13 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _celularController = TextEditingController(text: widget.orden.celular);
     _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
     _selectedSolution = widget.orden.solucionTecnico;
+    
+    // Si la orden viene reprogramada o con cierre solicitado (reasignada), limpiar el campo
+    // para que el nuevo técnico deba seleccionar una nueva solución.
+    if (_selectedSolution != null && 
+       (_selectedSolution!.contains('Reprogramar') || _selectedSolution!.contains('Solicitar Cierre'))) {
+      _selectedSolution = null;
+    }
     _macRouterController.text = widget.orden.macRouter ?? '';
     _macBridgeController.text = widget.orden.macBridge ?? '';
     _macOntController.text = widget.orden.macOnt ?? '';
