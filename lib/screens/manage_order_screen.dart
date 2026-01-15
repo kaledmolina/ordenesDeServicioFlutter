@@ -98,6 +98,76 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         }
     }
     _initialize();
+    _startDeadlineTimer();
+  }
+
+  // Timer Logic
+  Timer? _deadlineTimer;
+  Duration _timeLeft = Duration.zero;
+  bool _isOverdue = false;
+
+  void _startDeadlineTimer() {
+    if (widget.orden.deadlineAt == null) return;
+    
+    _updateTimeLeft(); // Initial check
+    
+    _deadlineTimer = Timer.periodic(const Duration(minutes: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _updateTimeLeft();
+        });
+      }
+    });
+  }
+
+  void _updateTimeLeft() {
+    final now = DateTime.now();
+    final deadline = widget.orden.deadlineAt!;
+    
+    if (now.isAfter(deadline)) {
+      _isOverdue = true;
+      _timeLeft = now.difference(deadline);
+    } else {
+      _isOverdue = false;
+      _timeLeft = deadline.difference(now);
+    }
+  }
+
+  Widget _buildDeadlineWidget() {
+    if (widget.orden.deadlineAt == null) return const SizedBox.shrink();
+
+    // Format duration: "Xh Ym"
+    String formatDuration(Duration d) {
+      int hours = d.inHours;
+      int minutes = d.inMinutes.remainder(60);
+      return '${hours}h ${minutes}m';
+    }
+
+    final color = _isOverdue ? Colors.redAccent : Colors.lightGreenAccent;
+    final icon = _isOverdue ? Icons.warning_amber_rounded : Icons.timer;
+    final text = _isOverdue 
+        ? 'VENCIDA HACE: ${formatDuration(_timeLeft)}' 
+        : 'VENCE EN: ${formatDuration(_timeLeft)}';
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withOpacity(0.5))
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 8),
+          Text(
+            text, 
+            style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 13)
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _initialize() async {
@@ -118,6 +188,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   
   @override
   void dispose() {
+    _deadlineTimer?.cancel();
     _uploadSubscription?.cancel();
     _celularController.dispose();
     _obsOrigenController.dispose();
@@ -563,6 +634,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                         Text(widget.orden.nombreCliente, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16), textAlign: TextAlign.center),
                         const SizedBox(height: 4),
                         Text(widget.orden.direccion ?? 'Sin Dirección', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                        const SizedBox(height: 12),
+                        _buildDeadlineWidget(),
                       ],
                     ),
                   ),
