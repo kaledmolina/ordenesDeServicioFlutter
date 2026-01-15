@@ -119,7 +119,6 @@ class Orden {
     this.clasificacion,
     this.codigoContrato,
     this.novedadesNoc,
-    this.novedadesNoc,
     this.otroTelefono,
     this.deadlineAt,
   });
@@ -237,7 +236,7 @@ class Orden {
       clasificacion: json['clasificacion']?.toString(),
       codigoContrato: json['cliente']?['codigo_contrato']?.toString(),
       novedadesNoc: json['novedades_noc']?.toString(),
-      otrotelefono: json['cliente']?['otro_telefono']?.toString(),
+      otroTelefono: json['cliente']?['otro_telefono']?.toString(),
       deadlineAt: DateTime.tryParse(json['deadline_at'] ?? '')?.toLocal(),
     );
   }
