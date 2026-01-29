@@ -49,6 +49,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   // Signatures
   final SignatureController _technicianSignatureController = SignatureController(penStrokeWidth: 3);
   final SignatureController _subscriberSignatureController = SignatureController(penStrokeWidth: 3);
+  File? _savedSignatureFile;
 
   // Photos
   List<PhotoDisplay> _galleryPhotos = [];
@@ -523,7 +524,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     // 3. Normal Flow Checks
     if (!isSpecialCase) {
         // Signatures
-        if (_technicianSignatureController.isEmpty) missingFields.add('Firma del Técnico');
+        if (_technicianSignatureController.isEmpty && _savedSignatureFile == null) missingFields.add('Firma del Técnico');
         if (_subscriberSignatureController.isEmpty) missingFields.add('Firma del Cliente');
         
         // Photos (Except 037)
@@ -563,15 +564,28 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     });
 
     try {
-      final techSig = await _technicianSignatureController.toPngBytes();
+      Uint8List? techSig;
+      
+      // Handle Technician Signature Logic
+      if (_savedSignatureFile != null && _technicianSignatureController.isEmpty) {
+         // Use saved signature
+         techSig = await _savedSignatureFile!.readAsBytes();
+      } else if (_technicianSignatureController.isNotEmpty) {
+         // Use new signature and SAVE IT
+         techSig = await _technicianSignatureController.toPngBytes();
+         if (techSig != null) {
+           final appDir = await getApplicationDocumentsDirectory();
+           final file = File('${appDir.path}/technician_signature.png');
+           await file.writeAsBytes(techSig);
+         }
+      }
+
       final subSig = await _subscriberSignatureController.toPngBytes();
       
       final closingData = {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
-        'observaciones': _obsOrigenController.text,
         'solucion_tecnico': _selectedSolution?.split(', ').map((e) => e.trim()).toList(),
-        'mac_router': _macRouterController.text,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macOntController.text,
@@ -699,7 +713,30 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                  ]),
                  _buildCard('Firmas', Icons.draw, [
                     const Text('Técnico', style: TextStyle(fontWeight: FontWeight.bold)),
-                    _buildSignaturePad(_technicianSignatureController),
+                    if (_savedSignatureFile != null && _technicianSignatureController.isEmpty)
+                      Column(
+                        children: [
+                          Container(
+                            height: 120,
+                            width: double.infinity,
+                            decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
+                            child: Image.file(_savedSignatureFile!, fit: BoxFit.contain),
+                          ),
+                          TextButton.icon(
+                            onPressed: () {
+                              setState(() {
+                                _savedSignatureFile = null;
+                                _technicianSignatureController.clear();
+                              });
+                            }, 
+                            icon: const Icon(Icons.edit), 
+                            label: const Text('Cambiar Firma')
+                          )
+                        ],
+                      )
+                    else
+                      _buildSignaturePad(_technicianSignatureController),
+                    
                     const SizedBox(height: 10),
                     const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
                     _buildSignaturePad(_subscriberSignatureController),
@@ -752,10 +789,23 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   }
 
   Widget _buildSignaturePad(SignatureController ctrl) {
-    return Container(
-      height: 120,
-      decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
-      child: Signature(controller: ctrl, backgroundColor: Colors.white),
+    return Stack(
+      children: [
+        Container(
+          height: 120,
+          decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
+          child: Signature(controller: ctrl, backgroundColor: Colors.white),
+        ),
+        Positioned(
+          right: 4,
+          top: 4,
+          child: IconButton(
+            icon: const Icon(Icons.clear, color: Colors.red),
+            onPressed: () => setState(() => ctrl.clear()),
+            tooltip: 'Borrar firma',
+          ),
+        ),
+      ],
     );
   }
 
