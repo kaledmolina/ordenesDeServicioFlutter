@@ -177,19 +177,128 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   Future<void> _initialize() async {
     await _loadPhotos();
     _fetchEvidenceTypes();
+    _fetchProfileAndSignature();
     
     _uploadSubscription = UploadService.instance.uploadStatusStream.listen((status) {
       if (mounted) {
         setState(() {
           final index = _galleryPhotos.indexWhere((p) => p.localId == status.localId);
           if (index != -1) {
-             // PREVIOUS BUG: _loadPhotos() here caused the photo to vanish if API wasn't updated yet.
-             // FIX: Just update the local object status.
              _galleryPhotos[index] = status;
           }
         });
       }
     });
+  }
+
+  Future<void> _fetchProfileAndSignature() async {
+    try {
+      final profile = await ApiService().getProfile();
+      final signatureUrl = profile['signature_url'];
+      if (signatureUrl != null && signatureUrl.isNotEmpty) {
+         await _cacheSignature(signatureUrl);
+      } else {
+         // Fallback to local file check (legacy)
+         _loadSavedSignature();
+      }
+    } catch (e) {
+      debugPrint('Error fetching profile: $e');
+      _loadSavedSignature();
+    }
+  }
+
+  Future<void> _cacheSignature(String url) async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final file = File(p.join(appDir.path, 'technician_signature.png'));
+      
+      // Always download fresh or check timestamp? For now, download to sync updates.
+      // Or check if file exists and maybe skip? User wants "always consult".
+      // Let's download if we have a URL.
+      final response = await http.get(Uri.parse(url));
+      if (response.statusCode == 200) {
+        await file.writeAsBytes(response.bodyBytes, flush: true);
+        if (mounted) setState(() => _savedSignatureFile = file);
+      }
+    } catch (e) {
+      debugPrint('Error caching signature: $e');
+    }
+  }
+
+  Future<void> _loadSavedSignature() async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final file = File(p.join(appDir.path, 'technician_signature.png'));
+      if (await file.exists()) {
+        if (mounted) setState(() => _savedSignatureFile = file);
+      }
+    } catch (e) {
+      debugPrint('Error loading saved signature: $e');
+    }
+  }
+
+  void _showSignatureDialog() {
+    final controller = SignatureController(penStrokeWidth: 3);
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Firma del Técnico'),
+        content: Column(
+           mainAxisSize: MainAxisSize.min,
+           children: [
+             Container(
+               height: 180,
+               width: double.infinity,
+               decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
+               child: Stack(
+                 children: [
+                   Signature(controller: controller, backgroundColor: Colors.white, height: 180, width: 300), // Adjusted constraints
+                   Positioned(right:4, top:4, child: IconButton(icon: const Icon(Icons.clear, color: Colors.red), onPressed: () => controller.clear()))
+                 ]
+               ),
+             ),
+           ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancelar')
+          ),
+          ElevatedButton(
+            onPressed: () async {
+              if (controller.isNotEmpty) {
+                Navigator.pop(ctx);
+                await _saveAndUploadSignature(controller);
+              }
+            },
+            child: const Text('Guardar y Actualizar')
+          )
+        ],
+      )
+    );
+  }
+
+  Future<void> _saveAndUploadSignature(SignatureController controller) async {
+    setState(() { _isLoading = true; _loadingMessage = 'Guardando firma...'; });
+    try {
+      final bytes = await controller.toPngBytes();
+      if (bytes != null) {
+        final appDir = await getApplicationDocumentsDirectory();
+        final file = File(p.join(appDir.path, 'technician_signature.png'));
+        await file.writeAsBytes(bytes, flush: true);
+        
+        // Upload
+        await ApiService().updateSignature(file);
+        
+        setState(() => _savedSignatureFile = file);
+        _showSnackbar('Firma actualizada correctamente', Colors.green);
+      }
+    } catch (e) {
+      _showSnackbar('Error al guardar firma: $e', Colors.red);
+    } finally {
+      setState(() => _isLoading = false);
+    }
   }
 
   Future<void> _fetchEvidenceTypes() async {
@@ -524,7 +633,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     // 3. Normal Flow Checks
     if (!isSpecialCase) {
         // Signatures
-        if (_technicianSignatureController.isEmpty && _savedSignatureFile == null) missingFields.add('Firma del Técnico');
+        if (_savedSignatureFile == null) missingFields.add('Firma del Técnico (Debe crearla)');
         if (_subscriberSignatureController.isEmpty) missingFields.add('Firma del Cliente');
         
         // Photos (Except 037)
@@ -567,19 +676,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       Uint8List? techSig;
       
       // Handle Technician Signature Logic
-      if (_savedSignatureFile != null && _technicianSignatureController.isEmpty) {
-         // Use saved signature
-         techSig = await _savedSignatureFile!.readAsBytes();
-      } else if (_technicianSignatureController.isNotEmpty) {
-         // Use new signature and SAVE IT
-         techSig = await _technicianSignatureController.toPngBytes();
-         if (techSig != null && techSig.isNotEmpty) {
-           final appDir = await getApplicationDocumentsDirectory();
-           final file = File(p.join(appDir.path, 'technician_signature.png'));
-           await file.writeAsBytes(techSig, flush: true);
-           debugPrint('Signature saved to: ${file.path}');
-         }
+      if (_savedSignatureFile == null) {
+         throw 'Falta la firma del técnico. Por favor cree o actualice su firma.';
       }
+      techSig = await _savedSignatureFile!.readAsBytes();
 
       final subSig = await _subscriberSignatureController.toPngBytes();
       
@@ -713,35 +813,52 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     _buildPhotoGallery(),
                  ]),
                  _buildCard('Firmas', Icons.draw, [
-                    const Text('Técnico', style: TextStyle(fontWeight: FontWeight.bold)),
-                    if (_savedSignatureFile != null && _technicianSignatureController.isEmpty)
-                      Column(
-                        children: [
-                          Container(
-                            height: 120,
-                            width: double.infinity,
-                            decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
-                            child: Image.file(_savedSignatureFile!, fit: BoxFit.contain),
-                          ),
-                          TextButton.icon(
-                            onPressed: () {
-                              setState(() {
-                                _savedSignatureFile = null;
-                                _technicianSignatureController.clear();
-                              });
-                            }, 
-                            icon: const Icon(Icons.edit), 
-                            label: const Text('Cambiar Firma')
-                          )
-                        ],
-                      )
-                    else
-                      _buildSignaturePad(_technicianSignatureController),
-                    
-                    const SizedBox(height: 10),
-                    const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
-                    _buildSignaturePad(_subscriberSignatureController),
-                 ]),
+                  _buildCard('Firmas', Icons.draw, [
+                     const Text('Técnico', style: TextStyle(fontWeight: FontWeight.bold)),
+                     if (_savedSignatureFile != null)
+                       Column(
+                         children: [
+                           Container(
+                             height: 120,
+                             width: double.infinity,
+                             decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
+                             child: Image.file(_savedSignatureFile!, fit: BoxFit.contain),
+                           ),
+                           const SizedBox(height: 8),
+                           Row(
+                             mainAxisAlignment: MainAxisAlignment.center,
+                             children: [
+                               const Icon(Icons.check_circle, color: Colors.green, size: 16),
+                               const SizedBox(width: 4),
+                               const Text('Firma guardada', style: TextStyle(color: Colors.green)),
+                               const SizedBox(width: 16),
+                               TextButton.icon(
+                                 onPressed: _showSignatureDialog,
+                                 icon: const Icon(Icons.edit), 
+                                 label: const Text('Actualizar Firma')
+                               )
+                             ],
+                           )
+                         ],
+                       )
+                     else
+                       Center(
+                         child: ElevatedButton.icon(
+                           onPressed: _showSignatureDialog,
+                           icon: const Icon(Icons.draw),
+                           label: const Text('Crear Firma Digital'),
+                           style: ElevatedButton.styleFrom(
+                             backgroundColor: Colors.blue.shade50,
+                             foregroundColor: Colors.blue,
+                             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12)
+                           ),
+                         ),
+                       ),
+                     
+                     const SizedBox(height: 20),
+                     const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
+                     _buildSignaturePad(_subscriberSignatureController),
+                  ]),
                  _buildCard('Cierre', Icons.check_circle, [
                    ListTile(
                      title: const Text('Solución Técnico'),

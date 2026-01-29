@@ -213,4 +213,31 @@ class ApiService {
       throw Exception(body['message'] ?? 'Ocurrió un error');
     }
   }
+  Future<Map<String, dynamic>> getProfile() async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/v1/profile'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> updateSignature(File signatureFile) async {
+    final token = await AuthService.instance.getToken();
+    final uri = Uri.parse('$baseUrl/v1/profile/signature');
+    final request = http.MultipartRequest('POST', uri)
+      ..headers['Authorization'] = 'Bearer $token'
+      ..headers['Accept'] = 'application/json'
+      ..files.add(await http.MultipartFile.fromPath('signature', signatureFile.path));
+      
+    final response = await request.send();
+    final responseBody = await response.stream.bytesToString();
+    
+    if (response.statusCode >= 200 && response.statusCode < 300) {
+      return jsonDecode(responseBody);
+    } else {
+       final body = jsonDecode(responseBody);
+       throw Exception(body['message'] ?? 'Error updating signature');
+    }
+  }
 }
