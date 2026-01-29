@@ -252,15 +252,17 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         content: Column(
            mainAxisSize: MainAxisSize.min,
            children: [
-             Container(
+             SizedBox(
                height: 180,
-               width: double.infinity,
-               decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
-               child: Stack(
-                 children: [
-                   Signature(controller: controller, backgroundColor: Colors.white, height: 180, width: 300), // Adjusted constraints
-                   Positioned(right:4, top:4, child: IconButton(icon: const Icon(Icons.clear, color: Colors.red), onPressed: () => controller.clear()))
-                 ]
+               width: 300,
+               child: Container(
+                 decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
+                 child: Stack(
+                   children: [
+                     Signature(controller: controller, backgroundColor: Colors.white, height: 180, width: 300),
+                     Positioned(right:4, top:4, child: IconButton(icon: const Icon(Icons.clear, color: Colors.red), onPressed: () => controller.clear()))
+                   ]
+                 ),
                ),
              ),
            ],
