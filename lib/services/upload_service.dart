@@ -90,7 +90,7 @@ class UploadService {
     _isSyncing = false;
   }
   
-  Future<bool> _uploadPhoto(String orderNumber, String imagePath) async {
+  Future<bool> _uploadPhoto(String orderNumber, String imagePath, String? tipo) async {
     final token = await AuthService.instance.getToken();
     if (token == null) return false;
 
@@ -99,6 +99,10 @@ class UploadService {
       ..headers['Authorization'] = 'Bearer $token'
       ..headers['Accept'] = 'application/json'
       ..files.add(await http.MultipartFile.fromPath('photo', imagePath));
+      
+    if (tipo != null) {
+      request.fields['tipo'] = tipo;
+    }
       
     final response = await request.send();
     
