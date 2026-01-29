@@ -170,8 +170,12 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     );
   }
 
+  List<String> _evidenceTypes = [];
+
   Future<void> _initialize() async {
     await _loadPhotos();
+    _fetchEvidenceTypes();
+    
     _uploadSubscription = UploadService.instance.uploadStatusStream.listen((status) {
       if (mounted) {
         setState(() {
@@ -184,6 +188,15 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         });
       }
     });
+  }
+
+  Future<void> _fetchEvidenceTypes() async {
+    try {
+      final types = await ApiService().getEvidenceTypes();
+      if (mounted) setState(() => _evidenceTypes = types);
+    } catch (e) {
+      debugPrint('Error fetching evidence types: $e');
+    }
   }
   
   @override
@@ -209,6 +222,30 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final photos = await _photoRepo.getPhotos(widget.orden.numeroOrden);
       if (mounted) setState(() => _galleryPhotos = photos);
     } catch (_) {}
+  }
+
+  Future<String?> _showTypeSelectionDialog() async {
+    return showDialog<String>(
+      context: context,
+      barrierDismissible: false, // Force selection or cancel explicitly
+      builder: (ctx) => SimpleDialog(
+        title: const Text('Seleccionar Tipo de Foto'),
+        children: [
+          ..._evidenceTypes.map((type) => SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, type),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 8.0),
+              child: Text(type, style: const TextStyle(fontSize: 16)),
+            ),
+          )),
+          const Divider(),
+          SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, null), // Return null on cancel
+            child: const Text('Cancelar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
   }
 
   Future<void> _showSourceSelection() async {
@@ -274,27 +311,27 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final appDir = await getApplicationDocumentsDirectory();
 
       for (var pickedFile in filesToProcess) {
+        // Ask for Evidence Type FIRST
+        String? selectedType;
+        if (_evidenceTypes.isNotEmpty) {
+           selectedType = await _showTypeSelectionDialog();
+           if (selectedType == null && mounted) {
+             // If user cancels, we might want to skip this photo or stop.
+             // Let's skip this photo but continue others if any (or just break?).
+             // User expectation: Cancel = Don't upload this one.
+             continue; 
+           }
+        }
+      
         final fileName = 'WM_${DateTime.now().millisecondsSinceEpoch}_${p.basename(pickedFile.path)}';
         final targetPath = '${appDir.path}/$fileName';
         
         // 1. Watermark Processing
         final watermarkedFile = await _addWatermark(File(pickedFile.path), targetPath);
         
-        // 2. Compress/Copy logic (Watermark alrdy saves to targetPath, maybe we compress after? 
-        // Or if watermark saves high res, we correct. 
-        // Simplest: Watermark -> Save. Compressor was used before.
-        // Let's compress AFTER watermark if needed, or rely on watermark saving quality.
-        // For efficiency, let's just use the watermarked file.
-        
         File finalFile = watermarkedFile;
 
-        // Optional: Extra compression if watermarked is still huge, but 'image' package encodes well usually.
-        // If we want to strictly follow previous flow:
-        // final result = await FlutterImageCompress.compressAndGetFile(...) 
-        // But we already decoded/encoded in watermark. Doing it again is slow. 
-        // Let's assume _addWatermark saves with good quality/size.
-
-        final localId = await _photoRepo.addPhoto(widget.orden.numeroOrden, finalFile.path);
+        final localId = await _photoRepo.addPhoto(widget.orden.numeroOrden, finalFile.path, tipo: selectedType);
         if (mounted) {
           setState(() {
             _galleryPhotos.add(PhotoDisplay(localId: localId, path: finalFile.path, status: PhotoStatusType.local));

@@ -162,6 +162,16 @@ class ApiService {
     return List<String>.from(data);
   }
 
+  Future<List<String>> getEvidenceTypes() async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/v1/evidence-types'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    final data = _handleResponse(response);
+    return List<String>.from(data);
+  }
+
   Future<Map<String, dynamic>> getPendingOrders({int page = 1, String? barrio}) async {
     final token = await AuthService.instance.getToken();
     String url = '$baseUrl/v1/pending-orders?page=$page';

@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
-  static const int _databaseVersion = 8;
+  static const int _databaseVersion = 9;
 
   DatabaseService._init();
 
@@ -34,11 +34,17 @@ class DatabaseService {
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         order_number TEXT NOT NULL,
         image_path TEXT NOT NULL,
+        tipo TEXT, 
         created_at INTEGER NOT NULL DEFAULT (strftime('%s', 'now')),
         sync_status TEXT NOT NULL DEFAULT 'pending',
         last_error TEXT
       )
     ''');
+// ... (rest of _createDB omitted for brevity in tool call, but context needs it to be valid)
+// WAIT, I cannot replace the whole file or large chunks easily if I don't include enough context or if it's too big.
+// I should split this into multiple replacement chunks using multi_replace_file_content or do sequential replaces.
+// Since I can't use multi_replace yet (or rather, I should use replace_file_content for single blocks), I'll do sequential.
+
 
     // Tabla orders
     await db.execute('''
@@ -251,14 +257,19 @@ class DatabaseService {
         try { await db.execute('ALTER TABLE orders ADD COLUMN $colDef'); } catch (_) {}
       }
     }
+
+    if (oldVersion < 9) {
+       try { await db.execute('ALTER TABLE pending_photos ADD COLUMN tipo TEXT'); } catch (_) {}
+    }
   }
 
   // ========== PENDING PHOTOS ==========
-  Future<int> addPendingPhoto(String orderNumber, String imagePath) async {
+  Future<int> addPendingPhoto(String orderNumber, String imagePath, {String? tipo}) async {
     final db = await database;
     return await db.insert('pending_photos', {
       'order_number': orderNumber,
       'image_path': imagePath,
+      'tipo': tipo,
       'sync_status': 'pending',
     });
   }

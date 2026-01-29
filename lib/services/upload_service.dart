@@ -56,12 +56,13 @@ class UploadService {
       final photoId = photo['id'] as int;
       final photoPath = photo['image_path'] as String;
       final orderNumber = photo['order_number'] as String;
+      final tipo = photo['tipo'] as String?;
 
 
       _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.uploading));
       
       try {
-        final success = await _uploadPhoto(orderNumber, photoPath);
+        final success = await _uploadPhoto(orderNumber, photoPath, tipo);
         if (success) {
           await db.deletePendingPhoto(photoId);
           _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.uploaded));
