@@ -219,7 +219,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final response = await http.get(Uri.parse(url));
       if (response.statusCode == 200) {
         await file.writeAsBytes(response.bodyBytes, flush: true);
-        if (mounted) setState(() => _savedSignatureFile = file);
+        if (mounted) {
+             setState(() => _savedSignatureFile = file);
+        }
+      } else {
+        debugPrint('Failed to download signature: ${response.statusCode}');
       }
     } catch (e) {
       debugPrint('Error caching signature: $e');
@@ -822,7 +826,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                              height: 120,
                              width: double.infinity,
                              decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
-                             child: Image.file(_savedSignatureFile!, fit: BoxFit.contain),
+                             child: GestureDetector(
+                               onTap: _showSignatureDialog,
+                               child: Image.file(_savedSignatureFile!, fit: BoxFit.scaleDown),
+                             ),
                            ),
                            const SizedBox(height: 8),
                            Row(
