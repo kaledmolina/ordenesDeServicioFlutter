@@ -18,6 +18,7 @@ import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/sync_service.dart';
 import '../services/upload_service.dart';
+import '../services/api_service.dart';
 import '../widgets/connection_status_indicator.dart';
 import '../widgets/app_background.dart';
 import '../widgets/processing_overlay.dart';
