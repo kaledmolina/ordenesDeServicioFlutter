@@ -573,10 +573,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       } else if (_technicianSignatureController.isNotEmpty) {
          // Use new signature and SAVE IT
          techSig = await _technicianSignatureController.toPngBytes();
-         if (techSig != null) {
+         if (techSig != null && techSig.isNotEmpty) {
            final appDir = await getApplicationDocumentsDirectory();
-           final file = File('${appDir.path}/technician_signature.png');
-           await file.writeAsBytes(techSig);
+           final file = File(p.join(appDir.path, 'technician_signature.png'));
+           await file.writeAsBytes(techSig, flush: true);
+           debugPrint('Signature saved to: ${file.path}');
          }
       }
 
