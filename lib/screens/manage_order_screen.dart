@@ -813,7 +813,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                  _buildCard('Evidencia Fotográfica', Icons.camera_alt, [
                     _buildPhotoGallery(),
                  ]),
-                 _buildCard('Firmas', Icons.draw, [
                   _buildCard('Firmas', Icons.draw, [
                      const Text('Técnico', style: TextStyle(fontWeight: FontWeight.bold)),
                      if (_savedSignatureFile != null)
