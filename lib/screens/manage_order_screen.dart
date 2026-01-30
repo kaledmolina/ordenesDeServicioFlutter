@@ -57,6 +57,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   bool _isLoading = false;
   String _loadingMessage = 'Procesando...';
   StreamSubscription? _uploadSubscription;
+  Key _signatureKey = UniqueKey();
 
   // Articles
   List<Map<String, dynamic>> _articles = [];
@@ -298,7 +299,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         // Upload
         await ApiService().updateSignature(file);
         
-        setState(() => _savedSignatureFile = file);
+        setState(() {
+          _savedSignatureFile = file;
+          _signatureKey = UniqueKey();
+        });
         _showSnackbar('Firma actualizada correctamente', Colors.green);
       }
     } catch (e) {
@@ -938,7 +942,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                              decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
                              child: GestureDetector(
                                onTap: _showSignatureDialog,
-                               child: Image.file(_savedSignatureFile!, fit: BoxFit.scaleDown),
+                               child: Image.file(_savedSignatureFile!, fit: BoxFit.scaleDown, key: _signatureKey),
                              ),
                            ),
                            const SizedBox(height: 8),
