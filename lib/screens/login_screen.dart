@@ -68,7 +68,8 @@ class _LoginScreenState extends State<LoginScreen> {
     return AppBackground(
       child: Scaffold(
         backgroundColor: Colors.transparent,
-        body: Center(
+        body: SafeArea(
+          child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24.0),
             child: TweenAnimationBuilder<double>(

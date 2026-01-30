@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
@@ -197,11 +198,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         child: Column(
           children: [
             // 1. Status Stepper
-            _buildStatusStepper(orden.status),
+            _buildStatusStepper(orden.status)
+                .animate().fadeIn().slideY(begin: 0.2, end: 0),
             const SizedBox(height: 20),
             
             // 2. Details
-            _buildDetailSection(orden),
+            _buildDetailSection(orden)
+                .animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
             const SizedBox(height: 80), // Space for Bottom Bar
           ],
         ),

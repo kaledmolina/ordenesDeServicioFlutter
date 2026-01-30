@@ -13,7 +13,6 @@ import 'order_detail_screen.dart';
 import '../widgets/connection_status_indicator.dart';
 import '../widgets/order_countdown.dart';
 import 'pending_orders_screen.dart';
-import 'pending_orders_screen.dart';
 import 'profile_screen.dart'; // Import ProfileScreen
 import 'active_order_view.dart';
 import '../widgets/barrio_search_modal.dart';

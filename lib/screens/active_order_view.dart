@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
 import 'order_detail_screen.dart';
@@ -99,7 +100,8 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.assignment_turned_in_outlined, size: 80, color: Colors.grey.shade300),
+              Icon(Icons.assignment_turned_in_outlined, size: 80, color: Colors.grey.shade300)
+                  .animate().scale(duration: 500.ms).then().shake(duration: 500.ms),
               const SizedBox(height: 16),
               Text(
                 'No tienes ordenes en curso',

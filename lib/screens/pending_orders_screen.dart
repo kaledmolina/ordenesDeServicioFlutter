@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/api_service.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../models/orden_model.dart';
 import '../widgets/barrio_search_modal.dart';
 
@@ -139,7 +140,9 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                             separatorBuilder: (_, __) => const SizedBox(height: 12),
                             itemBuilder: (context, index) {
                               final order = Orden.fromJson(_orders[index]);
-                              return _buildOrderCard(order);
+                              return _buildOrderCard(order)
+                                  .animate(delay: (50 * index).clamp(0, 300).ms)
+                                  .fadeIn().slideX();
                             },
                           ),
           ),

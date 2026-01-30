@@ -654,24 +654,92 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     }
 
     // SHOW DETAILED ERROR DIALOG
-    if (missingFields.isNotEmpty) {
-       showDialog(
-         context: context,
-         builder: (_) => AlertDialog(
-           title: const Row(children: [Icon(Icons.error, color: Colors.orange), SizedBox(width: 8), Text('Faltan Datos')]),
-           content: Column(
-             mainAxisSize: MainAxisSize.min,
-             crossAxisAlignment: CrossAxisAlignment.start,
-             children: missingFields.map((e) => Padding(
-               padding: const EdgeInsets.symmetric(vertical: 4),
-               child: Row(children: [const Icon(Icons.circle, size: 8, color: Colors.grey), const SizedBox(width: 8), Expanded(child: Text(e))]),
-             )).toList(),
-           ),
-           actions: [TextButton(onPressed: () => Navigator.pop(context), child: const Text('Entendido'))],
-         )
-       );
-       return;
-    }
+     // SHOW DETAILED ERROR DIALOG
+     if (missingFields.isNotEmpty) {
+        if (mounted) {
+          showGeneralDialog(
+            context: context,
+            barrierDismissible: true,
+            barrierLabel: 'Cerrar',
+            barrierColor: Colors.black.withOpacity(0.5),
+            transitionDuration: const Duration(milliseconds: 300),
+            pageBuilder: (ctx, anim1, anim2) => const SizedBox(),
+            transitionBuilder: (ctx, anim1, anim2, child) {
+              return ScaleTransition(
+                scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+                child: FadeTransition(
+                  opacity: anim1,
+                  child: AlertDialog(
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                    backgroundColor: Colors.white,
+                    elevation: 10,
+                    contentPadding: EdgeInsets.zero,
+                    content: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                         Container(
+                           width: double.infinity,
+                           padding: const EdgeInsets.all(20),
+                           decoration: BoxDecoration(
+                             color: Colors.red.shade50,
+                             borderRadius: const BorderRadius.only(topLeft: Radius.circular(20), topRight: Radius.circular(20)),
+                           ),
+                           child: Column(
+                             children: [
+                               Container(
+                                 padding: const EdgeInsets.all(12),
+                                 decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                                 child: const Icon(Icons.warning_amber_rounded, size: 40, color: Colors.orange)
+                               ).animate().shake(duration: 500.ms),
+                               const SizedBox(height: 12),
+                               const Text('Atención Requerida', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18, color: Colors.red)),
+                             ],
+                           ),
+                         ),
+                        Padding(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Por favor complete los siguientes campos obligatorios:', style: TextStyle(color: Colors.black87, fontSize: 15)),
+                              const SizedBox(height: 16),
+                              ...missingFields.map((e) => Padding(
+                                padding: const EdgeInsets.only(bottom: 8),
+                                child: Row(
+                                  children: [
+                                    const Icon(Icons.error_outline, size: 18, color: Colors.red),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(e, style: const TextStyle(fontWeight: FontWeight.w500))),
+                                  ],
+                                ),
+                              )),
+                              const SizedBox(height: 24),
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () => Navigator.pop(ctx),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.red,
+                                    foregroundColor: Colors.white,
+                                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                    padding: const EdgeInsets.symmetric(vertical: 12),
+                                  ),
+                                  child: const Text('Entendido', style: TextStyle(fontWeight: FontWeight.bold)),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            },
+          );
+        }
+        return;
+     }
 
     // Proceed to Close
     setState(() {
@@ -811,7 +879,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           elevation: 0,
           foregroundColor: Colors.black87,
         ),
-        body: ProcessingOverlay(
+        body: SafeArea(
+          child: ProcessingOverlay(
           isLoading: _isLoading,
           message: _loadingMessage,
           icon: _loadingMessage.contains('imágenes') ? Icons.photo_library : Icons.cloud_sync,
