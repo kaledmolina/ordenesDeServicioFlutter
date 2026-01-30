@@ -462,7 +462,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           });
         }
       }
-      UploadService.instance.syncPendingUploads();
+      // REMOVED: Immediate upload
+      // UploadService.instance.syncPendingUploads();
       await Future.delayed(const Duration(milliseconds: 500));
     } catch (e) {
       if (mounted) _showSnackbar('Error al procesar imágenes: $e', Colors.red);
@@ -1056,7 +1057,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       children: [
          if (_galleryPhotos.isEmpty) const Text('Sin fotos agregadas', style: TextStyle(color: Colors.grey)),
          if (_galleryPhotos.isNotEmpty) SizedBox(
-           height: 120,
+           height: 140, // Increased height for title
            child: ListView.builder(
              scrollDirection: Axis.horizontal,
              itemCount: _galleryPhotos.length,
@@ -1064,71 +1065,70 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                final photo = _galleryPhotos[i];
                Widget imageWidget;
                if (photo.url != null && photo.url!.isNotEmpty) {
-                 imageWidget = Image.network(photo.url!, width: 120, height: 120, fit: BoxFit.cover,
+                 imageWidget = Image.network(photo.url!, width: 100, height: 100, fit: BoxFit.cover,
                    errorBuilder: (context, error, stackTrace) => Container(
-                     width: 120, height: 120, color: Colors.grey[300], 
+                     width: 100, height: 100, color: Colors.grey[300], 
                      child: const Icon(Icons.broken_image, color: Colors.grey)
                    ),
                  );
                } else {
-                 imageWidget = Image.file(File(photo.path), width: 120, height: 120, fit: BoxFit.cover,
+                 imageWidget = Image.file(File(photo.path), width: 100, height: 100, fit: BoxFit.cover,
                     errorBuilder: (context, error, stackTrace) => Container(
-                     width: 120, height: 120, color: Colors.grey[300], 
+                     width: 100, height: 100, color: Colors.grey[300], 
                      child: const Icon(Icons.image_not_supported, color: Colors.grey)
                    ),
                  );
                }
 
                return Padding(
-                 padding: const EdgeInsets.only(right: 8),
-                 child: Stack(
+                 padding: const EdgeInsets.only(right: 12),
+                 child: Column(
+                   mainAxisSize: MainAxisSize.min,
                    children: [
-                     GestureDetector(
-                       onTap: () => _showPhotoDetail(photo),
-                       child: ClipRRect(
-                         borderRadius: BorderRadius.circular(8),
-                         child: imageWidget,
-                       ),
-                     ),
-                     // Type Overlay
+                     // Type Title
                      if (photo.type != null)
-                       Positioned(
-                         bottom: 0,
-                         left: 0,
-                         right: 0,
-                         child: Container(
-                           color: Colors.black54,
-                           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                           child: Text(
-                             photo.type!,
-                             style: const TextStyle(color: Colors.white, fontSize: 10),
-                             maxLines: 1,
-                             overflow: TextOverflow.ellipsis,
-                             textAlign: TextAlign.center,
-                           ),
+                       Padding(
+                         padding: const EdgeInsets.only(bottom: 4),
+                         child: Text(
+                           photo.type!,
+                           style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 11),
+                           maxLines: 1,
+                           overflow: TextOverflow.ellipsis,
                          ),
                        ),
-                     // Status Icons
-                     if (photo.status == PhotoStatusType.uploading)
-                       const Positioned.fill(child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))),
-                     if (photo.status == PhotoStatusType.uploaded)
-                       const Positioned(right: 4, top: 4, child: Icon(Icons.check_circle, color: Colors.green, size: 20)),
                        
-                     // Delete Button (Only for local photos or if we allow deleting uploaded)
-                     // For NOW, allow deleting pending local photos easily.
-                     if (photo.status == PhotoStatusType.local)
-                       Positioned(
-                         right: 0,
-                         top: 0,
-                         child: GestureDetector(
-                           onTap: () => _deletePhoto(photo),
-                           child: Container(
-                             decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
-                             padding: const EdgeInsets.all(4),
-                             child: const Icon(Icons.close, color: Colors.white, size: 14),
+                     Stack(
+                       children: [
+                         GestureDetector(
+                           onTap: () => _showPhotoDetail(photo),
+                           child: ClipRRect(
+                             borderRadius: BorderRadius.circular(8),
+                             child: imageWidget,
                            ),
                          ),
-                       ),
+                         
+                         // Status Icons
+                         if (photo.status == PhotoStatusType.uploading)
+                           const Positioned.fill(child: Center(child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))),
+                         if (photo.status == PhotoStatusType.uploaded)
+                           const Positioned(right: 0, top: 0, child: Icon(Icons.check_circle, color: Colors.green, size: 18)),
+                           
+                         // Delete Button (Always visible for local photos now that upload is delayed)
+                         if (photo.status == PhotoStatusType.local)
+                           Positioned(
+                             right: -4,
+                             top: -4,
+                             child: GestureDetector(
+                               onTap: () => _deletePhoto(photo),
+                               child: Container(
+                                 decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                                 padding: const EdgeInsets.all(4),
+                                 child: const Icon(Icons.close, color: Colors.white, size: 14),
+                               ),
+                             ),
+                           ),
+                       ],
+                     ),
                    ],
                  ),
                );
