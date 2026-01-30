@@ -55,7 +55,19 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchBarrios();
 
     _fetchOrders();
+    _fetchPendingCount();
     UploadService.instance.start(); // Ensure service is running
+  }
+  
+  int _pendingCount = 0;
+
+  Future<void> _fetchPendingCount() async {
+    try {
+      final count = await _orderRepo.getPendingCount();
+      if (mounted) setState(() => _pendingCount = count);
+    } catch (e) {
+      debugPrint('Error fetching pending count: $e');
+    }
   }
 
   Future<void> _fetchBarrios() async {
@@ -273,6 +285,15 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Text('Hola, Técnico', style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.normal)),
           Text(_currentUser?.name ?? 'Bienvenido', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF10447E))),
+          if (_pendingCount > 0)
+            Padding(
+              padding: const EdgeInsets.only(top: 4),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
+                child: Text('Pendientes: $_pendingCount', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ),
         ],
       ),
       actions: [

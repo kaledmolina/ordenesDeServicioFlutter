@@ -24,6 +24,10 @@ class OrderRepository {
     }
   }
 
+  Future<int> getPendingCount() async {
+    return await _apiService.getPendingCount();
+  }
+
   Future<List<String>> getBarrios() async {
     return await _apiService.getBarrios();
   }

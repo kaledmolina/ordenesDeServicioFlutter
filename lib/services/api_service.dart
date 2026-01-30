@@ -65,6 +65,19 @@ class ApiService {
     return _handleResponse(response);
   }
 
+    return _handleResponse(response);
+  }
+
+  Future<int> getPendingCount() async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.get(
+      Uri.parse('$baseUrl/v1/orders/count-pending'),
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    );
+    final data = _handleResponse(response);
+    return data['count'] as int;
+  }
+
   // CAMBIO: Acepta un String en lugar de un int
   Future<Orden> getOrderDetails(String orderNumber) async {
     final token = await AuthService.instance.getToken();
