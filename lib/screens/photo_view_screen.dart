@@ -12,25 +12,27 @@ class PhotoViewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget image;
-    // CORRECCIÓN: Se construye la URL correcta para las fotos subidas.
-    if (photo.status == PhotoStatusType.uploaded && photo.remoteId != null) {
-      final secureUrl = '${ApiService.baseUrl}/v1/private-fotos/${photo.remoteId}';
+    // Use URL if available (handled by repository), else local file
+    if (photo.url != null && photo.url!.isNotEmpty) {
       image = Image.network(
-        secureUrl,
-        headers: {'Authorization': 'Bearer $authToken'},
+        photo.url!,
+        // tokens/headers not needed if URL is signed/public or handled by connection
+        // consistency with ManageOrderScreen
         loadingBuilder: (context, child, loadingProgress) {
-          if (loadingProgress == null) return child;
-          return Center(
-            child: CircularProgressIndicator(
-              value: loadingProgress.expectedTotalBytes != null
-                  ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                  : null,
-            ),
-          );
+           if (loadingProgress == null) return child;
+           return Center(child: CircularProgressIndicator(
+             value: loadingProgress.expectedTotalBytes != null
+                 ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
+                 : null
+           ));
         },
+        errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, color: Colors.white)),
       );
     } else {
-      image = Image.file(File(photo.path));
+      image = Image.file(
+        File(photo.path),
+        errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported, color: Colors.white)),
+      );
     }
 
     return Scaffold(
