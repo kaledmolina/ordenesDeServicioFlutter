@@ -716,41 +716,80 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         // );
         // Navigator.of(context).popUntil((route) => route.isFirst);
 
-        await showDialog(
+        await showGeneralDialog(
           context: context,
           barrierDismissible: false,
-          builder: (ctx) => AlertDialog(
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-            title: const Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Icon(Icons.check_circle, size: 60, color: Colors.green),
-                SizedBox(height: 10),
-                Text('Orden Finalizada', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
-              ],
-            ),
-            content: const Text(
-              'La orden ha sido finalizada y sincronizada correctamente.',
-              textAlign: TextAlign.center,
-            ),
-            actions: [
-              Center(
-                child: ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(ctx); // Close dialog
-                    Navigator.of(context).popUntil((route) => route.isFirst); // Go to home
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 12),
+          barrierColor: Colors.black.withOpacity(0.5),
+          transitionDuration: const Duration(milliseconds: 300),
+          pageBuilder: (ctx, anim1, anim2) => const SizedBox(),
+          transitionBuilder: (ctx, anim1, anim2, child) {
+            return ScaleTransition(
+              scale: CurvedAnimation(parent: anim1, curve: Curves.easeOutBack),
+              child: FadeTransition(
+                opacity: anim1,
+                child: AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+                  backgroundColor: Colors.white,
+                  elevation: 10,
+                  contentPadding: EdgeInsets.zero,
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.symmetric(vertical: 24),
+                        decoration: BoxDecoration(
+                          color: Colors.green.shade50,
+                          borderRadius: const BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
+                        ),
+                        child: Column(
+                          children: [
+                            Container(
+                               padding: const EdgeInsets.all(16),
+                               decoration: const BoxDecoration(color: Colors.white, shape: BoxShape.circle),
+                               child: const Icon(Icons.check_rounded, size: 48, color: Colors.green)
+                            ).animate().scale(duration: 600.ms, curve: Curves.elasticOut),
+                            const SizedBox(height: 16),
+                            const Text('¡Orden Finalizada!', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20, color: Colors.green)),
+                          ],
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Column(
+                          children: [
+                            Text(
+                              'La orden #${widget.orden.numeroOrden} se ha guardado y sincronizado correctamente con el servidor.',
+                              textAlign: TextAlign.center,
+                              style: TextStyle(color: Colors.grey.shade700, fontSize: 15, height: 1.4),
+                            ),
+                            const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed: () {
+                                  Navigator.pop(ctx);
+                                  Navigator.of(context).popUntil((route) => route.isFirst);
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.green,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  elevation: 0,
+                                ),
+                                child: const Text('Volver al Menú', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Text('Volver al Menú'),
                 ),
               ),
-            ],
-          ),
+            );
+          },
         );
       }
     } catch (e) {

@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 
@@ -23,59 +24,67 @@ class ProcessingOverlay extends StatelessWidget {
       children: [
         child,
         if (isLoading)
-          Container(
-            color: Colors.black.withOpacity(0.4),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.all(24),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(0.1),
-                      blurRadius: 20,
-                      offset: const Offset(0, 10),
-                    )
-                  ],
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: (color ?? const Color(0xFF10447E)).withOpacity(0.1),
-                        shape: BoxShape.circle,
-                      ),
-                      child: Icon(
-                        icon,
-                        size: 40,
-                        color: color ?? const Color(0xFF10447E),
-                      )
-                      .animate(onPlay: (controller) => controller.repeat())
-                      .scale(duration: 1000.ms, begin: const Offset(0.9, 0.9), end: const Offset(1.1, 1.1), curve: Curves.easeInOut)
-                      .then()
-                      .scale(duration: 1000.ms, begin: const Offset(1.1, 1.1), end: const Offset(0.9, 0.9), curve: Curves.easeInOut),
+          Positioned.fill(
+            child: Animate(
+              effects: [FadeEffect(duration: 200.ms)],
+              child: Stack(
+                children: [
+                  // Glassmorphism Background
+                  BackdropFilter(
+                    filter: ImageFilter.blur(sigmaX: 5, sigmaY: 5),
+                    child: Container(
+                      color: Colors.black.withOpacity(0.3),
                     ),
-                    const SizedBox(height: 16),
-                    Text(
-                      message,
-                      style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
+                  ),
+                  Center(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 32),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withOpacity(0.9),
+                        borderRadius: BorderRadius.circular(24),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 30,
+                            offset: const Offset(0, 15),
+                          ),
+                        ],
                       ),
-                    )
-                    .animate()
-                    .fadeIn(duration: 500.ms)
-                    .shimmer(duration: 2000.ms, color: Colors.grey.shade300),
-                  ],
-                ),
-              )
-              .animate()
-              .scale(duration: 300.ms, curve: Curves.easeOutBack)
-              .fadeIn(duration: 200.ms),
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(16),
+                            decoration: BoxDecoration(
+                              color: (color ?? const Color(0xFF10447E)).withOpacity(0.1),
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              icon,
+                              size: 48,
+                              color: color ?? const Color(0xFF10447E),
+                            )
+                            .animate(onPlay: (controller) => controller.repeat())
+                            .rotate(duration: 1500.ms, curve: Curves.easeInOut)
+                            .shimmer(duration: 1500.ms, color: Colors.white.withOpacity(0.5)),
+                          ),
+                          const SizedBox(height: 24),
+                          Text(
+                            message,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: Colors.black87,
+                              letterSpacing: 0.5,
+                            ),
+                          ).animate().fadeIn(duration: 400.ms, delay: 100.ms),
+                        ],
+                      ),
+                    ).animate().scale(duration: 300.ms, curve: Curves.easeOutBack),
+                  ),
+                ],
+              ),
             ),
           ),
       ],
