@@ -994,6 +994,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           ),
         ),
       ),
+      ),
     );
   }
 
