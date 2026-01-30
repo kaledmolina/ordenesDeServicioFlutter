@@ -594,7 +594,11 @@ class _HomeScreenState extends State<HomeScreen> {
                          ],
                        ),
                      ),
-                     OrderCountdown(creationDate: order.fechaHora, status: order.status),
+                     OrderCountdown(
+                       creationDate: order.fechaHora, 
+                       status: order.status,
+                       deadlineDate: order.deadlineAt,
+                     ),
                    ],
                  ),
                  

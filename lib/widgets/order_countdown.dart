@@ -5,12 +5,13 @@ import '../utils/business_hours.dart';
 
 class OrderCountdown extends StatefulWidget {
   final DateTime creationDate;
-  final String status;
+  final DateTime? deadlineDate;
 
   const OrderCountdown({
     Key? key,
     required this.creationDate,
     required this.status,
+    this.deadlineDate,
   }) : super(key: key);
 
   @override
@@ -21,8 +22,6 @@ class _OrderCountdownState extends State<OrderCountdown> {
   Timer? _timer;
   late Duration _remaining;
   bool _isOverdue = false;
-
-  static const Duration _deadlineDuration = Duration(hours: 48);
 
   @override
   void initState() {
@@ -42,11 +41,15 @@ class _OrderCountdownState extends State<OrderCountdown> {
            s == Orden.ESTADO_ANULADA;
   }
 
-
-
   void _calculateTime() {
-    // Calculate deadline using Business Hours Logic (48h excluding weekends/holidays)
-    final deadline = BusinessHours.add(widget.creationDate, 48);
+    DateTime deadline;
+    if (widget.deadlineDate != null) {
+      deadline = widget.deadlineDate!;
+    } else {
+      // Fallback: Use Business Hours Logic if no deadline provided from backend
+      deadline = BusinessHours.add(widget.creationDate, 48);
+    }
+    
     final now = DateTime.now();
     final difference = deadline.difference(now);
 
