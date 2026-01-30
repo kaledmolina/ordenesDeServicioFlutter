@@ -5,6 +5,7 @@ import '../utils/business_hours.dart';
 
 class OrderCountdown extends StatefulWidget {
   final DateTime creationDate;
+  final String status;
   final DateTime? deadlineDate;
 
   const OrderCountdown({
