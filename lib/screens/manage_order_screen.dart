@@ -634,7 +634,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     List<String> missingFields = [];
 
     // 1. Solución Técnico check
-    if (_selectedSolution == null) missingFields.add('Solución Técnico (Obligatorio)');
+    if (_selectedSolution == null || _selectedSolution!.isEmpty) missingFields.add('Solución Técnico (Obligatorio)');
     
     bool isSpecialCase = _selectedSolution == 'Solicitar Cierre' || _selectedSolution == 'Reprogramar';
 
