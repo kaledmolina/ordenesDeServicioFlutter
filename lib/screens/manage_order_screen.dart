@@ -1216,9 +1216,23 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
              ),
              Container(
                decoration: const BoxDecoration(color: Colors.white, borderRadius: BorderRadius.vertical(bottom: Radius.circular(8))),
-               child: TextButton(
-                onPressed: () => Navigator.pop(context),
-                child: const Text('Cerrar'),
+               child: Row(
+                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                 children: [
+                   TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text('Cerrar'),
+                   ),
+                   if (photo.status == PhotoStatusType.local)
+                     TextButton.icon(
+                       onPressed: () {
+                         Navigator.pop(context); // Close dialog first
+                         _deletePhoto(photo);
+                       },
+                       icon: const Icon(Icons.delete, color: Colors.red),
+                       label: const Text('Eliminar', style: TextStyle(color: Colors.red)),
+                     ),
+                 ],
                ),
              )
           ],

@@ -147,6 +147,11 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _orders = [...activeOrders, ...inactiveOrders];
         });
+        
+        // Update pending count if refreshing or initial load
+        if (isRefresh) {
+           _fetchPendingCount();
+        }
       }
     } catch (e) {
       if (mounted) {
