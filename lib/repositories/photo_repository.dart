@@ -19,6 +19,7 @@ class PhotoRepository {
           remoteId: p['id'],
           path: p['path'],
           url: p['url'],
+          type: p['tipo'] ?? p['evidence_type'], // Try to get type from API response
           status: PhotoStatusType.uploaded,
         )));
       } catch (e) {
@@ -31,6 +32,7 @@ class PhotoRepository {
     photos.addAll(pending.map((p) => PhotoDisplay(
       localId: p['id'] as int,
       path: p['image_path'] as String,
+      type: p['tipo'] as String?,
       status: PhotoStatusType.local,
     )));
 
