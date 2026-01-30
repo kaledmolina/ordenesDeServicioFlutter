@@ -65,8 +65,7 @@ class ApiService {
     return _handleResponse(response);
   }
 
-    return _handleResponse(response);
-  }
+
 
   Future<int> getPendingCount() async {
     final token = await AuthService.instance.getToken();
