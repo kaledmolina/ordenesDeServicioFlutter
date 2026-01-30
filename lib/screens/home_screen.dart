@@ -290,27 +290,42 @@ class _HomeScreenState extends State<HomeScreen> {
         children: [
           const Text('Hola, Técnico', style: TextStyle(fontSize: 14, color: Colors.grey, fontWeight: FontWeight.normal)),
           Text(_currentUser?.name ?? 'Bienvenido', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Color(0xFF10447E))),
-          if (_pendingCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(top: 4),
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(12)),
-                child: Text('Pendientes: $_pendingCount', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
-              ),
-            ),
         ],
       ),
       actions: [
-        Padding(
-          padding: EdgeInsets.only(right: 16.0),
-          child: ConnectionStatusIndicator(),
-        ),
-        Padding(
-          padding: EdgeInsets.only(right: 16.0),
-          child: _buildUploadProgress(),
+        Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_pendingCount > 0)
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                decoration: BoxDecoration(
+                  color: Colors.orange.shade700, 
+                  borderRadius: BorderRadius.circular(20),
+                  boxShadow: [
+                    BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                  ]
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.assignment_late_outlined, size: 16, color: Colors.white),
+                    const SizedBox(width: 4),
+                    Text(
+                      '$_pendingCount', 
+                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)
+                    ),
+                  ],
+                ),
+              ),
+            const ConnectionStatusIndicator(),
+            const SizedBox(width: 16),
+            _buildUploadProgress(), 
+             const SizedBox(width: 8),
+          ],
         ),
       ],
+    );
     );
   }
 
