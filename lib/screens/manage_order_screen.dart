@@ -299,6 +299,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         // Upload
         await ApiService().updateSignature(file);
         
+        await FileImage(file).evict();
+        
         setState(() {
           _savedSignatureFile = file;
           _signatureKey = UniqueKey();
