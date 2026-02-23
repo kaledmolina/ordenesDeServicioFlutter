@@ -878,7 +878,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                               child: ElevatedButton(
                                 onPressed: () {
                                   Navigator.pop(ctx);
-                                  Navigator.of(context).popUntil((route) => route.isFirst);
+                                  Navigator.of(context).pop('refresh');
                                 },
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: Colors.green,

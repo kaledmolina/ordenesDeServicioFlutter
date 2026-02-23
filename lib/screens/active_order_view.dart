@@ -137,7 +137,10 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
 
     // Reuse OrderDetailScreen but embedded or just redirect?
     // User asked to "see the order", embedding detail screen is best for a tab experience.
-    return OrderDetailScreen(orderNumber: _activeOrder!.numeroOrden);
+    return OrderDetailScreen(
+      orderNumber: _activeOrder!.numeroOrden,
+      onOrderUpdated: _findActiveOrder,
+    );
   }
 
   Widget _buildSuggestionCard(Orden order) {

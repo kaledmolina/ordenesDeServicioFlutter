@@ -19,7 +19,8 @@ import '../services/auth_service.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String orderNumber;
-  const OrderDetailScreen({super.key, required this.orderNumber});
+  final VoidCallback? onOrderUpdated;
+  const OrderDetailScreen({super.key, required this.orderNumber, this.onOrderUpdated});
 
   @override
   _OrderDetailScreenState createState() => _OrderDetailScreenState();
@@ -40,6 +41,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   void initState() {
     super.initState();
     _loadOrderDetails();
+  }
+  
+  void _safePop([String? result]) {
+    final finalResult = result ?? (_hasStateChanged ? 'refresh' : null);
+    if (widget.onOrderUpdated != null && finalResult == 'refresh') {
+      widget.onOrderUpdated!();
+    } else {
+      if (Navigator.canPop(context)) {
+        Navigator.of(context).pop(finalResult);
+      }
+    }
   }
   
   Future<void> _loadOrderDetails() async {
@@ -97,7 +109,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       await _orderRepo.rejectOrder(widget.orderNumber);
       if (mounted) {
         _msg('Orden rechazada.', Colors.orange);
-        Navigator.of(context).pop('refresh');
+        _hasStateChanged = true;
+        _safePop('refresh');
       }
     } catch (e) {
       if (mounted) _msg('Error al rechazar: $e', Colors.red);
@@ -159,7 +172,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   Widget build(BuildContext context) {
     return WillPopScope(
       onWillPop: () async {
-        Navigator.of(context).pop(_hasStateChanged ? 'refresh' : null);
+        _safePop();
         return false;
       },
       child: AppBackground(
@@ -344,7 +357,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                      await _orderRepo.reassignOrder(widget.orderNumber, obsController.text.trim());
                      if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden marcada para reasignar'), backgroundColor: Colors.blue));
-                        Navigator.of(context).pop('refresh');
+                        _hasStateChanged = true;
+                        _safePop('refresh');
                      }
                   } catch (e) {
                      if (mounted) _msg('Error al reasignar: $e', Colors.red);
@@ -395,7 +409,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                      await _orderRepo.rescheduleOrder(widget.orderNumber, obsController.text.trim());
                      if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden reprogramada'), backgroundColor: Colors.green));
-                        Navigator.of(context).pop('refresh');
+                        _hasStateChanged = true;
+                        _safePop('refresh');
                      }
                   } catch (e) {
                      if (mounted) _msg('Error al reprogramar: $e', Colors.red);
@@ -492,7 +507,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               final result = await Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => ManageOrderScreen(orden: orden)),
               );
-              if (result == 'refresh' && mounted) _loadOrderDetails();
+              if (result == 'refresh' && mounted) {
+                _hasStateChanged = true;
+                _safePop('refresh');
+              }
             },
             icon: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
             label: const Text('GESTIONAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
