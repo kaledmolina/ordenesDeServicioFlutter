@@ -15,6 +15,7 @@ import '../widgets/app_background.dart';
 import '../widgets/connection_status_indicator.dart';
 import 'signature_screen.dart';
 import '../widgets/processing_overlay.dart';
+import '../services/auth_service.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String orderNumber;
