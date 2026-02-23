@@ -11,6 +11,8 @@ class Orden {
   static const String ESTADO_EJECUTADA = 'ejecutada';
   static const String ESTADO_CERRADA = 'cerrada';
   static const String ESTADO_ANULADA = 'anulada';
+  static const String ESTADO_REASIGNAR = 'reasignar';
+  static const String ESTADO_REPROGRAMADA = 'reprogramada';
   
   final String numeroOrden;
   final String nombreCliente;
