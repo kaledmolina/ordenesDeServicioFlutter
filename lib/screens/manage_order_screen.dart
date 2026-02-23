@@ -80,12 +80,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
     _selectedSolution = widget.orden.solucionTecnico;
     
-    // Si la orden viene reprogramada o con cierre solicitado (reasignada), limpiar el campo
-    // para que el nuevo técnico deba seleccionar una nueva solución.
-    if (_selectedSolution != null && 
-       (_selectedSolution!.contains('Reprogramar') || _selectedSolution!.contains('Solicitar Cierre'))) {
-      _selectedSolution = null;
-    }
+
     _macRouterController.text = widget.orden.macRouter ?? '';
     _macBridgeController.text = widget.orden.macBridge ?? '';
     _macOntController.text = widget.orden.macOnt ?? '';
@@ -678,18 +673,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     // 1. Solución Técnico check
     if (_selectedSolution == null || _selectedSolution!.isEmpty) missingFields.add('Solución Técnico (Obligatorio)');
     
-    bool isSpecialCase = _selectedSolution == 'Solicitar Cierre' || _selectedSolution == 'Reprogramar';
-
-    // 2. Observations
-    if (isSpecialCase && _obsOrigenController.text.trim().isEmpty) {
-        missingFields.add('Motivo/Observaciones (Obligatorio para reprogramar o cerrar)');
-    }
-
-    // 3. Normal Flow Checks
-    if (!isSpecialCase) {
-        // Signatures
-        if (_savedSignatureFile == null) missingFields.add('Firma del Técnico (Debe crearla)');
-        if (_subscriberSignatureController.isEmpty) missingFields.add('Firma del Cliente');
+    // 2. Normal Flow Checks
+    // Signatures
+    if (_savedSignatureFile == null) missingFields.add('Firma del Técnico (Debe crearla)');
+    if (_subscriberSignatureController.isEmpty) missingFields.add('Firma del Cliente');
         
         // Photos (Except 037)
         bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
@@ -1291,8 +1278,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     
     // Sort options to match the ID order if possible or just values
     final options = Orden.solucionTecnicoOptions.values.toList();
-    // Add special options
-    final allOptions = [...options, 'Solicitar Cierre', 'Reprogramar'];
+    final allOptions = options;
 
     showDialog(
       context: context,
@@ -1315,16 +1301,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                       onChanged: (bool? checked) {
                         setModalState(() {
                           if (checked == true) {
-                             // Special cases are exclusive? Or just normal tags? Let's treat them as normal for now or exclusive if needed.
-                             // Usually "Reprogramar" is exclusive.
-                             if (option == 'Solicitar Cierre' || option == 'Reprogramar') {
-                                currentSelections = [option];
-                             } else {
-                                // Remove exclusive ones if selecting normal ones
-                                currentSelections.remove('Solicitar Cierre');
-                                currentSelections.remove('Reprogramar');
-                                currentSelections.add(option);
-                             }
+                            currentSelections.add(option);
                           } else {
                             currentSelections.remove(option);
                           }
