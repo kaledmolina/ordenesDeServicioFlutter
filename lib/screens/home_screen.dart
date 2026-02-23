@@ -108,7 +108,7 @@ class _HomeScreenState extends State<HomeScreen> {
       
       // Custom Sorting Logic
       final now = DateTime.now();
-      final activeStatuses = ['asignada', 'en_proceso', 'en_sitio', 'pendiente'];
+      final activeStatuses = ['asignada', 'en_proceso', 'en_sitio', 'pendiente', 'reasignar', 'reprogramada'];
       
       final activeOrders = <Orden>[];
       final inactiveOrders = <Orden>[];
@@ -432,6 +432,8 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildFilterChip('Cerradas', 'cerrada', color: Colors.grey),
                     const SizedBox(width: 8),
                     _buildFilterChip('Anuladas', 'anulada', color: Colors.red),
+                    const SizedBox(width: 8),
+                    _buildFilterChip('Especiales', 'especiales', color: Colors.purple),
                   ],
                 ),
               ),
@@ -729,6 +731,8 @@ class _HomeScreenState extends State<HomeScreen> {
       case 'en_proceso': return Colors.blue;
       case 'en_sitio': return Colors.indigo;
       case 'ejecutada': return Colors.green;
+      case 'reasignar': return Colors.redAccent;
+      case 'reprogramada': return Colors.orangeAccent;
       default: return Colors.grey;
     }
   }

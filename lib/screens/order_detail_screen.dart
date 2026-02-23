@@ -1,10 +1,14 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
+import '../models/photo_status_model.dart';
+import '../repositories/photo_repository.dart';
+import 'photo_view_screen.dart';
 import '../services/sync_service.dart';
 import 'manage_order_screen.dart';
 import '../widgets/app_background.dart';
@@ -22,7 +26,9 @@ class OrderDetailScreen extends StatefulWidget {
 
 class _OrderDetailScreenState extends State<OrderDetailScreen> {
   final OrderRepository _orderRepo = OrderRepository();
+  final PhotoRepository _photoRepo = PhotoRepository();
   Orden? _currentOrder;
+  List<PhotoDisplay> _photos = [];
   bool _isLoading = true;
   String? _error;
 
@@ -43,11 +49,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     
     try {
       final cachedOrder = await _orderRepo.getOrderDetails(widget.orderNumber);
-      if (mounted) setState(() { _currentOrder = cachedOrder; _isLoading = false; });
+      final cachedPhotos = await _photoRepo.getPhotos(widget.orderNumber);
+      if (mounted) setState(() { _currentOrder = cachedOrder; _photos = cachedPhotos; _isLoading = false; });
     } catch (e) {
       try {
         final order = await _orderRepo.getOrderDetails(widget.orderNumber);
-        if (mounted) setState(() { _currentOrder = order; _isLoading = false; });
+        final fetchedPhotos = await _photoRepo.getPhotos(widget.orderNumber);
+        if (mounted) setState(() { _currentOrder = order; _photos = fetchedPhotos; _isLoading = false; });
       } catch (err) {
         if (mounted) setState(() { _error = err.toString(); _isLoading = false; });
       }
@@ -299,21 +307,73 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   // --- DIALOGS FOR SPECIAL ACTIONS ---
-  Future<void> _promptForObservationAndClose(String solutionType, String title, String confirmText) async {
+  Future<void> _promptForReassign() async {
       final obsController = TextEditingController();
       await showDialog(
         context: context, 
         builder: (_) => AlertDialog(
-          title: Text(title, style: const TextStyle(fontWeight: FontWeight.bold)),
+          title: const Text('Reasignar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
           content: Column(
              mainAxisSize: MainAxisSize.min,
              children: [
-               const Text('Por favor, indica el motivo:'),
+               const Text('Por favor, indica el motivo detallado de la reasignación (mínimo 15 caracteres):'),
                const SizedBox(height: 10),
                TextField(
                  controller: obsController,
-                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Escribe el motivo aquí...'),
+                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Motivo de la falla...'),
                  maxLines: 3,
+                 maxLength: 150,
+               )
+             ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            ElevatedButton(
+              onPressed: () async {
+                  if (obsController.text.trim().length < 15) {
+                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo debe tener al menos 15 caracteres'), backgroundColor: Colors.orange));
+                      return;
+                  }
+                  Navigator.pop(context); // Close dialog
+                  setState(() {
+                     _isLoading = true;
+                     _loadingMessage = 'Procesando reasignación...';
+                  });
+                  try {
+                     await _orderRepo.reassignOrder(widget.orderNumber, obsController.text.trim());
+                     if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden marcada para reasignar'), backgroundColor: Colors.blue));
+                        Navigator.of(context).pop('refresh');
+                     }
+                  } catch (e) {
+                     if (mounted) _msg('Error al reasignar: $e', Colors.red);
+                  } finally {
+                     if (mounted) setState(() => _isLoading = false);
+                  }
+              }, 
+              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
+              child: const Text('Reasignar')
+            ),
+          ],
+        )
+      );
+  }
+
+  Future<void> _promptForReschedule() async {
+      final obsController = TextEditingController();
+      await showDialog(
+        context: context, 
+        builder: (_) => AlertDialog(
+          title: const Text('Reprogramar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
+          content: Column(
+             mainAxisSize: MainAxisSize.min,
+             children: [
+               const Text('Por favor, indica el motivo de la reprogramación:'),
+               const SizedBox(height: 10),
+               TextField(
+                 controller: obsController,
+                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Motivo...'),
+                 maxLines: 2,
                )
              ],
           ),
@@ -328,29 +388,22 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   Navigator.pop(context); // Close dialog
                   setState(() {
                      _isLoading = true;
-                     _loadingMessage = 'Procesando solicitud...';
+                     _loadingMessage = 'Reprogramando...';
                   });
                   try {
-                     final closingData = {
-                        'solucion_tecnico': solutionType,
-                        'observaciones': obsController.text.trim(),
-                        // Minimal required fields to pass validation if any
-                        'firma_tecnico': null,
-                        'firma_suscriptor': null,
-                     };
-                     await _orderRepo.closeOrder(widget.orderNumber, closingData);
+                     await _orderRepo.rescheduleOrder(widget.orderNumber, obsController.text.trim());
                      if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Orden procesada: $solutionType'), backgroundColor: Colors.green));
-                        Navigator.of(context).popUntil((route) => route.isFirst);
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden reprogramada'), backgroundColor: Colors.green));
+                        Navigator.of(context).pop('refresh');
                      }
                   } catch (e) {
-                     if (mounted) _msg('Error: $e', Colors.red);
+                     if (mounted) _msg('Error al reprogramar: $e', Colors.red);
                   } finally {
                      if (mounted) setState(() => _isLoading = false);
                   }
               }, 
               style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
-              child: Text(confirmText)
+              child: const Text('Reprogramar')
             ),
           ],
         )
@@ -358,134 +411,146 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   }
 
   List<Widget> _buildActionButtons(Orden orden, String status) {
+    List<Widget> mainAction = [];
+
     // 1. ASIGNADA
     if (status == Orden.ESTADO_ASIGNADA) {
-      return [
+      mainAction = [
         const Text(
           '¿Estás listo para iniciar?',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.grey, fontSize: 13),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: OutlinedButton(
-                onPressed: () => _promptForObservationAndClose('Solicitar Cierre', 'Solicitar Cierre', 'Enviar Solicitud'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: Colors.redAccent,
-                  side: const BorderSide(color: Colors.redAccent),
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                ),
-                child: const Text('Solicitar Cierre'),
-              ),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _showConfirmationDialog(
+              title: 'Iniciar Orden',
+              content: 'El cliente será notificado de que estás en camino.',
+              confirmText: 'Iniciar Ahora',
+              onConfirm: _takeOrder,
             ),
-            const SizedBox(width: 12),
-            Expanded(
-              flex: 2,
-              child: ElevatedButton.icon(
-                onPressed: () => _showConfirmationDialog(
-                  title: 'Iniciar Orden',
-                  content: 'El cliente será notificado de que estás en camino.',
-                  confirmText: 'Iniciar Ahora',
-                  onConfirm: _takeOrder,
-                ),
-                icon: const Icon(Icons.play_arrow, color: Colors.white),
-                label: const Text('INICIAR RUTA', style: TextStyle(fontWeight: FontWeight.bold)),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF10447E),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                  elevation: 5,
-                ),
-              ),
+            icon: const Icon(Icons.play_arrow, color: Colors.white),
+            label: const Text('INICIAR RUTA', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10447E),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 5,
             ),
-          ],
+          ),
         ),
       ];
     }
-
     // 2. EN PROCESO
-    if (status == Orden.ESTADO_EN_PROCESO) {
-      return [
+    else if (status == Orden.ESTADO_EN_PROCESO) {
+      mainAction = [
         const Text(
           'Dirígete a la ubicación del cliente',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.grey, fontSize: 13),
         ),
         const SizedBox(height: 10),
-        ElevatedButton.icon(
-          onPressed: () => _showConfirmationDialog(
-            title: 'Llegada a Sitio',
-            content: '¿Has llegado a la ubicación del cliente?',
-            confirmText: 'Sí, estoy aquí',
-            onConfirm: _reportOnSite,
-          ),
-          icon: const Icon(Icons.location_on, color: Colors.white),
-          label: const Text('CONFIRMAR LLEGADA', style: TextStyle(fontWeight: FontWeight.bold)),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: const Color(0xFF10447E), 
-            foregroundColor: Colors.white,
-            padding: const EdgeInsets.symmetric(vertical: 16),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            elevation: 5,
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () => _showConfirmationDialog(
+              title: 'Llegada a Sitio',
+              content: '¿Has llegado a la ubicación del cliente?',
+              confirmText: 'Sí, estoy aquí',
+              onConfirm: _reportOnSite,
+            ),
+            icon: const Icon(Icons.location_on, color: Colors.white),
+            label: const Text('CONFIRMAR LLEGADA', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10447E), 
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 5,
+            ),
           ),
         ),
       ];
     }
-
     // 3. EN SITIO
-    if (status == Orden.ESTADO_EN_SITIO) {
-      return [
+    else if (status == Orden.ESTADO_EN_SITIO) {
+      mainAction = [
         const Text(
           'Completa el formulario para finalizar',
           textAlign: TextAlign.center,
           style: TextStyle(color: Colors.grey, fontSize: 13),
         ),
         const SizedBox(height: 10),
-        Row(
-          children: [
-             Expanded(
-               child: OutlinedButton(
-                 onPressed: () => _promptForObservationAndClose('Reprogramar', 'Reprogramar Orden', 'Reprogramar'),
-                 style: OutlinedButton.styleFrom(
-                   foregroundColor: Colors.orange,
-                   side: const BorderSide(color: Colors.orange),
-                   padding: const EdgeInsets.symmetric(vertical: 16),
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                 ),
-                 child: const Text('Reprogramar', style: TextStyle(fontSize: 12)),
-               ),
-             ),
-             const SizedBox(width: 12),
-             Expanded(
-               flex: 2,
-               child: ElevatedButton.icon(
-                 onPressed: () async {
-                   final result = await Navigator.of(context).push(
-                     MaterialPageRoute(builder: (_) => ManageOrderScreen(orden: orden)),
-                   );
-                   if (result == 'refresh' && mounted) _loadOrderDetails();
-                 },
-                 icon: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
-                 label: const Text('GESTIONAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-                 style: ElevatedButton.styleFrom(
-                   backgroundColor: const Color(0xFF10447E),
-                   foregroundColor: Colors.white,
-                   padding: const EdgeInsets.symmetric(vertical: 16),
-                   shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                   elevation: 5,
-                 ),
-               ),
-             ),
-          ],
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            onPressed: () async {
+              final result = await Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => ManageOrderScreen(orden: orden)),
+              );
+              if (result == 'refresh' && mounted) _loadOrderDetails();
+            },
+            icon: const Icon(Icons.assignment_turned_in, color: Colors.white, size: 20),
+            label: const Text('GESTIONAR', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF10447E),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              elevation: 5,
+            ),
+          ),
         ),
       ];
     }
 
-    return [const SizedBox.shrink()];
+    if (mainAction.isEmpty && status != 'reasignar' && status != 'reprogramada') {
+      return [const SizedBox.shrink()];
+    }
+
+    // Secondary buttons for active orders
+    List<Widget> finalActions = [...mainAction];
+
+    // Show secondary actions if it is an active or special status that user still owns
+    if ([Orden.ESTADO_ASIGNADA, Orden.ESTADO_EN_PROCESO, Orden.ESTADO_EN_SITIO].contains(status)) {
+         finalActions.addAll([
+             const SizedBox(height: 16),
+             Row(
+               children: [
+                 Expanded(
+                   child: OutlinedButton(
+                     onPressed: _promptForReassign,
+                     style: OutlinedButton.styleFrom(
+                       foregroundColor: Colors.redAccent,
+                       side: const BorderSide(color: Colors.redAccent),
+                       padding: const EdgeInsets.symmetric(vertical: 14),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                     ),
+                     child: const Text('Reasignar'),
+                   ),
+                 ),
+                 const SizedBox(width: 12),
+                 Expanded(
+                   child: OutlinedButton(
+                     onPressed: _promptForReschedule,
+                     style: OutlinedButton.styleFrom(
+                       foregroundColor: Colors.orange,
+                       side: const BorderSide(color: Colors.orange),
+                       padding: const EdgeInsets.symmetric(vertical: 14),
+                       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                     ),
+                     child: const Text('Reprogramar'),
+                   ),
+                 ),
+               ],
+             )
+         ]);
+    }
+
+    return finalActions;
   }
 
   // --- HELPERS ---
@@ -517,6 +582,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           _buildInfoContainer('Artículos', [
              _buildArticleList(orden.articulos!),
           ]),
+         const SizedBox(height: 16),
+         _buildAttachedPhotos(),
       ],
     );
   }
@@ -617,5 +684,40 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ],
       ),
     );
+  }
+
+  Widget _buildAttachedPhotos() {
+    if (_photos.isEmpty) return const SizedBox.shrink();
+    return _buildInfoContainer('Fotos Adjuntas', [
+       SizedBox(
+        height: 100,
+        child: ListView.builder(
+          scrollDirection: Axis.horizontal,
+          itemCount: _photos.length,
+          itemBuilder: (context, index) {
+            final photo = _photos[index];
+            return GestureDetector(
+              onTap: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => PhotoViewScreen(photo: photo),
+                ));
+              },
+              child: Container(
+                margin: const EdgeInsets.only(right: 8),
+                width: 100,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(8),
+                  color: Colors.grey[200],
+                ),
+                clipBehavior: Clip.hardEdge,
+                child: photo.url != null && photo.url!.isNotEmpty 
+                  ? Image.network(photo.url!, fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image))
+                  : Image.file(File(photo.path), fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image)),
+              ),
+            );
+          },
+        ),
+       )
+    ]);
   }
 }

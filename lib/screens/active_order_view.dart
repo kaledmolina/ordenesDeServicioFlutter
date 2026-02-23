@@ -250,6 +250,16 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                        Expanded(child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue)),
                    ],
                  ),
+                 if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) ...[
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                         Expanded(
+                           child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent),
+                         ),
+                      ],
+                    ),
+                 ],
                  
                  // Observaciones
                  if (order.observaciones != null && order.observaciones!.isNotEmpty) ...[

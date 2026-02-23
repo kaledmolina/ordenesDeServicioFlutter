@@ -136,6 +136,26 @@ class ApiService {
     return _handleResponse(response);
   }
 
+  Future<Map<String, dynamic>> reassignOrder(String orderNumber, String motivo) async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/v1/orders/$orderNumber/reassign'),
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'motivo': motivo}),
+    );
+    return _handleResponse(response);
+  }
+
+  Future<Map<String, dynamic>> rescheduleOrder(String orderNumber, String motivo) async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/v1/orders/$orderNumber/reschedule'),
+      headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      body: jsonEncode({'motivo': motivo}),
+    );
+    return _handleResponse(response);
+  }
+
   // CAMBIO: Acepta un String en lugar de un int
   Future<void> updateDetails(String orderNumber, Map<String, dynamic> data) async {
     final token = await AuthService.instance.getToken();

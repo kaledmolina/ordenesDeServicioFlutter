@@ -91,6 +91,22 @@ class OrderRepository {
     }
   }
 
+  Future<void> reassignOrder(String orderNumber, String motivo) async {
+    try {
+      await _apiService.reassignOrder(orderNumber, motivo);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  Future<void> rescheduleOrder(String orderNumber, String motivo) async {
+    try {
+      await _apiService.rescheduleOrder(orderNumber, motivo);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   Future<void> updateOrderDetails(String orderNumber, Map<String, String> data) async {
     try {
       await _apiService.updateDetails(orderNumber, data);
@@ -201,6 +217,7 @@ class OrderRepository {
       'estado_interno': json['estado_interno'],
       'direccion_asociado': json['direccion_asociado'],
       'telefono': json['telefono'],
+      'otro_telefono': json['cliente']?['otro_telefono']?.toString() ?? json['otro_telefono']?.toString(),
       'saldo_cliente': json['saldo_cliente'],
       'solicitado_por': json['solicitado_por'],
       'estado_tv': json['estado_tv'],
@@ -246,6 +263,7 @@ class OrderRepository {
       'estado_interno': order.estadoInterno,
       'direccion_asociado': order.direccionAsociado,
       'telefono': order.telefono,
+      'otro_telefono': order.otroTelefono,
       'saldo_cliente': order.saldoCliente,
       'solicitado_por': order.solicitadoPor,
       'estado_tv': order.estadoTv,
@@ -294,6 +312,7 @@ class OrderRepository {
       estadoInterno: map['estado_interno']?.toString(),
       direccionAsociado: map['direccion_asociado']?.toString(),
       telefono: map['telefono']?.toString(),
+      otroTelefono: map['otro_telefono']?.toString(),
       saldoCliente: map['saldo_cliente']?.toString(),
       solicitadoPor: map['solicitado_por']?.toString(),
       estadoTv: map['estado_tv']?.toString(),
