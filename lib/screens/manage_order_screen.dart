@@ -680,8 +680,15 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         
         // Photos (Except 037)
         bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
-        if (_galleryPhotos.isEmpty && !isPasswordChange) {
-           missingFields.add('Al menos 1 foto como evidencia');
+        
+        // Count only technician photos (they have 'WM_' in the file name or are local pending)
+        int techPhotoCount = _galleryPhotos.where((p) {
+          if (p.status == PhotoStatusType.local) return true;
+          return p.url != null && p.url!.contains('WM_');
+        }).length;
+        
+        if (techPhotoCount == 0 && !isPasswordChange) {
+           missingFields.add('Al menos 1 foto propia como evidencia (las del panel admin no cuentan)');
         }
         
         // REMOVED: Blocking check for pending uploads. 
@@ -1080,16 +1087,22 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   }
 
   Widget _buildPhotoGallery() {
+    // Only show technician photos (local or containing 'WM_')
+    final techPhotos = _galleryPhotos.where((p) {
+      if (p.status == PhotoStatusType.local) return true;
+      return p.url != null && p.url!.contains('WM_');
+    }).toList();
+
     return Column(
       children: [
-         if (_galleryPhotos.isEmpty) const Text('Sin fotos agregadas', style: TextStyle(color: Colors.grey)),
-         if (_galleryPhotos.isNotEmpty) SizedBox(
+         if (techPhotos.isEmpty) const Text('Sin fotos agregadas', style: TextStyle(color: Colors.grey)),
+         if (techPhotos.isNotEmpty) SizedBox(
            height: 140, // Increased height for title
            child: ListView.builder(
              scrollDirection: Axis.horizontal,
-             itemCount: _galleryPhotos.length,
+             itemCount: techPhotos.length,
              itemBuilder: (ctx, i) {
-               final photo = _galleryPhotos[i];
+               final photo = techPhotos[i];
                Widget imageWidget;
                if (photo.url != null && photo.url!.isNotEmpty) {
                  imageWidget = Image.network(photo.url!, width: 100, height: 100, fit: BoxFit.cover,
