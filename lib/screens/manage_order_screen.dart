@@ -686,7 +686,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         
         // REMOVED: Blocking check for pending uploads. 
         // Background service manages uploads now.
-    }
 
     // SHOW DETAILED ERROR DIALOG
      // SHOW DETAILED ERROR DIALOG
