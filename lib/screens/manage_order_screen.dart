@@ -364,8 +364,47 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           )),
           const Divider(),
           SimpleDialogOption(
+            onPressed: () => Navigator.pop(ctx, '__OTRO__'),
+            child: const Padding(
+              padding: EdgeInsets.symmetric(vertical: 8.0),
+              child: Text('Otro (Escribir Motivo)', style: TextStyle(fontSize: 16, color: Colors.blue, fontWeight: FontWeight.bold)),
+            ),
+          ),
+          SimpleDialogOption(
             onPressed: () => Navigator.pop(ctx, null), // Return null on cancel
             child: const Text('Cancelar', style: TextStyle(color: Colors.red)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<String?> _showCustomTypeDialog() async {
+    final controller = TextEditingController();
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('Ingresar Motivo de Foto'),
+        content: TextField(
+          controller: controller,
+          decoration: const InputDecoration(
+            hintText: 'Ej. Daño en fachada, cableado roto...',
+            border: OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, null),
+            child: const Text('Cancelar', style: TextStyle(color: Colors.red)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (controller.text.trim().isNotEmpty) {
+                Navigator.pop(ctx, controller.text.trim());
+              }
+            },
+            child: const Text('Aceptar'),
           ),
         ],
       ),
@@ -441,9 +480,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
            selectedType = await _showTypeSelectionDialog();
            if (selectedType == null && mounted) {
              // If user cancels, we might want to skip this photo or stop.
-             // Let's skip this photo but continue others if any (or just break?).
-             // User expectation: Cancel = Don't upload this one.
              continue; 
+           }
+           if (selectedType == '__OTRO__' && mounted) {
+             selectedType = await _showCustomTypeDialog();
+             if (selectedType == null || selectedType.trim().isEmpty) continue;
            }
         }
       
