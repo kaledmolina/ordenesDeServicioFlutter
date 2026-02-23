@@ -576,6 +576,14 @@ class _HomeScreenState extends State<HomeScreen> {
                                padding: const EdgeInsets.only(top: 2),
                                child: Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
                              ),
+                           if (order.telefono != null)
+                             Padding(
+                               padding: const EdgeInsets.only(top: 2),
+                               child: InkWell(
+                                 onTap: () => _launchCaller(order.telefono!),
+                                 child: Text('Cel: ${order.telefono}', style: TextStyle(color: Colors.blue[600], fontSize: 12, fontWeight: FontWeight.bold)),
+                               ),
+                             ),
                            const SizedBox(height: 4),
                            Row(
                              children: [

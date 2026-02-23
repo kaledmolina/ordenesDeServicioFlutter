@@ -691,29 +691,64 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     if (_photos.isEmpty) return const SizedBox.shrink();
     return _buildInfoContainer('Fotos Adjuntas', [
        SizedBox(
-        height: 100,
+        height: 120, // Increased height for label
         child: ListView.builder(
           scrollDirection: Axis.horizontal,
           itemCount: _photos.length,
           itemBuilder: (context, index) {
             final photo = _photos[index];
             return GestureDetector(
-              onTap: () {
-                Navigator.of(context).push(MaterialPageRoute(
-                  builder: (_) => PhotoViewScreen(photo: photo),
-                ));
+              onTap: () async {
+                final token = await AuthService.instance.getToken();
+                if (context.mounted) {
+                  Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => PhotoViewScreen(photo: photo, authToken: token),
+                  ));
+                }
               },
               child: Container(
                 margin: const EdgeInsets.only(right: 8),
                 width: 100,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(8),
-                  color: Colors.grey[200],
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Container(
+                        width: 100,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(8),
+                          color: Colors.grey[200],
+                        ),
+                        clipBehavior: Clip.hardEdge,
+                        child: photo.url != null && photo.url!.isNotEmpty 
+                          ? FutureBuilder<String?>(
+                              future: AuthService.instance.getToken(),
+                              builder: (context, snapshot) {
+                                if (snapshot.connectionState == ConnectionState.waiting) {
+                                  return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                                }
+                                final token = snapshot.data;
+                                return Image.network(
+                                  photo.url!, 
+                                  headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+                                  fit: BoxFit.cover, 
+                                  errorBuilder: (_,__,___) => const Icon(Icons.broken_image)
+                                );
+                              }
+                            )
+                          : Image.file(File(photo.path), fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image)),
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      photo.type ?? 'Foto adjunta',
+                      style: const TextStyle(fontSize: 10, color: Colors.black87),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
                 ),
-                clipBehavior: Clip.hardEdge,
-                child: photo.url != null && photo.url!.isNotEmpty 
-                  ? Image.network(photo.url!, fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image))
-                  : Image.file(File(photo.path), fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image)),
               ),
             );
           },

@@ -16,8 +16,7 @@ class PhotoViewScreen extends StatelessWidget {
     if (photo.url != null && photo.url!.isNotEmpty) {
       image = Image.network(
         photo.url!,
-        // tokens/headers not needed if URL is signed/public or handled by connection
-        // consistency with ManageOrderScreen
+        headers: authToken != null ? {'Authorization': 'Bearer $authToken'} : null,
         loadingBuilder: (context, child, loadingProgress) {
            if (loadingProgress == null) return child;
            return Center(child: CircularProgressIndicator(
