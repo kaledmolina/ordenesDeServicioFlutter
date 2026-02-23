@@ -214,7 +214,7 @@ class Orden {
       tipo: json['tipo']?.toString(),
       estadoInterno: json['estado_interno']?.toString(),
       direccionAsociado: json['direccion_asociado']?.toString(),
-      telefono: json['telefono']?.toString(), 
+      telefono: json['telefono']?.toString() ?? json['cliente']?['celular']?.toString() ?? json['cliente']?['telefono']?.toString(), 
       saldoCliente: json['cliente']?['saldo_total']?.toString() ?? json['saldo_cliente']?.toString(),
       solicitadoPor: json['solicitado_por']?.toString(),
       estadoTv: json['estado_tv']?.toString(),
@@ -240,8 +240,8 @@ class Orden {
       clasificacion: json['clasificacion']?.toString(),
       codigoContrato: json['cliente']?['codigo_contrato']?.toString(),
       novedadesNoc: json['novedades_noc']?.toString(),
-      otroTelefono: json['cliente']?['otro_telefono']?.toString(),
-      telefonoFacturacion: json['cliente']?['telefono_facturacion']?.toString(),
+      otroTelefono: json['otro_telefono']?.toString() ?? json['cliente']?['otro_telefono']?.toString(),
+      telefonoFacturacion: json['telefono_facturacion']?.toString() ?? json['cliente']?['telefono_facturacion']?.toString(),
       deadlineAt: DateTime.tryParse(json['deadline_at'] ?? '')?.toLocal(),
     );
   }

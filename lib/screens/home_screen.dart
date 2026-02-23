@@ -690,8 +690,6 @@ class _HomeScreenState extends State<HomeScreen> {
                      child: Text(
                        order.observaciones!,
                        style: TextStyle(color: Colors.grey[700], fontSize: 12, fontStyle: FontStyle.italic),
-                       maxLines: 2,
-                       overflow: TextOverflow.ellipsis,
                      ),
                    ),
                  ],
@@ -768,7 +766,7 @@ class _HomeScreenState extends State<HomeScreen> {
     String status = order.status.toLowerCase();
 
     // Reusing logic but with modern buttons
-    if (status == 'asignada') {
+    if (status == 'asignada' || status == 'reasignar' || status == 'reprogramada') {
       return SizedBox(
         width: double.infinity,
         child: OutlinedButton(
