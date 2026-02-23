@@ -516,7 +516,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     List<Widget> finalActions = [...mainAction];
 
     // Show secondary actions if it is an active or special status that user still owns
-    if ([Orden.ESTADO_ASIGNADA, Orden.ESTADO_EN_PROCESO, Orden.ESTADO_EN_SITIO].contains(status)) {
+    if ([Orden.ESTADO_ASIGNADA, Orden.ESTADO_EN_PROCESO, Orden.ESTADO_EN_SITIO, Orden.ESTADO_REASIGNAR, Orden.ESTADO_REPROGRAMADA].contains(status)) {
          finalActions.addAll([
              const SizedBox(height: 16),
              Row(
