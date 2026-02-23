@@ -62,6 +62,7 @@ class Orden {
   final String? codigoContrato;
   final String? novedadesNoc;
   final String? otroTelefono;
+  final String? telefonoFacturacion;
   final DateTime? deadlineAt;
 
   // Celular alias for UI compatibility (maps to telefono)
