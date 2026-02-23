@@ -413,8 +413,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   List<Widget> _buildActionButtons(Orden orden, String status) {
     List<Widget> mainAction = [];
 
-    // 1. ASIGNADA
-    if (status == Orden.ESTADO_ASIGNADA) {
+    // 1. ASIGNADA / REPROGRAMADA / REASIGNAR
+    if (status == Orden.ESTADO_ASIGNADA || status == Orden.ESTADO_REPROGRAMADA || status == Orden.ESTADO_REASIGNAR) {
       mainAction = [
         const Text(
           '¿Estás listo para iniciar?',
@@ -564,7 +564,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             if (orden.cedula != null) _buildDetailRow('Cédula', orden.cedula),
             _buildDetailRow('Dirección', orden.direccion, icon: Icons.map),
             if (orden.barrio != null) _buildDetailRow('Barrio', orden.barrio),
-            _buildDetailRow('Celular', orden.celular, icon: Icons.phone, isPhone: true),
+            _buildDetailRow('Celular Principal', orden.celular, icon: Icons.phone, isPhone: true),
+            if (orden.telefonoFacturacion != null && orden.telefonoFacturacion!.isNotEmpty) _buildDetailRow('Teléfono Facturación', orden.telefonoFacturacion, icon: Icons.phone_android, isPhone: true),
             if (orden.otroTelefono != null && orden.otroTelefono!.isNotEmpty) _buildDetailRow('Otro Teléfono', orden.otroTelefono, icon: Icons.phone_android, isPhone: true),
             if (orden.solicitudSuscriptor != null) _buildDetailRow('Reporte', orden.solicitudSuscriptorLabel, icon: Icons.report_problem),
         ]),
