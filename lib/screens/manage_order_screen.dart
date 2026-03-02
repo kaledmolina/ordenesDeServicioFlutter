@@ -1132,7 +1132,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
   void _showFullscreenSignatureDialog(SignatureController ctrl) {
     // Save current strokes in case of cancel
-    final previousStrokes = ctrl.strokes;
+    final previousStrokes = ctrl.points;
     
     // Force landscape
     SystemChrome.setPreferredOrientations([
@@ -1164,7 +1164,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     icon: const Icon(Icons.close, color: Colors.white),
                     label: const Text('Cancelar', style: TextStyle(color: Colors.white)),
                     onPressed: () {
-                      ctrl.strokes = previousStrokes;
+                      ctrl.points = previousStrokes;
                       _restoreOrientationAndPop(context);
                     },
                   ),
