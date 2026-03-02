@@ -905,7 +905,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         );
       }
     } catch (e) {
-      if (mounted) _showSnackbar('Error: $e', Colors.red);
+      if (e.toString().contains('SocketException') || e.toString().contains('Failed host lookup')) {
+        if (mounted) _showSnackbar('Error de conexión. Por favor, asegúrate de estar conectado a Internet.', Colors.red);
+      } else {
+        if (mounted) _showSnackbar('Error: $e', Colors.red);
+      }
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
