@@ -1091,24 +1091,141 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   }
 
   Widget _buildSignaturePad(SignatureController ctrl) {
-    return Stack(
+    return Column(
       children: [
-        Container(
-          height: 120,
-          decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8)),
-          child: Signature(controller: ctrl, backgroundColor: Colors.white),
-        ),
-        Positioned(
-          right: 4,
-          top: 4,
-          child: IconButton(
-            icon: const Icon(Icons.clear, color: Colors.red),
-            onPressed: () => setState(() => ctrl.clear()),
-            tooltip: 'Borrar firma',
+        if (ctrl.isNotEmpty)
+          Container(
+            height: 120,
+            width: double.infinity,
+            decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8), color: Colors.white),
+            child: Stack(
+              children: [
+                Center(child: Image.memory(ctrl.toPngBytes() as dynamic ?? Uint8List(0), fit: BoxFit.contain)),
+                Positioned(
+                  right: 4, top: 4,
+                  child: IconButton(
+                    icon: const Icon(Icons.clear, color: Colors.red),
+                    onPressed: () => setState(() => ctrl.clear()),
+                    tooltip: 'Borrar firma',
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 10),
+        SizedBox(
+          width: double.infinity,
+          child: ElevatedButton.icon(
+            icon: const Icon(Icons.edit),
+            label: Text(ctrl.isNotEmpty ? 'Volver a Firmar' : 'Firmar (Pantalla Completa)'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: ctrl.isNotEmpty ? Colors.orange.shade50 : Colors.blue.shade50,
+              foregroundColor: ctrl.isNotEmpty ? Colors.orange : Colors.blue,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+            ),
+            onPressed: () => _showFullscreenSignatureDialog(ctrl),
           ),
         ),
       ],
     );
+  }
+
+  void _showFullscreenSignatureDialog(SignatureController ctrl) {
+    // Save current strokes in case of cancel
+    final previousStrokes = ctrl.strokes;
+    
+    // Force landscape
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.landscapeRight,
+      DeviceOrientation.landscapeLeft,
+    ]);
+
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return SafeArea(
+          child: Scaffold(
+            backgroundColor: Colors.white,
+            body: Stack(
+              children: [
+                Signature(
+                  controller: ctrl,
+                  backgroundColor: Colors.white,
+                ),
+                Positioned(
+                  top: 10,
+                  left: 10,
+                  child: FloatingActionButton.extended(
+                    heroTag: 'cancel_sig',
+                    backgroundColor: Colors.red,
+                    icon: const Icon(Icons.close, color: Colors.white),
+                    label: const Text('Cancelar', style: TextStyle(color: Colors.white)),
+                    onPressed: () {
+                      ctrl.strokes = previousStrokes;
+                      _restoreOrientationAndPop(context);
+                    },
+                  ),
+                ),
+                Positioned(
+                  top: 10,
+                  right: 10,
+                  child: FloatingActionButton.extended(
+                    heroTag: 'clear_sig',
+                    backgroundColor: Colors.orange,
+                    icon: const Icon(Icons.clear, color: Colors.white),
+                    label: const Text('Limpiar', style: TextStyle(color: Colors.white)),
+                    onPressed: () => ctrl.clear(),
+                  ),
+                ),
+                Positioned(
+                  bottom: 10,
+                  right: 10,
+                  child: FloatingActionButton.extended(
+                    heroTag: 'save_sig',
+                    backgroundColor: Colors.green,
+                    icon: const Icon(Icons.check, color: Colors.white),
+                    label: const Text('Guardar Firma', style: TextStyle(color: Colors.white)),
+                    onPressed: () {
+                      if (ctrl.isNotEmpty) {
+                        setState(() {}); // Trigger rebuild to show signature image
+                        _restoreOrientationAndPop(context);
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La firma no puede estar vacía'), backgroundColor: Colors.orange));
+                      }
+                    },
+                  ),
+                ),
+                // "Firme Aquí" watermark
+                const Center(
+                  child: IgnorePointer(
+                    child: Text(
+                      'FIRME AQUÍ',
+                      style: TextStyle(
+                        color: Color(0x22000000), // Very light transparent black
+                        fontSize: 60,
+                        fontWeight: FontWeight.bold,
+                        letterSpacing: 4,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  void _restoreOrientationAndPop(BuildContext context) {
+    SystemChrome.setPreferredOrientations([
+      DeviceOrientation.portraitUp,
+      DeviceOrientation.portraitDown,
+    ]);
+    Navigator.of(context).pop();
   }
 
   Widget _buildPhotoGallery() {
