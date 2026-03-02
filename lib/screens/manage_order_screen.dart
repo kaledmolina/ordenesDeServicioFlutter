@@ -1100,7 +1100,20 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(8), color: Colors.white),
             child: Stack(
               children: [
-                Center(child: Image.memory(ctrl.toPngBytes() as dynamic ?? Uint8List(0), fit: BoxFit.contain)),
+                Center(
+                  child: FutureBuilder<Uint8List?>(
+                    future: ctrl.toPngBytes(),
+                    builder: (context, snapshot) {
+                      if (snapshot.connectionState == ConnectionState.waiting) {
+                        return const CircularProgressIndicator();
+                      }
+                      if (snapshot.hasData && snapshot.data != null) {
+                        return Image.memory(snapshot.data!, fit: BoxFit.contain);
+                      }
+                      return const SizedBox(); // Empty space if no data
+                    },
+                  ),
+                ),
                 Positioned(
                   right: 4, top: 4,
                   child: IconButton(
