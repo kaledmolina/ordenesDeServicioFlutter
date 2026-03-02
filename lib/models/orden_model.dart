@@ -209,7 +209,7 @@ class Orden {
       fechaProgramada: DateTime.tryParse(json['fecha_programada'] ?? '')?.toLocal(),
       clienteId: int.tryParse(json['cliente_id']?.toString() ?? ''),
       direccion: json['direccion']?.toString(),
-      cedula: json['cedula']?.toString(),
+      cedula: json['cedula']?.toString() ?? json['cliente']?['cedula']?.toString() ?? json['cliente']?['nit']?.toString(),
       precinto: json['precinto']?.toString(),
       tipoOrden: json['tipo_orden']?.toString(),
       tipoFuncion: json['tipo_funcion']?.toString(),

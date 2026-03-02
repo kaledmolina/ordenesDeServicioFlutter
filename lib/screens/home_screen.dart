@@ -596,9 +596,25 @@ class _HomeScreenState extends State<HomeScreen> {
                            if (order.telefono != null)
                              Padding(
                                padding: const EdgeInsets.only(top: 2),
-                               child: InkWell(
-                                 onTap: () => _launchCaller(order.telefono!),
-                                 child: Text('Cel: ${order.telefono}', style: TextStyle(color: Colors.blue[600], fontSize: 12, fontWeight: FontWeight.bold)),
+                               child: Row(
+                                 children: [
+                                   InkWell(
+                                     onTap: () => _launchCaller(order.telefono!),
+                                     child: Text('Cel: ${order.telefono}', style: TextStyle(color: Colors.blue[600], fontSize: 12, fontWeight: FontWeight.bold)),
+                                   ),
+                                   const SizedBox(width: 8),
+                                   InkWell(
+                                     onTap: () {
+                                        Clipboard.setData(ClipboardData(text: order.telefono!));
+                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Celular copiado al portapapeles')));
+                                     },
+                                     child: Container(
+                                       padding: const EdgeInsets.all(2),
+                                       decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                                       child: Icon(Icons.copy, size: 12, color: Colors.blue[600]),
+                                     ),
+                                   )
+                                 ],
                                ),
                              ),
                            const SizedBox(height: 4),
