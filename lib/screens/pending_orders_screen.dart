@@ -214,6 +214,38 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                  const SizedBox(height: 8),
                  _buildInfoRow(Icons.map, order.barrio ?? 'Sin barrio'),
                  const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: InkWell(
+                         onTap: () { if (order.telefono != null) _launchCaller(order.telefono!); },
+                         child: _buildInfoRow(Icons.phone, order.telefono ?? 'N/A', isCopyable: order.telefono != null, rawValue: order.telefono),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: InkWell(
+                         onTap: () { if (order.telefonoFacturacion != null && order.telefonoFacturacion!.isNotEmpty) _launchCaller(order.telefonoFacturacion!); },
+                         child: _buildInfoRow(Icons.receipt, order.telefonoFacturacion?.isNotEmpty == true ? 'Fact: ${order.telefonoFacturacion!}' : 'Factura: N/A', isCopyable: order.telefonoFacturacion?.isNotEmpty == true, rawValue: order.telefonoFacturacion),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () { if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) _launchCaller(order.otroTelefono!); },
+                          child: _buildInfoRow(Icons.phone_android, order.otroTelefono?.isNotEmpty == true ? 'Otro: ${order.otroTelefono!}' : 'Otro: N/A', isCopyable: order.otroTelefono?.isNotEmpty == true, rawValue: order.otroTelefono),
+                        ),
+                      ),
+                   ],
+                 ),
                   _buildInfoRow(Icons.assignment, order.tipoOrdenLabel),
                   const SizedBox(height: 8),
                   if (order.solicitudSuscriptor != null)
@@ -240,12 +272,26 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text) {
+  Widget _buildInfoRow(IconData icon, String text, {bool isCopyable = false, String? rawValue}) {
     return Row(
       children: [
         Icon(icon, size: 16, color: Colors.grey),
         const SizedBox(width: 8),
         Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
+        if (isCopyable) ...[
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: rawValue ?? text));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copiado: ${rawValue ?? text}')));
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+              child: const Icon(Icons.copy, size: 14, color: Colors.blue),
+            ),
+          )
+        ]
       ],
     );
   }

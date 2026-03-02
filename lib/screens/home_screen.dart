@@ -593,30 +593,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                  ],
                                ),
                              ),
-                           if (order.telefono != null)
-                             Padding(
-                               padding: const EdgeInsets.only(top: 2),
-                               child: Row(
-                                 children: [
-                                   InkWell(
-                                     onTap: () => _launchCaller(order.telefono!),
-                                     child: Text('Cel: ${order.telefono}', style: TextStyle(color: Colors.blue[600], fontSize: 12, fontWeight: FontWeight.bold)),
-                                   ),
-                                   const SizedBox(width: 8),
-                                   InkWell(
-                                     onTap: () {
-                                        Clipboard.setData(ClipboardData(text: order.telefono!));
-                                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Celular copiado al portapapeles')));
-                                     },
-                                     child: Container(
-                                       padding: const EdgeInsets.all(2),
-                                       decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                                       child: Icon(Icons.copy, size: 12, color: Colors.blue[600]),
-                                     ),
-                                   )
-                                 ],
-                               ),
-                             ),
+                           // Celular moved to bottom
                            const SizedBox(height: 4),
                            Row(
                              children: [
@@ -663,28 +640,40 @@ class _HomeScreenState extends State<HomeScreen> {
                    children: [
                      if (order.codigoContrato != null)
                         Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
-                     if (order.telefono != null)
-                       Expanded(
-                         child: InkWell(
-                           onTap: () => _launchCaller(order.telefono!),
-                           child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue, isCopyable: true, rawValue: order.telefono),
-                         ),
+                  // Contact Numbers
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: InkWell(
+                         onTap: () { if (order.telefono != null) _launchCaller(order.telefono!); },
+                         child: _buildMiniDetail(Icons.phone, order.telefono ?? 'N/A', color: Colors.blue, isCopyable: order.telefono != null, rawValue: order.telefono),
                        ),
+                     ),
                    ],
                  ),
-                 if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                         Expanded(
-                           child: InkWell(
-                             onTap: () => _launchCaller(order.otroTelefono!),
-                             child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent, isCopyable: true, rawValue: order.otroTelefono),
-                           ),
-                         ),
-                      ],
-                    ),
-                 ],
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: InkWell(
+                         onTap: () { if (order.telefonoFacturacion != null && order.telefonoFacturacion!.isNotEmpty) _launchCaller(order.telefonoFacturacion!); },
+                         child: _buildMiniDetail(Icons.receipt, order.telefonoFacturacion?.isNotEmpty == true ? 'Fact: ${order.telefonoFacturacion!}' : 'Factura: N/A', color: Colors.blueAccent, isCopyable: order.telefonoFacturacion?.isNotEmpty == true, rawValue: order.telefonoFacturacion),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () { if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) _launchCaller(order.otroTelefono!); },
+                          child: _buildMiniDetail(Icons.phone_android, order.otroTelefono?.isNotEmpty == true ? 'Otro: ${order.otroTelefono!}' : 'Otro: N/A', color: Colors.blueGrey, isCopyable: order.otroTelefono?.isNotEmpty == true, rawValue: order.otroTelefono),
+                        ),
+                      ),
+                   ],
+                 ),
                  
                  // Novedades NOC
                  if (order.novedadesNoc != null && order.novedadesNoc!.isNotEmpty) ...[

@@ -250,20 +250,41 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                    children: [
                      if (order.codigoContrato != null)
                         Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
-                     if (order.telefono != null)
-                       Expanded(child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue, isCopyable: true, rawValue: order.telefono)),
                    ],
                  ),
-                 if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) ...[
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                         Expanded(
-                           child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent, isCopyable: true, rawValue: order.otroTelefono),
-                         ),
-                      ],
-                    ),
-                 ],
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: InkWell(
+                         onTap: () { if (order.telefono != null) _launchCaller(order.telefono!); },
+                         child: _buildMiniDetail(Icons.phone, order.telefono ?? 'N/A', color: Colors.blue, isCopyable: order.telefono != null, rawValue: order.telefono),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                     Expanded(
+                       child: InkWell(
+                         onTap: () { if (order.telefonoFacturacion != null && order.telefonoFacturacion!.isNotEmpty) _launchCaller(order.telefonoFacturacion!); },
+                         child: _buildMiniDetail(Icons.receipt, order.telefonoFacturacion?.isNotEmpty == true ? 'Fact: ${order.telefonoFacturacion!}' : 'Factura: N/A', color: Colors.blueAccent, isCopyable: order.telefonoFacturacion?.isNotEmpty == true, rawValue: order.telefonoFacturacion),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 8),
+                 Row(
+                   children: [
+                      Expanded(
+                        child: InkWell(
+                          onTap: () { if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) _launchCaller(order.otroTelefono!); },
+                          child: _buildMiniDetail(Icons.phone_android, order.otroTelefono?.isNotEmpty == true ? 'Otro: ${order.otroTelefono!}' : 'Otro: N/A', color: Colors.blueGrey, isCopyable: order.otroTelefono?.isNotEmpty == true, rawValue: order.otroTelefono),
+                        ),
+                      ),
+                   ],
+                 ),
                  
                  // Observaciones
                  if (order.observaciones != null && order.observaciones!.isNotEmpty) ...[
