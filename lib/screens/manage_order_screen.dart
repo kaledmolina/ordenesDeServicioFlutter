@@ -415,26 +415,28 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
     showModalBottomSheet(
       context: context,
-      builder: (ctx) => Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          ListTile(
-            leading: const Icon(Icons.camera_alt),
-            title: const Text('Cámara'),
-            onTap: () {
-              Navigator.pop(ctx);
-              _pickFromSource(ImageSource.camera);
-            },
-          ),
-          ListTile(
-            leading: const Icon(Icons.photo_library),
-            title: const Text('Galería'),
-            onTap: () {
-              Navigator.pop(ctx);
-              _pickFromSource(ImageSource.gallery);
-            },
-          ),
-        ],
+      builder: (ctx) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt),
+              title: const Text('Cámara'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromSource(ImageSource.camera);
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library),
+              title: const Text('Galería'),
+              onTap: () {
+                Navigator.pop(ctx);
+                _pickFromSource(ImageSource.gallery);
+              },
+            ),
+          ],
+        ),
       ),
     );
   }
