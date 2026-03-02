@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
+import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
@@ -941,6 +942,28 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     child: Column(
                       children: [
                         Text(widget.orden.nombreCliente, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16), textAlign: TextAlign.center),
+                        if (widget.orden.cedula != null)
+                          Padding(
+                            padding: const EdgeInsets.only(top: 2),
+                            child: Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Text('C.C. ${widget.orden.cedula}', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
+                                const SizedBox(width: 8),
+                                InkWell(
+                                  onTap: () {
+                                    Clipboard.setData(ClipboardData(text: widget.orden.cedula!));
+                                    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cédula copiada al portapapeles')));
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.all(4),
+                                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.15), borderRadius: BorderRadius.circular(4)),
+                                    child: const Icon(Icons.copy, size: 14, color: Colors.white),
+                                  ),
+                                )
+                              ],
+                            ),
+                          ),
                         const SizedBox(height: 4),
                         Text(widget.orden.direccion ?? 'Sin Dirección', style: const TextStyle(color: Colors.white70, fontSize: 13), textAlign: TextAlign.center),
                         const SizedBox(height: 12),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
+import 'package:flutter/services.dart';
 import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
 import 'order_detail_screen.dart';
@@ -250,7 +251,7 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                      if (order.codigoContrato != null)
                         Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
                      if (order.telefono != null)
-                       Expanded(child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue)),
+                       Expanded(child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue, isCopyable: true, rawValue: order.telefono)),
                    ],
                  ),
                  if (order.otroTelefono != null && order.otroTelefono!.isNotEmpty) ...[
@@ -258,7 +259,7 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                     Row(
                       children: [
                          Expanded(
-                           child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent),
+                           child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent, isCopyable: true, rawValue: order.otroTelefono),
                          ),
                       ],
                     ),
@@ -312,8 +313,9 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
     );
   }
 
-  Widget _buildMiniDetail(IconData icon, String text, {Color color = const Color(0xFF6B7280)}) {
+  Widget _buildMiniDetail(IconData icon, String text, {Color color = const Color(0xFF6B7280), bool isCopyable = false, String? rawValue}) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: color.withOpacity(0.7)),
         const SizedBox(width: 6),
@@ -324,6 +326,20 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (isCopyable) ...[
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: rawValue ?? text));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copiado: ${rawValue ?? text}')));
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+              child: Icon(Icons.copy, size: 14, color: color),
+            ),
+          )
+        ]
       ],
     );
   }

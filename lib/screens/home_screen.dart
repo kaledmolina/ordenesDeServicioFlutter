@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:ui';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../models/user_model.dart';
@@ -574,7 +575,23 @@ class _HomeScreenState extends State<HomeScreen> {
                            if (order.cedula != null)
                              Padding(
                                padding: const EdgeInsets.only(top: 2),
-                               child: Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                               child: Row(
+                                 children: [
+                                   Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
+                                   const SizedBox(width: 6),
+                                   InkWell(
+                                     onTap: () {
+                                       Clipboard.setData(ClipboardData(text: order.cedula!));
+                                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cédula copiada al portapapeles')));
+                                     },
+                                     child: Container(
+                                       padding: const EdgeInsets.all(2),
+                                       decoration: BoxDecoration(color: Colors.grey[200], borderRadius: BorderRadius.circular(4)),
+                                       child: Icon(Icons.copy, size: 12, color: Colors.grey[600]),
+                                     ),
+                                   )
+                                 ],
+                               ),
                              ),
                            if (order.telefono != null)
                              Padding(
@@ -634,7 +651,7 @@ class _HomeScreenState extends State<HomeScreen> {
                        Expanded(
                          child: InkWell(
                            onTap: () => _launchCaller(order.telefono!),
-                           child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue),
+                           child: _buildMiniDetail(Icons.phone, order.telefono!, color: Colors.blue, isCopyable: true, rawValue: order.telefono),
                          ),
                        ),
                    ],
@@ -646,7 +663,7 @@ class _HomeScreenState extends State<HomeScreen> {
                          Expanded(
                            child: InkWell(
                              onTap: () => _launchCaller(order.otroTelefono!),
-                             child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent),
+                             child: _buildMiniDetail(Icons.phone_android, 'Otro: ${order.otroTelefono!}', color: Colors.blueAccent, isCopyable: true, rawValue: order.otroTelefono),
                            ),
                          ),
                       ],
@@ -715,8 +732,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildMiniDetail(IconData icon, String text, {Color color = const Color(0xFF6B7280)}) {
+  Widget _buildMiniDetail(IconData icon, String text, {Color color = const Color(0xFF6B7280), bool isCopyable = false, String? rawValue}) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
         Icon(icon, size: 14, color: color.withOpacity(0.7)),
         const SizedBox(width: 6),
@@ -727,6 +745,20 @@ class _HomeScreenState extends State<HomeScreen> {
             overflow: TextOverflow.ellipsis,
           ),
         ),
+        if (isCopyable) ...[
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: () {
+              Clipboard.setData(ClipboardData(text: rawValue ?? text));
+              ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Copiado: ${rawValue ?? text}')));
+            },
+            child: Container(
+              padding: const EdgeInsets.all(4),
+              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+              child: Icon(Icons.copy, size: 14, color: color),
+            ),
+          )
+        ]
       ],
     );
   }

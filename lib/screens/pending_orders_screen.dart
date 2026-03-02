@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import '../services/api_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/orden_model.dart';
@@ -188,6 +189,26 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                crossAxisAlignment: CrossAxisAlignment.start,
                children: [
                  _buildInfoRow(Icons.person, order.nombreCliente),
+                 if (order.cedula != null) ...[
+                   const SizedBox(height: 4),
+                   Row(
+                     children: [
+                       Expanded(child: _buildInfoRow(Icons.badge, 'C.C. ${order.cedula}')),
+                       const SizedBox(width: 8),
+                       InkWell(
+                         onTap: () {
+                           Clipboard.setData(ClipboardData(text: order.cedula!));
+                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cédula copiada al portapapeles')));
+                         },
+                         child: Container(
+                           padding: const EdgeInsets.all(4),
+                           decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                           child: const Icon(Icons.copy, size: 16, color: Colors.blue),
+                         ),
+                       ),
+                     ],
+                   ),
+                 ],
                  const SizedBox(height: 8),
                  _buildInfoRow(Icons.location_on, order.direccion ?? 'Sin dirección'),
                  const SizedBox(height: 8),

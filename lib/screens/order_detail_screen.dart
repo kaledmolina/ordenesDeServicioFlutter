@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -580,7 +581,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       children: [
         _buildInfoContainer('Información General', [
             _buildDetailRow('Cliente', orden.nombreCliente, isTitle: true),
-            if (orden.cedula != null) _buildDetailRow('Cédula', orden.cedula),
+            if (orden.cedula != null) _buildDetailRow('Cédula', orden.cedula, isCopyable: true),
             _buildDetailRow('Dirección', orden.direccion, icon: Icons.map),
             if (orden.barrio != null) _buildDetailRow('Barrio', orden.barrio),
             _buildDetailRow('Celular Principal', orden.celular, icon: Icons.phone, isPhone: true),
@@ -630,7 +631,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String? value, {bool isTitle = false, IconData? icon, bool isPhone = false}) {
+  Widget _buildDetailRow(String label, String? value, {bool isTitle = false, IconData? icon, bool isPhone = false, bool isCopyable = false}) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -646,12 +647,35 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!isTitle) Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                isPhone 
-                ? InkWell(
-                    onTap: () => _launchCaller(value),
-                    child: Text(value, style: const TextStyle(fontSize: 15, color: Colors.blue, fontWeight: FontWeight.bold)),
+                if (isPhone || isCopyable)
+                  Row(
+                    children: [
+                      if (isPhone)
+                        InkWell(
+                          onTap: () => _launchCaller(value),
+                          child: Text(value, style: const TextStyle(fontSize: 15, color: Colors.blue, fontWeight: FontWeight.bold)),
+                        )
+                      else
+                        Text(value, style: TextStyle(fontSize: 15, fontWeight: isTitle ? FontWeight.bold : FontWeight.w500, color: Colors.black87)),
+                      const SizedBox(width: 12),
+                      InkWell(
+                        onTap: () {
+                          Clipboard.setData(ClipboardData(text: value));
+                          ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$label copiado al portapapeles')));
+                        },
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Icon(Icons.copy, size: 16, color: Colors.blue),
+                        ),
+                      ),
+                    ],
                   )
-                : Text(value, style: TextStyle(fontSize: 15, fontWeight: isTitle ? FontWeight.bold : FontWeight.w500, color: Colors.black87)),
+                else
+                  Text(value, style: TextStyle(fontSize: 15, fontWeight: isTitle ? FontWeight.bold : FontWeight.w500, color: Colors.black87)),
               ],
             ),
           ),
