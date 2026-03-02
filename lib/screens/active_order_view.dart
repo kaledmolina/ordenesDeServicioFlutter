@@ -5,6 +5,7 @@ import '../models/orden_model.dart';
 import '../repositories/order_repository.dart';
 import 'order_detail_screen.dart';
 import '../widgets/order_countdown.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ActiveOrderView extends StatefulWidget {
   const ActiveOrderView({super.key});
@@ -24,6 +25,15 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
   void initState() {
     super.initState();
     _findActiveOrder();
+  }
+
+  Future<void> _launchCaller(String number) async {
+    final url = Uri.parse('tel:$number');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url);
+    } else {
+      debugPrint('Could not launch $url');
+    }
   }
 
   Future<void> _findActiveOrder() async {

@@ -640,7 +640,9 @@ class _HomeScreenState extends State<HomeScreen> {
                    children: [
                      if (order.codigoContrato != null)
                         Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
-                  // Contact Numbers
+                   ],
+                 ),
+                 // Contact Numbers
                  const SizedBox(height: 8),
                  Row(
                    children: [
