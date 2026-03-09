@@ -104,13 +104,7 @@ class _HomeScreenState extends State<HomeScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Si el filtro es asignada, queremos traer todas las activas
-      String statusToFetch = _currentStatusFilter;
-      if (_currentStatusFilter == 'asignada') {
-        statusToFetch = 'asignada,en_proceso,en_sitio';
-      }
-      
-      final orders = await _orderRepo.getOrders(page: 1, status: statusToFetch, search: _searchQuery, barrio: _selectedBarrio);
+      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery, barrio: _selectedBarrio);
       // Custom Sorting Logic
       final now = DateTime.now();
       final activeStatuses = ['asignada', 'en_proceso', 'en_sitio', 'pendiente', 'reasignar', 'reprogramada'];
