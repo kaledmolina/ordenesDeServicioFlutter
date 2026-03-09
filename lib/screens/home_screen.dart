@@ -428,8 +428,6 @@ class _HomeScreenState extends State<HomeScreen> {
                     const SizedBox(width: 8),
                     _buildFilterChip('Reprogramadas', 'reprogramada', color: Colors.amber),
                     const SizedBox(width: 8),
-                    _buildFilterChip('Pendientes', 'pendiente', color: Colors.blueAccent),
-                    const SizedBox(width: 8),
                     _buildFilterChip('Reasignar', 'reasignar', color: Colors.redAccent),
                   ],
                 ),
