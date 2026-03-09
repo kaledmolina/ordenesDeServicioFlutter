@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final OrderRepository _orderRepo = OrderRepository();
   List<Orden> _orders = [];
   bool _isLoading = false;
-  String _currentStatusFilter = 'reprogramada';
+  String _currentStatusFilter = 'asignada';
   String _searchQuery = '';
   String _loadingMessage = 'Procesando...';
   Timer? _debounce;
