@@ -32,7 +32,7 @@ class _HomeScreenState extends State<HomeScreen> {
   final OrderRepository _orderRepo = OrderRepository();
   List<Orden> _orders = [];
   bool _isLoading = false;
-  String _currentStatusFilter = 'todas';
+  String _currentStatusFilter = 'reprogramada';
   String _searchQuery = '';
   String _loadingMessage = 'Procesando...';
   Timer? _debounce;
@@ -424,17 +424,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 scrollDirection: Axis.horizontal,
                 child: Row(
                   children: [
-                    _buildFilterChip('Todas', 'todas'),
-                    const SizedBox(width: 8),
                     _buildFilterChip('Asignadas', 'asignada', color: Colors.orange),
                     const SizedBox(width: 8),
-                    _buildFilterChip('Ejecutadas', 'ejecutada', color: Colors.green),
+                    _buildFilterChip('Reprogramadas', 'reprogramada', color: Colors.amber),
                     const SizedBox(width: 8),
-                    _buildFilterChip('Cerradas', 'cerrada', color: Colors.grey),
+                    _buildFilterChip('Pendientes', 'pendiente', color: Colors.blueAccent),
                     const SizedBox(width: 8),
-                    _buildFilterChip('Anuladas', 'anulada', color: Colors.red),
-                    const SizedBox(width: 8),
-                    _buildFilterChip('Especiales', 'especiales', color: Colors.purple),
+                    _buildFilterChip('Reasignar', 'reasignar', color: Colors.redAccent),
                   ],
                 ),
               ),
