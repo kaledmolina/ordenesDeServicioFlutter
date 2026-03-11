@@ -136,14 +136,16 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                   style: TextStyle(color: Colors.grey),
                 ),
                  const SizedBox(height: 20),
-                 ElevatedButton(
+                  ElevatedButton(
                     onPressed: _findActiveOrder,
-                    child: const Text('Actualizar')
-              ]
-            ],
+                    child: const Text('Actualizar'),
+                  ),
+                ],
+              ],
+            ),
           ),
         ),
-      ));
+      );
     }
 
     // Reuse OrderDetailScreen but embedded or just redirect?
