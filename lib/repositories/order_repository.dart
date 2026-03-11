@@ -214,7 +214,11 @@ class OrderRepository {
   }
 
   Future<void> _updateLocalOrderStatus(String orderNumber, String newStatus) async {
-    await _dbService.updateOrder(orderNumber, {'status': newStatus});
+    // Actualizamos ambas columnas para asegurar consistencia en el modelo y UI
+    await _dbService.updateOrder(orderNumber, {
+      'status': newStatus,
+      'estado_orden': newStatus
+    });
   }
 
   Future<void> _queueOperation(String type, String orderNumber, Map<String, dynamic> data) async {
