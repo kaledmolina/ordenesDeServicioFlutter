@@ -17,9 +17,9 @@ import 'pending_orders_screen.dart';
 import 'profile_screen.dart'; // Import ProfileScreen
 import 'active_order_view.dart';
 import '../widgets/barrio_search_modal.dart';
-import '../widgets/barrio_search_modal.dart';
 import '../widgets/processing_overlay.dart';
 import '../utils/business_hours.dart';
+import 'offline_pending_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -291,25 +291,30 @@ class _HomeScreenState extends State<HomeScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             if (_pendingCount > 0)
-              Container(
-                margin: const EdgeInsets.only(right: 8),
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: Colors.orange.shade700, 
-                  borderRadius: BorderRadius.circular(20),
-                  boxShadow: [
-                    BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
-                  ]
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.assignment_late_outlined, size: 16, color: Colors.white),
-                    const SizedBox(width: 4),
-                    Text(
-                      '$_pendingCount', 
-                      style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)
-                    ),
-                  ],
+              GestureDetector(
+                onTap: () {
+                  Navigator.push(context, MaterialPageRoute(builder: (_) => const OfflinePendingScreen()));
+                },
+                child: Container(
+                  margin: const EdgeInsets.only(right: 8),
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.shade700, 
+                    borderRadius: BorderRadius.circular(20),
+                    boxShadow: [
+                      BoxShadow(color: Colors.orange.withOpacity(0.3), blurRadius: 4, offset: const Offset(0, 2))
+                    ]
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.assignment_late_outlined, size: 16, color: Colors.white),
+                      const SizedBox(width: 4),
+                      Text(
+                        '$_pendingCount', 
+                        style: const TextStyle(color: Colors.white, fontSize: 13, fontWeight: FontWeight.bold)
+                      ),
+                    ],
+                  ),
                 ),
               ),
             const ConnectionStatusIndicator(),

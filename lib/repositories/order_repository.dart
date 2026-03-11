@@ -11,16 +11,21 @@ class OrderRepository {
   final DatabaseService _dbService = DatabaseService.instance;
 
   Future<List<Orden>> getOrders({int page = 1, String status = 'todas', String? search, String? barrio}) async {
-    try {
-      final response = await _apiService.getOrders(page: page, status: status, search: search, barrio: barrio);
-      print('API Response Data Length: ${(response['data'] as List).length}');
-      
-      final ordersData = response['data'] as List;
-      return ordersData.map((json) => Orden.fromJson(json)).toList();
-    } catch (e, stack) {
-      print('Error fetching orders from API: $e');
-      print('Stack trace: $stack');
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        final response = await _apiService.getOrders(page: page, status: status, search: search, barrio: barrio);
+        print('API Response Data Length: ${(response['data'] as List).length}');
+        
+        final ordersData = response['data'] as List;
+        await _saveOrdersToLocal(ordersData);
+        return ordersData.map((json) => Orden.fromJson(json)).toList();
+      } catch (e, stack) {
+        print('Error fetching orders from API: $e');
+        print('Stack trace: $stack');
+        return await _getOrdersFromLocal(status: status);
+      }
+    } else {
+      return await _getOrdersFromLocal(status: status);
     }
   }
 
@@ -44,74 +49,130 @@ class OrderRepository {
   }
 
   Future<Orden> getOrderDetails(String orderNumber) async {
-    try {
-      return await _apiService.getOrderDetails(orderNumber);
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        final order = await _apiService.getOrderDetails(orderNumber);
+        await _saveOrderToLocal(order);
+        return order;
+      } catch (e) {
+        final localOrder = await _getOrderFromLocal(orderNumber);
+        if (localOrder != null) return localOrder;
+        rethrow;
+      }
+    } else {
+      final localOrder = await _getOrderFromLocal(orderNumber);
+      if (localOrder != null) return localOrder;
+      throw Exception('No connection and order not found locally');
     }
   }
 
   Future<Orden> acceptOrder(String orderNumber) async {
-    // Validar con una llamada rápida si se desea, o dejar que el backend valide (mejor).
-    // Para simpleza y remover offline: llamada directa.
-    
-    try {
-      final order = await _apiService.acceptOrder(orderNumber);
-      return order;
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        final order = await _apiService.acceptOrder(orderNumber);
+        await _updateLocalOrderStatus(orderNumber, 'en_proceso');
+        return order;
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('accept', orderNumber, {});
+      await _updateLocalOrderStatus(orderNumber, 'en_proceso');
+      final localOrder = await _getOrderFromLocal(orderNumber);
+      if (localOrder != null) return localOrder;
+      throw Exception('Order not found locally');
     }
   }
 
   Future<Orden> reportOnSite(String orderNumber) async {
-    try {
-      final order = await _apiService.reportOnSite(orderNumber);
-      return order;
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        final order = await _apiService.reportOnSite(orderNumber);
+        await _updateLocalOrderStatus(orderNumber, 'en_sitio');
+        return order;
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('reportOnSite', orderNumber, {});
+      await _updateLocalOrderStatus(orderNumber, 'en_sitio');
+      final localOrder = await _getOrderFromLocal(orderNumber);
+      if (localOrder != null) return localOrder;
+      throw Exception('Order not found locally');
     }
   }
 
   Future<Orden> closeOrder(String orderNumber, Map<String, dynamic> closingData) async {
-    try {
-      final order = await _apiService.closeOrder(orderNumber, closingData);
-      return order;
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        final order = await _apiService.closeOrder(orderNumber, closingData);
+        await _updateLocalOrderStatus(orderNumber, 'ejecutada');
+        return order;
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('close', orderNumber, closingData);
+      await _updateLocalOrderStatus(orderNumber, 'ejecutada');
+      final localOrder = await _getOrderFromLocal(orderNumber);
+      if (localOrder != null) return localOrder;
+      throw Exception('Order not found locally');
     }
   }
 
   Future<void> rejectOrder(String orderNumber) async {
-    try {
-      await _apiService.rejectOrder(orderNumber);
-      // await _dbService.deleteOrder(orderNumber); // Optional: if we want to clean up local db, but user asked to remove "guardar local".
-      // Deleting is fine, but let's keep it clean and just do API.
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        await _apiService.rejectOrder(orderNumber);
+        await _dbService.deleteOrder(orderNumber);
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('reject', orderNumber, {});
+      await _dbService.deleteOrder(orderNumber);
     }
   }
 
   Future<void> reassignOrder(String orderNumber, String motivo) async {
-    try {
-      await _apiService.reassignOrder(orderNumber, motivo);
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        await _apiService.reassignOrder(orderNumber, motivo);
+        await _dbService.deleteOrder(orderNumber);
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('reassign', orderNumber, {'motivo': motivo});
+      await _dbService.deleteOrder(orderNumber);
     }
   }
 
   Future<void> rescheduleOrder(String orderNumber, String motivo) async {
-    try {
-      await _apiService.rescheduleOrder(orderNumber, motivo);
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        await _apiService.rescheduleOrder(orderNumber, motivo);
+        await _dbService.deleteOrder(orderNumber);
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('reschedule', orderNumber, {'motivo': motivo});
+      await _dbService.deleteOrder(orderNumber);
     }
   }
 
   Future<void> updateOrderDetails(String orderNumber, Map<String, String> data) async {
-    try {
-      await _apiService.updateDetails(orderNumber, data);
-    } catch (e) {
-      rethrow;
+    if (await _hasConnection()) {
+      try {
+        await _apiService.updateDetails(orderNumber, data);
+        await _updateLocalOrder(orderNumber, data);
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('updateDetails', orderNumber, data);
+      await _updateLocalOrder(orderNumber, data);
     }
   }
 
@@ -121,7 +182,6 @@ class OrderRepository {
         connectivityResult.contains(ConnectivityResult.wifi);
   }
 
-  /*
   Future<void> _saveOrdersToLocal(List<dynamic> ordersData) async {
     final orders = ordersData.map((json) => _orderJsonToDbMap(json)).toList();
     await _dbService.saveOrders(orders);
@@ -181,7 +241,6 @@ class OrderRepository {
     );
     return operation['id'] as int;
   }
-  */
 
   Map<String, dynamic> _orderJsonToDbMap(Map<String, dynamic> json) {
     return {

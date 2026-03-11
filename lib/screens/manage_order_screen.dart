@@ -292,8 +292,12 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         final file = File(p.join(appDir.path, 'technician_signature.png'));
         await file.writeAsBytes(bytes, flush: true);
         
-        // Upload
-        await ApiService().updateSignature(file);
+        // Upload (graceful fallback if offline)
+        try {
+          await ApiService().updateSignature(file);
+        } catch (e) {
+          debugPrint('Aviso: Firma guardada localmente, pero no se pudo sincronizar el perfil: $e');
+        }
         
         await FileImage(file).evict();
         
@@ -301,7 +305,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           _savedSignatureFile = file;
           _signatureKey = UniqueKey();
         });
-        _showSnackbar('Firma actualizada correctamente', Colors.green);
+        _showSnackbar('Firma guardada correctamente', Colors.green);
       }
     } catch (e) {
       _showSnackbar('Error al guardar firma: $e', Colors.red);
@@ -926,6 +930,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           backgroundColor: Colors.transparent,
           elevation: 0,
           foregroundColor: Colors.black87,
+          actions: const [
+            ConnectionStatusIndicator(),
+            SizedBox(width: 16),
+          ],
         ),
         body: SafeArea(
           child: ProcessingOverlay(

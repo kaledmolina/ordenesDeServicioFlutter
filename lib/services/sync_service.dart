@@ -13,10 +13,6 @@ class SyncService {
   StreamSubscription? _connectivitySubscription;
   bool _isSyncing = false;
   
-  // final ApiService _apiService = ApiService(); // Unused
-  // final DatabaseService _dbService = DatabaseService.instance; // Unused for now
-  
-  // Stream dummy for compatibility if needed elsewhere (though we removed listeners)
   final _pendingOperationsController = StreamController<String>.broadcast();
   Stream<String> get pendingOperationsStream => _pendingOperationsController.stream;
 
@@ -28,6 +24,7 @@ class SyncService {
          if (result.contains(ConnectivityResult.mobile) || 
              result.contains(ConnectivityResult.wifi)) {
            debugPrint("Conexión detectada. Modo Online.");
+           sync();
          }
        });
      });
@@ -39,22 +36,77 @@ class SyncService {
   }
   
   void notifyPendingOperationChange(String orderNumber) {
-    // No-op
+    _pendingOperationsController.add(orderNumber);
   }
 
   Future<void> sync() async {
-    // Online-only mode: Sync is disabled.
-    debugPrint("Sincronización desactivada (Modo 100% Online).");
-    await UploadService.instance.syncPendingUploads(); // Still sync photos if needed
+    if (_isSyncing) return;
+    _isSyncing = true;
+    
+    try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (!connectivityResult.contains(ConnectivityResult.mobile) && 
+          !connectivityResult.contains(ConnectivityResult.wifi)) {
+        return;
+      }
+      
+      debugPrint("Iniciando sincronización...");
+      
+      final dbService = DatabaseService.instance;
+      final apiService = ApiService();
+      
+      final pendingOps = await dbService.getPendingOperations();
+      for (var op in pendingOps) {
+        final id = op['id'] as int;
+        final type = op['operation_type'] as String;
+        final orderNumber = op['order_number'] as String;
+        final dataStr = op['operation_data'] as String;
+        final data = jsonDecode(dataStr) as Map<String, dynamic>;
+        
+        try {
+          switch (type) {
+            case 'accept':
+              await apiService.acceptOrder(orderNumber);
+              break;
+            case 'reportOnSite':
+              await apiService.reportOnSite(orderNumber);
+              break;
+            case 'close':
+              await apiService.closeOrder(orderNumber, data);
+              break;
+            case 'reject':
+              await apiService.rejectOrder(orderNumber);
+              break;
+            case 'reassign':
+              await apiService.reassignOrder(orderNumber, data['motivo'] ?? '');
+              break;
+            case 'reschedule':
+              await apiService.rescheduleOrder(orderNumber, data['motivo'] ?? '');
+              break;
+            case 'updateDetails':
+              await apiService.updateDetails(orderNumber, Map<String, dynamic>.from(data));
+              break;
+          }
+          await dbService.deletePendingOperation(id);
+          notifyPendingOperationChange(orderNumber);
+        } catch (e) {
+          debugPrint("Error syncing operation $id for order $orderNumber: $e");
+          await dbService.incrementRetryCount(id, e.toString());
+        }
+      }
+
+      await UploadService.instance.syncPendingUploads();
+    } finally {
+      _isSyncing = false;
+    }
   }
 
-  // Legacy methods removed or stubbed
   Future<SyncStatus> getSyncStatus() async {
-    return SyncStatus.idle;
+    return _isSyncing ? SyncStatus.syncing : SyncStatus.idle;
   }
 
   Future<int> getPendingOperationsCount() async {
-    return 0;
+    return await DatabaseService.instance.getPendingOperationsCount();
   }
 }
 
