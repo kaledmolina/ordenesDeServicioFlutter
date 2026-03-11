@@ -94,7 +94,8 @@ class DatabaseService {
         fecha_cierre TEXT,
         plan_internet TEXT,
         novedades_noc TEXT,
-        codigo_contrato TEXT
+        codigo_contrato TEXT,
+        barrio TEXT
       )
     ''');
 
@@ -271,6 +272,7 @@ class DatabaseService {
     try { await db.execute('ALTER TABLE orders ADD COLUMN plan_internet TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN novedades_noc TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN codigo_contrato TEXT'); } catch (_) {}
+    try { await db.execute('ALTER TABLE orders ADD COLUMN barrio TEXT'); } catch (_) {}
   }
 
   // ========== PENDING PHOTOS ==========
