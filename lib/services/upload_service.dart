@@ -71,15 +71,15 @@ class UploadService {
       final tipo = photo['tipo'] as String?;
 
 
-      _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.uploading));
+      _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.uploading, type: tipo));
       
       try {
         final success = await _uploadPhoto(orderNumber, photoPath, tipo);
         if (success) {
           await db.deletePendingPhoto(photoId);
-          _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.uploaded));
+          _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.uploaded, type: tipo));
         } else {
-           _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.error));
+           _uploadStatusController.add(PhotoDisplay(localId: photoId, path: photoPath, status: PhotoStatusType.error, type: tipo));
         }
       } catch (e, stackTrace) {
         debugPrint("Error subiendo foto $photoId ($photoPath): $e");
@@ -91,6 +91,7 @@ class UploadService {
           localId: photoId, 
           path: photoPath, 
           status: PhotoStatusType.error,
+          type: tipo,
           errorMessage: e.toString(),
         ));
       }
