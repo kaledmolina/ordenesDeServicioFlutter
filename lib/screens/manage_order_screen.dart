@@ -25,6 +25,7 @@ import '../widgets/connection_status_indicator.dart';
 import '../widgets/app_background.dart';
 import '../widgets/processing_overlay.dart';
 import 'photo_view_screen.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ManageOrderScreen extends StatefulWidget {
   final Orden orden;
@@ -36,6 +37,9 @@ class ManageOrderScreen extends StatefulWidget {
 
 class _ManageOrderScreenState extends State<ManageOrderScreen> {
   final _formKey = GlobalKey<FormState>();
+  
+  Timer? _draftDebounce;
+  static const String _draftKeyPrefix = "draft_order_";
   
   // Basic Info
   late TextEditingController _celularController;
@@ -97,8 +101,84 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
            debugPrint('Error parsing existing articles: $e');
         }
     }
+    
+    _addDraftListeners();
+    _loadDraft();
     _initialize();
     _startDeadlineTimer();
+  }
+
+  void _addDraftListeners() {
+    _celularController.addListener(_onFieldChanged);
+    _obsOrigenController.addListener(_onFieldChanged);
+    _macRouterController.addListener(_onFieldChanged);
+    _macBridgeController.addListener(_onFieldChanged);
+    _macOntController.addListener(_onFieldChanged);
+    _otrosEquiposController.addListener(_onFieldChanged);
+  }
+
+  void _onFieldChanged() {
+    if (_draftDebounce?.isActive ?? false) _draftDebounce!.cancel();
+    _draftDebounce = Timer(const Duration(seconds: 1), _saveDraft);
+  }
+
+  Future<void> _saveDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final draftData = {
+        'celular': _celularController.text,
+        'obs': _obsOrigenController.text,
+        'solucion': _selectedSolution,
+        'mac_router': _macRouterController.text,
+        'mac_bridge': _macBridgeController.text,
+        'mac_ont': _macOntController.text,
+        'otros': _otrosEquiposController.text,
+        'articles': _articles,
+      };
+      await prefs.setString('$_draftKeyPrefix${widget.orden.numeroOrden}', jsonEncode(draftData));
+    } catch(e) {
+      debugPrint('Error saving draft: $e');
+    }
+  }
+
+  Future<void> _loadDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final key = '$_draftKeyPrefix${widget.orden.numeroOrden}';
+      final draftString = prefs.getString(key);
+      if (draftString != null) {
+        final data = jsonDecode(draftString) as Map<String, dynamic>;
+        if (mounted) {
+          setState(() {
+            _celularController.text = data['celular'] ?? _celularController.text;
+            _obsOrigenController.text = data['obs'] ?? _obsOrigenController.text;
+            _selectedSolution = data['solucion'] ?? _selectedSolution;
+            _macRouterController.text = data['mac_router'] ?? _macRouterController.text;
+            _macBridgeController.text = data['mac_bridge'] ?? _macBridgeController.text;
+            _macOntController.text = data['mac_ont'] ?? _macOntController.text;
+            _otrosEquiposController.text = data['otros'] ?? _otrosEquiposController.text;
+             
+            if (data['articles'] != null) {
+              _articles = List<Map<String, dynamic>>.from(data['articles']);
+            }
+          });
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Borrador local recuperado'), duration: Duration(seconds: 2))
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading draft: $e');
+    }
+  }
+
+  Future<void> _clearDraft() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove('$_draftKeyPrefix${widget.orden.numeroOrden}');
+    } catch (e) {
+      debugPrint('Error clearing draft: $e');
+    }
   }
 
   // Timer Logic
@@ -651,16 +731,19 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                   final qty = int.tryParse(quantityCtrl.text) ?? 1;
                   final val = double.tryParse(valueCtrl.text) ?? 0.0;
                   
-                  setState(() => _articles.add({
-                    'uuid': DateTime.now().millisecondsSinceEpoch.toString(),
-                    'articulo': selected, 
-                    'grupo_articulo': selected,
-                    'descripcion': descCtrl.text,
-                    'asoc': asocCtrl.text,
-                    'valor_unitario': val,
-                    'cantidad': qty,
-                    'total': qty * val
-                  }));
+                  setState(() {
+                    _articles.add({
+                      'uuid': DateTime.now().millisecondsSinceEpoch.toString(),
+                      'articulo': selected, 
+                      'grupo_articulo': selected,
+                      'descripcion': descCtrl.text,
+                      'asoc': asocCtrl.text,
+                      'valor_unitario': val,
+                      'cantidad': qty,
+                      'total': qty * val
+                    });
+                    _onFieldChanged();
+                  });
                   Navigator.pop(ctx);
                 }
               },
@@ -822,6 +905,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       await _orderRepo.closeOrder(widget.orden.numeroOrden, closingData);
       UploadService.instance.syncPendingUploads();
       await SyncService.instance.sync();
+      await _clearDraft();
       
       // Artificial delay to ensure user sees the "Finishing" status and feels the "server process" time
       await Future.delayed(const Duration(seconds: 2));
@@ -1357,7 +1441,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         subtitle: Text('Cant: $cantidad'),
         trailing: IconButton(
           icon: const Icon(Icons.delete, color: Colors.red), 
-          onPressed: () => setState(() => _articles.remove(a))
+          onPressed: () => setState(() {
+            _articles.remove(a);
+            _onFieldChanged();
+          })
         ),
       );
     }).toList());
@@ -1501,6 +1588,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                   onPressed: () {
                     setState(() {
                        _selectedSolution = currentSelections.join(', ');
+                       _onFieldChanged();
                     });
                     Navigator.pop(context);
                   },
