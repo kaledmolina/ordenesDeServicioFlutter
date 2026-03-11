@@ -628,12 +628,28 @@ class _HomeScreenState extends State<HomeScreen> {
                     _buildMiniDetail(Icons.report_problem, 'Reporte: ${order.solicitudSuscriptorLabel}', color: Colors.orange[800]!),
                   ],
                   const SizedBox(height: 8),
-                 Row(
-                   children: [
-                     if (order.codigoContrato != null)
-                        Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
-                   ],
-                 ),
+                  Row(
+                    children: [
+                      if (order.codigoContrato != null && order.codigoContrato!.isNotEmpty)
+                         Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
+                      if (order.planInternet != null && order.planInternet!.isNotEmpty)
+                         Expanded(child: _buildMiniDetail(Icons.speed, order.planInternet!, color: Colors.purple)),
+                    ],
+                  ),
+                  if (order.novedadesNoc != null && order.novedadesNoc!.isNotEmpty) ...[
+                     const SizedBox(height: 8),
+                     Container(
+                       padding: const EdgeInsets.all(8),
+                       decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), border: Border.all(color: Colors.red.withOpacity(0.1)), borderRadius: BorderRadius.circular(8)),
+                       child: Row(
+                         children: [
+                           const Icon(Icons.info_outline, size: 14, color: Colors.red),
+                           const SizedBox(width: 8),
+                           Expanded(child: Text('NOC: ${order.novedadesNoc}', style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                         ],
+                       ),
+                     ),
+                  ],
                  // Contact Numbers
                  const SizedBox(height: 8),
                  Row(

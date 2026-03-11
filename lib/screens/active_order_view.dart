@@ -235,11 +235,30 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                                        Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
                                        if (order.barrio != null && order.barrio!.isNotEmpty)
                                          Text(order.barrio!, style: TextStyle(color: const Color(0xFF10447E), fontSize: 12, fontWeight: FontWeight.bold)),
+                                       if (order.planInternet != null && order.planInternet!.isNotEmpty)
+                                         Padding(
+                                           padding: const EdgeInsets.only(top: 2),
+                                           child: Text('Plan: ${order.planInternet!}', style: const TextStyle(color: Colors.purple, fontSize: 12, fontWeight: FontWeight.bold)),
+                                         ),
                                    ],
                                  ),
                                ),
                              ],
                            ),
+                           if (order.novedadesNoc != null && order.novedadesNoc!.isNotEmpty) ...[
+                             const SizedBox(height: 12),
+                             Container(
+                               padding: const EdgeInsets.all(8),
+                               decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), border: Border.all(color: Colors.red.withOpacity(0.1)), borderRadius: BorderRadius.circular(8)),
+                               child: Row(
+                                 children: [
+                                   const Icon(Icons.info_outline, size: 14, color: Colors.red),
+                                   const SizedBox(width: 8),
+                                   Expanded(child: Text('NOC: ${order.novedadesNoc}', style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis)),
+                                 ],
+                               ),
+                             ),
+                           ],
                          ],
                        ),
                      ),

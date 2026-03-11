@@ -257,6 +257,10 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                    ],
                  ),
                   _buildInfoRow(Icons.assignment, order.tipoOrdenLabel),
+                  if (order.planInternet != null && order.planInternet!.isNotEmpty)
+                    _buildInfoRow(Icons.speed, order.planInternet!, iconColor: Colors.purple, textColor: Colors.purple, fontWeight: FontWeight.bold),
+                  if (order.novedadesNoc != null && order.novedadesNoc!.isNotEmpty)
+                    _buildNocSnippet(order.novedadesNoc!),
                   const SizedBox(height: 8),
                   if (order.solicitudSuscriptor != null)
                     _buildInfoRow(Icons.report_problem, order.solicitudSuscriptorLabel),
@@ -277,6 +281,22 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                ],
              ),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildNocSnippet(String noc) {
+    return Container(
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.all(8),
+      decoration: BoxDecoration(color: Colors.red.withOpacity(0.05), border: Border.all(color: Colors.red.withOpacity(0.1)), borderRadius: BorderRadius.circular(8)),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(Icons.info_outline, size: 14, color: Colors.red),
+          const SizedBox(width: 8),
+          Expanded(child: Text('NOC: $noc', style: const TextStyle(fontSize: 11, color: Colors.red, fontWeight: FontWeight.bold), maxLines: 2, overflow: TextOverflow.ellipsis)),
         ],
       ),
     );

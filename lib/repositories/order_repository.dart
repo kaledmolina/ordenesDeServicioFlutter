@@ -265,7 +265,7 @@ class OrderRepository {
       'articulos': json['articulos'] != null ? jsonEncode(json['articulos']) : null,
       'technician_id': json['technician_id'],
       'cliente_id': json['cliente_id'],
-      'cedula': json['cedula'] ?? json['cliente']?['cedula'] ?? json['cliente']?['nit'],
+      'cedula': (json['cedula'] ?? json['cliente']?['cedula'] ?? json['cliente']?['nit'])?.toString(),
       'precinto': json['precinto'],
       'tipo_orden': json['tipo_orden'],
       'tipo_funcion': json['tipo_funcion'],
@@ -288,7 +288,7 @@ class OrderRepository {
       'plan_internet': json['plan_internet']?.toString() ?? json['cliente']?['plan_internet']?.toString(),
       'novedades_noc': json['novedades_noc']?.toString(),
       'codigo_contrato': json['codigo_contrato']?.toString() ?? json['cliente']?['codigo_contrato']?.toString(),
-      'barrio': json['cliente']?['barrio']?.toString(),
+      'barrio': json['barrio']?.toString() ?? json['cliente']?['barrio']?.toString(),
     };
   }
 

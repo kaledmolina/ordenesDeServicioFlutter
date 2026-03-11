@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
-  static const int _databaseVersion = 9;
+  static const int _databaseVersion = 10;
 
   DatabaseService._init();
 
@@ -328,12 +328,43 @@ class DatabaseService {
   Future<void> saveOrders(List<Map<String, dynamic>> orders) async {
     final db = await database;
     final batch = db.batch();
+    
     for (var order in orders) {
-      batch.insert(
+      final number = order['numero_orden']?.toString();
+      if (number == null) continue;
+
+      // Intentar obtener la orden existente para hacer un merge
+      final existing = await db.query(
         'orders',
-        order,
-        conflictAlgorithm: ConflictAlgorithm.replace,
+        where: 'numero_orden = ?',
+        whereArgs: [number],
       );
+
+      if (existing.isNotEmpty) {
+        final existingMap = Map<String, dynamic>.from(existing.first);
+        final newMap = Map<String, dynamic>.from(order);
+        
+        // Solo actualizar campos que tengan valor en el nuevo mapa
+        // y preservar los que ya existen si el nuevo es null
+        newMap.forEach((key, value) {
+          if (value == null && existingMap[key] != null) {
+            newMap[key] = existingMap[key];
+          }
+        });
+
+        batch.update(
+          'orders',
+          newMap,
+          where: 'numero_orden = ?',
+          whereArgs: [number],
+        );
+      } else {
+        batch.insert(
+          'orders',
+          order,
+          conflictAlgorithm: ConflictAlgorithm.replace,
+        );
+      }
     }
     await batch.commit(noResult: true);
   }
