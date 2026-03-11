@@ -45,6 +45,7 @@ class _HomeScreenState extends State<HomeScreen> {
     // Placeholder for Home Tab (Built dynamically)
     const SizedBox(), 
     const ActiveOrderView(),
+    const OfflinePendingScreen(),
     const ProfileScreen(),
   ];
 
@@ -265,6 +266,11 @@ class _HomeScreenState extends State<HomeScreen> {
               icon: Icon(Icons.work_history_outlined),
               selectedIcon: Icon(Icons.work_history, color: Color(0xFF10447E)),
               label: 'En Curso',
+            ),
+            NavigationDestination(
+              icon: Icon(Icons.sync_problem_outlined),
+              selectedIcon: Icon(Icons.sync_problem, color: Color(0xFF10447E)),
+              label: 'Pendientes',
             ),
             NavigationDestination(
               icon: Icon(Icons.person_outline),

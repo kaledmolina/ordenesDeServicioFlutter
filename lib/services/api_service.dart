@@ -92,26 +92,36 @@ class ApiService {
     return Orden.fromJson(data);
   }
 
-  // CAMBIO: Acepta un String en lugar de un int
-  Future<Orden> acceptOrder(String orderNumber) async {
+  // CAMBIO: Acepta un String en lugar de un int y datos opcionales (como fecha offline)
+  Future<Orden> acceptOrder(String orderNumber, {Map<String, dynamic>? data}) async {
     final token = await AuthService.instance.getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/v1/orders/$orderNumber/accept'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
+      body: data != null ? jsonEncode(data) : null,
     );
-    final data = _handleResponse(response);
-    return Orden.fromJson(data['order']);
+    final responseData = _handleResponse(response);
+    return Orden.fromJson(responseData['order']);
   }
 
-  // CAMBIO: Nuevo método para reportar en sitio
-  Future<Orden> reportOnSite(String orderNumber) async {
+  // CAMBIO: Nuevo método para reportar en sitio con datos opcionales
+  Future<Orden> reportOnSite(String orderNumber, {Map<String, dynamic>? data}) async {
     final token = await AuthService.instance.getToken();
     final response = await http.post(
       Uri.parse('$baseUrl/v1/orders/$orderNumber/report-on-site'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
+      body: data != null ? jsonEncode(data) : null,
     );
-    final data = _handleResponse(response);
-    return Orden.fromJson(data['order']);
+    final responseData = _handleResponse(response);
+    return Orden.fromJson(responseData['order']);
   }
   
   // CAMBIO: Acepta un String en lugar de un int y datos de cierre

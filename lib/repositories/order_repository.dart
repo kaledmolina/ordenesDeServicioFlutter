@@ -76,7 +76,9 @@ class OrderRepository {
         rethrow;
       }
     } else {
-      await _queueOperation('accept', orderNumber, {});
+      await _queueOperation('accept', orderNumber, {
+        'offline_at': DateTime.now().toIso8601String(),
+      });
       await _updateLocalOrderStatus(orderNumber, 'en_proceso');
       final localOrder = await _getOrderFromLocal(orderNumber);
       if (localOrder != null) return localOrder;
@@ -94,7 +96,9 @@ class OrderRepository {
         rethrow;
       }
     } else {
-      await _queueOperation('reportOnSite', orderNumber, {});
+      await _queueOperation('reportOnSite', orderNumber, {
+        'offline_at': DateTime.now().toIso8601String(),
+      });
       await _updateLocalOrderStatus(orderNumber, 'en_sitio');
       final localOrder = await _getOrderFromLocal(orderNumber);
       if (localOrder != null) return localOrder;
@@ -112,7 +116,9 @@ class OrderRepository {
         rethrow;
       }
     } else {
-      await _queueOperation('close', orderNumber, closingData);
+      final data = Map<String, dynamic>.from(closingData);
+      data['offline_at'] = DateTime.now().toIso8601String();
+      await _queueOperation('close', orderNumber, data);
       await _updateLocalOrderStatus(orderNumber, 'ejecutada');
       final localOrder = await _getOrderFromLocal(orderNumber);
       if (localOrder != null) return localOrder;

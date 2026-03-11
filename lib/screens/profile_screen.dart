@@ -117,8 +117,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
             const SizedBox(height: 20),
             
-            // Upload Status Card
-            const _UploadStatusCard(),
+            // Sync Status Card
+            const _SyncStatusCard(),
 
             const SizedBox(height: 40),
 
@@ -180,72 +180,101 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 }
 
-class _UploadStatusCard extends StatelessWidget {
-  const _UploadStatusCard();
+class _SyncStatusCard extends StatelessWidget {
+  const _SyncStatusCard();
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<int>(
-      stream: UploadService.instance.pendingCountStream,
-      initialData: 0,
-      builder: (context, snapshot) {
-        final count = snapshot.data ?? 0;
-        
-        if (count == 0) {
-           return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: Colors.green.withOpacity(0.3)),
-              ),
-              child: const Row(
-                children: [
-                  Icon(Icons.cloud_done, color: Colors.green),
-                  SizedBox(width: 12),
-                  Text('Todo sincronizado', style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
-                ],
-              ),
-           );
-        }
+    return Column(
+      children: [
+        StreamBuilder<int>(
+          stream: SyncService.instance.pendingCountStream,
+          initialData: 0,
+          builder: (context, syncSnapshot) {
+            return StreamBuilder<int>(
+              stream: UploadService.instance.pendingCountStream,
+              initialData: 0,
+              builder: (context, uploadSnapshot) {
+                final pendingOps = syncSnapshot.data ?? 0;
+                final pendingPhotos = uploadSnapshot.data ?? 0;
+                final totalPending = pendingOps + pendingPhotos;
 
-        return Container(
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: Colors.orange.withOpacity(0.1),
-            borderRadius: BorderRadius.circular(16),
-            border: Border.all(color: Colors.orange.withOpacity(0.3)),
-          ),
-          child: Column(
-            children: [
-              Row(
-                children: [
-                  const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      '$count fotos pendientes de subir...', 
-                      style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.bold)
+                if (totalPending == 0) {
+                  return Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.green.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.green.withOpacity(0.3)),
                     ),
+                    child: const Row(
+                      children: [
+                        Icon(Icons.cloud_done, color: Colors.green),
+                        SizedBox(width: 12),
+                        Text('Todo sincronizado', 
+                          style: TextStyle(color: Colors.green, fontWeight: FontWeight.bold)),
+                      ],
+                    ),
+                  );
+                }
+
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: Colors.orange.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.orange.withOpacity(0.3)),
                   ),
-                ],
-              ),
-              const SizedBox(height: 12),
-              SizedBox(
-                width: double.infinity,
-                child: OutlinedButton(
-                  onPressed: () => UploadService.instance.syncPendingUploads(),
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: Colors.orange[900],
-                    side: BorderSide(color: Colors.orange[900]!),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          const SizedBox(width: 20, height: 20, 
+                            child: CircularProgressIndicator(strokeWidth: 2)),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                if (pendingOps > 0)
+                                  Text(
+                                    '$pendingOps cambios de órdenes pendientes...', 
+                                    style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.bold, fontSize: 13)
+                                  ),
+                                if (pendingPhotos > 0)
+                                  Text(
+                                    '$pendingPhotos fotos pendientes de subir...', 
+                                    style: TextStyle(color: Colors.orange[800], fontWeight: FontWeight.bold, fontSize: 13)
+                                  ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton.icon(
+                          onPressed: () {
+                            SyncService.instance.sync();
+                            UploadService.instance.syncPendingUploads();
+                          },
+                          icon: const Icon(Icons.sync),
+                          label: const Text('Sincronizar Todo Ahora'),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.orange[900],
+                            foregroundColor: Colors.white,
+                          ),
+                        ),
+                      )
+                    ],
                   ),
-                  child: const Text('Forzar Sincronización'),
-                ),
-              )
-            ],
-          ),
-        );
-      },
+                );
+              },
+            );
+          },
+        ),
+      ],
     );
   }
 }

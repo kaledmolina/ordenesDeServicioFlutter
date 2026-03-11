@@ -16,7 +16,22 @@ class SyncService {
   final _pendingOperationsController = StreamController<String>.broadcast();
   Stream<String> get pendingOperationsStream => _pendingOperationsController.stream;
 
-  SyncService._init();
+  final _pendingCountController = StreamController<int>.broadcast();
+  Stream<int> get pendingCountStream => _pendingCountController.stream;
+
+  SyncService._init() {
+    // Initial count update
+    _updatePendingCount();
+  }
+
+  void _updatePendingCount() async {
+    try {
+      final count = await getPendingOperationsCount();
+      _pendingCountController.add(count);
+    } catch (e) {
+      debugPrint("Error updating pending count: $e");
+    }
+  }
 
   void start() {
      Future.delayed(const Duration(seconds: 3), () {
@@ -33,15 +48,18 @@ class SyncService {
   void dispose() {
     _connectivitySubscription?.cancel();
     _pendingOperationsController.close();
+    _pendingCountController.close();
   }
   
   void notifyPendingOperationChange(String orderNumber) {
     _pendingOperationsController.add(orderNumber);
+    _updatePendingCount();
   }
 
   Future<void> sync() async {
     if (_isSyncing) return;
     _isSyncing = true;
+    _updatePendingCount(); // Start syncing pulse
     
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
@@ -66,10 +84,10 @@ class SyncService {
         try {
           switch (type) {
             case 'accept':
-              await apiService.acceptOrder(orderNumber);
+              await apiService.acceptOrder(orderNumber, data: data);
               break;
             case 'reportOnSite':
-              await apiService.reportOnSite(orderNumber);
+              await apiService.reportOnSite(orderNumber, data: data);
               break;
             case 'close':
               await apiService.closeOrder(orderNumber, data);
@@ -98,6 +116,7 @@ class SyncService {
       await UploadService.instance.syncPendingUploads();
     } finally {
       _isSyncing = false;
+      _updatePendingCount(); // Final count update
     }
   }
 

@@ -19,7 +19,19 @@ class UploadService {
   final _pendingCountController = StreamController<int>.broadcast();
   Stream<int> get pendingCountStream => _pendingCountController.stream;
 
-  UploadService._init();
+  UploadService._init() {
+    _updatePendingCount();
+  }
+  
+  void _updatePendingCount() async {
+    try {
+      final db = DatabaseService.instance;
+      final pendingPhotos = await db.getPendingPhotos();
+      _pendingCountController.add(pendingPhotos.length);
+    } catch (e) {
+      debugPrint("Error updating upload pending count: $e");
+    }
+  }
 
   void start() {
     // Delay initialization to avoid blocking app startup
