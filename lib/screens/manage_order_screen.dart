@@ -63,6 +63,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   String _loadingMessage = 'Procesando...';
   StreamSubscription? _uploadSubscription;
   Key _signatureKey = UniqueKey();
+  File? _savedSubscriberSignatureFile;
 
   // Articles
   List<Map<String, dynamic>> _articles = [];
@@ -104,8 +105,21 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     
     _addDraftListeners();
     _loadDraft();
+    _loadSubscriberSignature();
     _initialize();
     _startDeadlineTimer();
+  }
+
+  Future<void> _loadSubscriberSignature() async {
+    try {
+      final appDir = await getApplicationDocumentsDirectory();
+      final signFile = File(p.join(appDir.path, 'sub_sig_${widget.orden.numeroOrden}.png'));
+      if (await signFile.exists()) {
+        if (mounted) setState(() => _savedSubscriberSignatureFile = signFile);
+      }
+    } catch (e) {
+      debugPrint('Error loading subscriber signature: $e');
+    }
   }
 
   void _addDraftListeners() {
@@ -778,14 +792,15 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     // 2. Normal Flow Checks
     // Signatures
     if (_savedSignatureFile == null) missingFields.add('Firma del Técnico (Debe crearla)');
-    if (_subscriberSignatureController.isEmpty) missingFields.add('Firma del Cliente');
+    if (_savedSubscriberSignatureFile == null) missingFields.add('Firma del Cliente');
         
         // Photos (Except 037)
         bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
         
-        // Count only technician photos (they have 'WM_' in the file name or are local pending)
+        // Count only technician photos (they have 'WM_' in the file name or are local pending or have a type)
         int techPhotoCount = _galleryPhotos.where((p) {
           if (p.status == PhotoStatusType.local) return true;
+          if (p.type != null && p.type!.isNotEmpty) return true;
           return p.url != null && p.url!.contains('WM_');
         }).length;
         
@@ -899,7 +914,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       }
       techSig = await _savedSignatureFile!.readAsBytes();
 
-      final subSig = await _subscriberSignatureController.toPngBytes();
+      Uint8List? subSig;
+      if (_savedSubscriberSignatureFile != null && await _savedSubscriberSignatureFile!.exists()) {
+        subSig = await _savedSubscriberSignatureFile!.readAsBytes();
+      }
       
       final closingData = {
         'celular': _celularController.text,
@@ -1148,7 +1166,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                      
                      const SizedBox(height: 20),
                      const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
-                     _buildSignaturePad(_subscriberSignatureController),
+                     _buildSubscriberSignatureArea(),
                   ]),
                  _buildCard('Cierre', Icons.check_circle, [
                    ListTile(
@@ -1198,10 +1216,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     );
   }
 
-  Widget _buildSignaturePad(SignatureController ctrl) {
+  Widget _buildSubscriberSignatureArea() {
     return Column(
       children: [
-        if (ctrl.isNotEmpty)
+        if (_savedSubscriberSignatureFile != null)
           Container(
             height: 120,
             width: double.infinity,
@@ -1209,24 +1227,18 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             child: Stack(
               children: [
                 Center(
-                  child: FutureBuilder<Uint8List?>(
-                    future: ctrl.toPngBytes(),
-                    builder: (context, snapshot) {
-                      if (snapshot.connectionState == ConnectionState.waiting) {
-                        return const CircularProgressIndicator();
-                      }
-                      if (snapshot.hasData && snapshot.data != null) {
-                        return Image.memory(snapshot.data!, fit: BoxFit.contain);
-                      }
-                      return const SizedBox(); // Empty space if no data
-                    },
-                  ),
+                  child: Image.file(_savedSubscriberSignatureFile!, fit: BoxFit.contain, key: ValueKey(_savedSubscriberSignatureFile!.path)),
                 ),
                 Positioned(
                   right: 4, top: 4,
                   child: IconButton(
                     icon: const Icon(Icons.clear, color: Colors.red),
-                    onPressed: () => setState(() => ctrl.clear()),
+                    onPressed: () async {
+                      if (await _savedSubscriberSignatureFile!.exists()) {
+                        await _savedSubscriberSignatureFile!.delete();
+                      }
+                      setState(() => _savedSubscriberSignatureFile = null);
+                    },
                     tooltip: 'Borrar firma',
                   ),
                 ),
@@ -1238,22 +1250,21 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
           width: double.infinity,
           child: ElevatedButton.icon(
             icon: const Icon(Icons.edit),
-            label: Text(ctrl.isNotEmpty ? 'Volver a Firmar' : 'Firmar (Pantalla Completa)'),
+            label: Text(_savedSubscriberSignatureFile != null ? 'Volver a Firmar' : 'Firmar (Pantalla Completa)'),
             style: ElevatedButton.styleFrom(
-              backgroundColor: ctrl.isNotEmpty ? Colors.orange.shade50 : Colors.blue.shade50,
-              foregroundColor: ctrl.isNotEmpty ? Colors.orange : Colors.blue,
+              backgroundColor: _savedSubscriberSignatureFile != null ? Colors.orange.shade50 : Colors.blue.shade50,
+              foregroundColor: _savedSubscriberSignatureFile != null ? Colors.orange : Colors.blue,
               padding: const EdgeInsets.symmetric(vertical: 12),
             ),
-            onPressed: () => _showFullscreenSignatureDialog(ctrl),
+            onPressed: () => _showFullscreenSignatureDialog(),
           ),
         ),
       ],
     );
   }
 
-  void _showFullscreenSignatureDialog(SignatureController ctrl) {
-    // Save current strokes in case of cancel
-    final previousStrokes = ctrl.points;
+  void _showFullscreenSignatureDialog() {
+    final ctrl = SignatureController(penStrokeWidth: 3);
     
     // Force landscape
     SystemChrome.setPreferredOrientations([
@@ -1309,9 +1320,18 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     backgroundColor: Colors.green,
                     icon: const Icon(Icons.check, color: Colors.white),
                     label: const Text('Guardar Firma', style: TextStyle(color: Colors.white)),
-                    onPressed: () {
+                    onPressed: () async {
                       if (ctrl.isNotEmpty) {
-                        setState(() {}); // Trigger rebuild to show signature image
+                        final bytes = await ctrl.toPngBytes();
+                        if (bytes != null) {
+                           final appDir = await getApplicationDocumentsDirectory();
+                           final path = p.join(appDir.path, 'sub_sig_${widget.orden.numeroOrden}.png');
+                           final file = File(path);
+                           await file.writeAsBytes(bytes, flush: true);
+                           setState(() {
+                              _savedSubscriberSignatureFile = file;
+                           });
+                        }
                         _restoreOrientationAndPop(context);
                       } else {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('La firma no puede estar vacía'), backgroundColor: Colors.orange));
@@ -1350,9 +1370,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   }
 
   Widget _buildPhotoGallery() {
-    // Only show technician photos (local or containing 'WM_')
+    // Only show technician photos (local or containing 'WM_' or having a type from DB/API)
     final techPhotos = _galleryPhotos.where((p) {
       if (p.status == PhotoStatusType.local) return true;
+      if (p.type != null && p.type!.isNotEmpty) return true;
       return p.url != null && p.url!.contains('WM_');
     }).toList();
 
