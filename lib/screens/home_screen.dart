@@ -623,12 +623,21 @@ class _HomeScreenState extends State<HomeScreen> {
                       Expanded(child: _buildMiniDetail(Icons.assignment, order.tipoOrdenLabel ?? 'General')),
                     ],
                   ),
+                   Row(
+                    children: [
+                      if (order.codigoContrato != null && order.codigoContrato!.isNotEmpty)
+                         Expanded(child: _buildMiniDetail(Icons.receipt_long, 'Cod: ${order.codigoContrato}')),
+                      if (order.planInternet != null && order.planInternet!.isNotEmpty)
+                         Expanded(child: _buildMiniDetail(Icons.speed, order.planInternet!, color: Colors.purple)),
+                    ],
+                  ),
                   if (order.solicitudSuscriptor != null) ...[
                     const SizedBox(height: 8),
                     _buildMiniDetail(Icons.report_problem, 'Reporte: ${order.solicitudSuscriptorLabel}', color: Colors.orange[800]!),
-                                 const SizedBox(height: 8),
+                  ],
+                  const SizedBox(height: 8),
                   // Contact Numbers
-                  const SizedBox(height: 8),t: 8),
+                  const SizedBox(height: 8),
                  Row(
                    children: [
                      Expanded(
