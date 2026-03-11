@@ -240,7 +240,7 @@ class Orden {
       otrosEquipos: json['otros_equipos']?.toString(),
       firmaTecnico: json['firma_tecnico']?.toString(),
       firmaSuscriptor: json['firma_suscriptor']?.toString(),
-      barrio: json['cliente']?['barrio']?.toString(), 
+      barrio: json['barrio']?.toString() ?? json['cliente']?['barrio']?.toString(), 
       planInternet: json['plan_internet']?.toString() ?? json['cliente']?['plan_internet']?.toString(),
       clasificacion: json['clasificacion']?.toString(),
       codigoContrato: json['codigo_contrato']?.toString() ?? json['cliente']?['codigo_contrato']?.toString(),

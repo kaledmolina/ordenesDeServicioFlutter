@@ -564,13 +564,13 @@ class _HomeScreenState extends State<HomeScreen> {
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
                            Text(order.nombreCliente, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                           if (order.cedula != null)
+                           if (order.cedula != null && order.cedula!.isNotEmpty)
                              Padding(
                                padding: const EdgeInsets.only(top: 2),
                                child: Row(
                                  children: [
-                                   Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                                   const SizedBox(width: 6),
+                                   Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.w500)),
+                                   const SizedBox(width: 8),
                                    InkWell(
                                      onTap: () {
                                        Clipboard.setData(ClipboardData(text: order.cedula!));
@@ -595,9 +595,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                  child: Column(
                                    crossAxisAlignment: CrossAxisAlignment.start,
                                    children: [
-                                      Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                      if (order.barrio != null)
-                                        Text(order.barrio!, style: TextStyle(color: Colors.grey[500], fontSize: 12, fontStyle: FontStyle.italic)),
+                                       Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                       if (order.barrio != null && order.barrio!.isNotEmpty)
+                                         Text(order.barrio!, style: TextStyle(color: const Color(0xFF10447E), fontSize: 12, fontWeight: FontWeight.bold)),
                                    ],
                                  ),
                                ),

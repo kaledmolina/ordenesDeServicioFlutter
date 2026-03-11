@@ -197,31 +197,32 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
              child: Column(
                crossAxisAlignment: CrossAxisAlignment.start,
                children: [
-                 _buildInfoRow(Icons.person, order.nombreCliente),
-                 if (order.cedula != null) ...[
-                   const SizedBox(height: 4),
-                   Row(
-                     children: [
-                       Expanded(child: _buildInfoRow(Icons.badge, 'C.C. ${order.cedula}')),
-                       const SizedBox(width: 8),
-                       InkWell(
-                         onTap: () {
-                           Clipboard.setData(ClipboardData(text: order.cedula!));
-                           ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cédula copiada al portapapeles')));
-                         },
-                         child: Container(
-                           padding: const EdgeInsets.all(4),
-                           decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
-                           child: const Icon(Icons.copy, size: 16, color: Colors.blue),
-                         ),
-                       ),
-                     ],
-                   ),
-                 ],
+                  _buildInfoRow(Icons.person, order.nombreCliente),
+                  if (order.cedula != null && order.cedula!.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Expanded(child: _buildInfoRow(Icons.badge, 'C.C. ${order.cedula}')),
+                        const SizedBox(width: 8),
+                        InkWell(
+                          onTap: () {
+                            Clipboard.setData(ClipboardData(text: order.cedula!));
+                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Cédula copiada al portapapeles')));
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.all(4),
+                            decoration: BoxDecoration(color: Colors.blue.withOpacity(0.1), borderRadius: BorderRadius.circular(4)),
+                            child: const Icon(Icons.copy, size: 16, color: Colors.blue),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                  const SizedBox(height: 8),
-                 _buildInfoRow(Icons.location_on, order.direccion ?? 'Sin dirección'),
-                 const SizedBox(height: 8),
-                 _buildInfoRow(Icons.map, order.barrio ?? 'Sin barrio'),
+                  _buildInfoRow(Icons.location_on, order.direccion?.isNotEmpty == true ? order.direccion! : 'Sin dirección'),
+                  const SizedBox(height: 4),
+                  if (order.barrio != null && order.barrio!.isNotEmpty)
+                    _buildInfoRow(Icons.map, order.barrio!, iconColor: const Color(0xFF10447E), textColor: const Color(0xFF10447E), fontWeight: FontWeight.bold),
                  const SizedBox(height: 8),
                  Row(
                    children: [
@@ -281,12 +282,12 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     );
   }
 
-  Widget _buildInfoRow(IconData icon, String text, {bool isCopyable = false, String? rawValue}) {
+  Widget _buildInfoRow(IconData icon, String text, {bool isCopyable = false, String? rawValue, Color? iconColor, Color? textColor, FontWeight? fontWeight}) {
     return Row(
       children: [
-        Icon(icon, size: 16, color: Colors.grey),
+        Icon(icon, size: 16, color: iconColor ?? Colors.grey),
         const SizedBox(width: 8),
-        Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
+        Expanded(child: Text(text, style: TextStyle(fontSize: 14, color: textColor, fontWeight: fontWeight))),
         if (isCopyable) ...[
           const SizedBox(width: 8),
           InkWell(

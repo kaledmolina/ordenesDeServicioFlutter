@@ -218,11 +218,11 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                          crossAxisAlignment: CrossAxisAlignment.start,
                          children: [
                            Text(order.nombreCliente, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-                           if (order.cedula != null)
-                             Padding(
-                               padding: const EdgeInsets.only(top: 2),
-                               child: Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[600], fontSize: 12)),
-                             ),
+                            if (order.cedula != null && order.cedula!.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 2),
+                                child: Text('C.C. ${order.cedula}', style: TextStyle(color: Colors.grey[700], fontSize: 13, fontWeight: FontWeight.w500)),
+                              ),
                            const SizedBox(height: 4),
                            Row(
                              children: [
@@ -232,9 +232,9 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                                  child: Column(
                                    crossAxisAlignment: CrossAxisAlignment.start,
                                    children: [
-                                      Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[600], fontSize: 13), maxLines: 1, overflow: TextOverflow.ellipsis),
-                                      if (order.barrio != null)
-                                        Text(order.barrio!, style: TextStyle(color: Colors.grey[500], fontSize: 12, fontStyle: FontStyle.italic)),
+                                       Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                       if (order.barrio != null && order.barrio!.isNotEmpty)
+                                         Text(order.barrio!, style: TextStyle(color: const Color(0xFF10447E), fontSize: 12, fontWeight: FontWeight.bold)),
                                    ],
                                  ),
                                ),
