@@ -1355,7 +1355,16 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
              itemBuilder: (ctx, i) {
                final photo = techPhotos[i];
                Widget imageWidget;
-               if (photo.url != null && photo.url!.isNotEmpty) {
+               bool hasLocalFile = photo.path.isNotEmpty && File(photo.path).existsSync();
+               
+               if (hasLocalFile) {
+                 imageWidget = Image.file(File(photo.path), width: 100, height: 100, fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => Container(
+                     width: 100, height: 100, color: Colors.grey[300], 
+                     child: const Icon(Icons.image_not_supported, color: Colors.grey)
+                   ),
+                 );
+               } else if (photo.url != null && photo.url!.isNotEmpty) {
                  imageWidget = Image.network(photo.url!, width: 100, height: 100, fit: BoxFit.cover,
                    errorBuilder: (context, error, stackTrace) => Container(
                      width: 100, height: 100, color: Colors.grey[300], 
@@ -1363,11 +1372,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                    ),
                  );
                } else {
-                 imageWidget = Image.file(File(photo.path), width: 100, height: 100, fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) => Container(
+                 imageWidget = Container(
                      width: 100, height: 100, color: Colors.grey[300], 
                      child: const Icon(Icons.image_not_supported, color: Colors.grey)
-                   ),
                  );
                }
 
@@ -1503,9 +1510,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                color: Colors.black,
                height: 400,
                child: InteractiveViewer(
-                 child: photo.url != null && photo.url!.isNotEmpty 
-                  ? Image.network(photo.url!) 
-                  : Image.file(File(photo.path)),
+                 child: (photo.path.isNotEmpty && File(photo.path).existsSync())
+                  ? Image.file(File(photo.path))
+                  : (photo.url != null && photo.url!.isNotEmpty) ? Image.network(photo.url!) : const Icon(Icons.broken_image, size: 50, color: Colors.white),
                ),
              ),
              Container(

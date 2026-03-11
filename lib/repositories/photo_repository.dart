@@ -2,6 +2,11 @@ import '../services/api_service.dart';
 import '../services/database_service.dart';
 import '../models/photo_status_model.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:path_provider/path_provider.dart';
+import 'dart:io';
+import 'dart:convert';
+import 'package:http/http.dart' as http;
 
 class PhotoRepository {
   final ApiService _apiService = ApiService();
@@ -11,10 +16,13 @@ class PhotoRepository {
     final hasConnection = await _hasConnection();
     final List<PhotoDisplay> photos = [];
 
-    // Obtener fotos subidas desde API si hay conexión
     if (hasConnection) {
       try {
         final uploaded = await _apiService.getUploadedPhotos(orderNumber);
+        
+        // Cache remotely fetched photos
+        await _cacheRemotePhotos(orderNumber, uploaded);
+        
         photos.addAll(uploaded.map((p) => PhotoDisplay(
           remoteId: p['id'],
           path: p['path'],
@@ -23,8 +31,12 @@ class PhotoRepository {
           status: PhotoStatusType.uploaded,
         )));
       } catch (e) {
-        // Si falla, continuar con fotos locales
+        // If API fails, try loading from cache
+        photos.addAll(await _getCachedRemotePhotos(orderNumber));
       }
+    } else {
+        // If offline, load from cache
+        photos.addAll(await _getCachedRemotePhotos(orderNumber));
     }
 
     // Obtener fotos pendientes desde DB local
@@ -59,6 +71,77 @@ class PhotoRepository {
     final connectivityResult = await Connectivity().checkConnectivity();
     return connectivityResult.contains(ConnectivityResult.mobile) ||
         connectivityResult.contains(ConnectivityResult.wifi);
+  }
+
+  // Caching Methods
+  Future<void> _cacheRemotePhotos(String orderNumber, List<dynamic> uploadedPhotos) async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final appDir = await getApplicationDocumentsDirectory();
+      final cacheDir = Directory('${appDir.path}/cached_remote_photos');
+      if (!await cacheDir.exists()) {
+        await cacheDir.create(recursive: true);
+      }
+
+      List<Map<String, dynamic>> cachedData = [];
+
+      for (var p in uploadedPhotos) {
+        if (p['url'] == null || p['id'] == null) continue;
+        
+        final localPath = '${cacheDir.path}/remote_${p['id']}.jpg';
+        final file = File(localPath);
+        
+        // Download if it doesn't exist locally
+        if (!await file.exists()) {
+          try {
+            final response = await http.get(Uri.parse(p['url']));
+            if (response.statusCode == 200) {
+              await file.writeAsBytes(response.bodyBytes);
+            }
+          } catch(e) {
+            // ignore download errors, will just try again next time
+          }
+        }
+        
+        cachedData.add({
+          'id': p['id'],
+          'local_path': localPath,
+          'url': p['url'],
+          'tipo': p['tipo'] ?? p['evidence_type']
+        });
+      }
+      
+      await prefs.setString('cached_photos_$orderNumber', jsonEncode(cachedData));
+    } catch(e) {
+       // ignore caching errors to prevent breaking the flow
+    }
+  }
+
+  Future<List<PhotoDisplay>> _getCachedRemotePhotos(String orderNumber) async {
+    List<PhotoDisplay> cachedPhotos = [];
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final dataStr = prefs.getString('cached_photos_$orderNumber');
+      if (dataStr != null) {
+        final List<dynamic> data = jsonDecode(dataStr);
+        for (var p in data) {
+           final localPath = p['local_path'] as String;
+           final file = File(localPath);
+           if (await file.exists()) {
+              cachedPhotos.add(PhotoDisplay(
+                remoteId: p['id'],
+                path: localPath, // use local path because it's offline
+                url: p['url'],   // keep URL for reference
+                type: p['tipo'],
+                status: PhotoStatusType.uploaded // mark as uploaded so UI handles it normally
+              ));
+           }
+        }
+      }
+    } catch(e) {
+        // ignore
+    }
+    return cachedPhotos;
   }
 }
 

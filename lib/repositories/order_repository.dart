@@ -285,6 +285,9 @@ class OrderRepository {
       'fecha_inicio_atencion': json['fecha_inicio_atencion'],
       'fecha_fin_atencion': json['fecha_fin_atencion'],
       'fecha_cierre': json['fecha_cierre'],
+      'plan_internet': json['cliente']?['plan_internet']?.toString(),
+      'novedades_noc': json['novedades_noc']?.toString(),
+      'codigo_contrato': json['cliente']?['codigo_contrato']?.toString(),
     };
   }
 
@@ -331,6 +334,9 @@ class OrderRepository {
       'fecha_inicio_atencion': order.fechaInicioAtencion?.toIso8601String(),
       'fecha_fin_atencion': order.fechaFinAtencion?.toIso8601String(),
       'fecha_cierre': order.fechaCierre?.toIso8601String(),
+      'plan_internet': order.planInternet,
+      'novedades_noc': order.novedadesNoc,
+      'codigo_contrato': order.codigoContrato,
     };
   }
 
@@ -380,6 +386,9 @@ class OrderRepository {
       fechaInicioAtencion: map['fecha_inicio_atencion'] != null ? DateTime.tryParse(map['fecha_inicio_atencion'].toString())?.toLocal() : null,
       fechaFinAtencion: map['fecha_fin_atencion'] != null ? DateTime.tryParse(map['fecha_fin_atencion'].toString())?.toLocal() : null,
       fechaCierre: map['fecha_cierre'] != null ? DateTime.tryParse(map['fecha_cierre'].toString())?.toLocal() : null,
+      planInternet: map['plan_internet']?.toString(),
+      novedadesNoc: map['novedades_noc']?.toString(),
+      codigoContrato: map['codigo_contrato']?.toString(),
     );
   }
 
