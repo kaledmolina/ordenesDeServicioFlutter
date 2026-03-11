@@ -106,13 +106,14 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
 
     if (_activeOrder == null) {
       return Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24.0),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(Icons.assignment_turned_in_outlined, size: 80, color: Colors.grey.shade300)
-                  .animate().scale(duration: 500.ms).then().shake(duration: 500.ms),
+        child: SingleChildScrollView(
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.assignment_turned_in_outlined, size: 80, color: Colors.grey.shade300)
+                    .animate().scale(duration: 500.ms).then().shake(duration: 500.ms),
               const SizedBox(height: 16),
               Text(
                 'No tienes ordenes en curso',
@@ -138,12 +139,11 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                  ElevatedButton(
                     onPressed: _findActiveOrder,
                     child: const Text('Actualizar')
-                )
               ]
             ],
           ),
         ),
-      );
+      ));
     }
 
     // Reuse OrderDetailScreen but embedded or just redirect?
