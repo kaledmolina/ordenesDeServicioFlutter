@@ -104,9 +104,13 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     }
     
     _addDraftListeners();
-    _loadDraft();
-    _loadSubscriberSignature();
-    _initialize();
+    // We run the async loading sequence safely after the first frame builds
+    Future.microtask(() async {
+       await _loadPhotos();
+       await _loadDraft();
+       await _loadSubscriberSignature();
+       await _initialize();
+    });
     _startDeadlineTimer();
   }
 
@@ -160,9 +164,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final prefs = await SharedPreferences.getInstance();
       final key = '$_draftKeyPrefix${widget.orden.numeroOrden}';
       final draftString = prefs.getString(key);
-      
-      // Load photos from DB explicitly to ensure they are restored
-      await _loadPhotos();
       
       if (draftString != null) {
         final data = jsonDecode(draftString) as Map<String, dynamic>;
@@ -281,7 +282,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   ];
 
   Future<void> _initialize() async {
-    await _loadPhotos();
     _fetchEvidenceTypes();
     _fetchProfileAndSignature();
     
