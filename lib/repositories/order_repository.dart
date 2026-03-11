@@ -285,9 +285,9 @@ class OrderRepository {
       'fecha_inicio_atencion': json['fecha_inicio_atencion'],
       'fecha_fin_atencion': json['fecha_fin_atencion'],
       'fecha_cierre': json['fecha_cierre'],
-      'plan_internet': json['cliente']?['plan_internet']?.toString(),
+      'plan_internet': json['plan_internet']?.toString() ?? json['cliente']?['plan_internet']?.toString(),
       'novedades_noc': json['novedades_noc']?.toString(),
-      'codigo_contrato': json['cliente']?['codigo_contrato']?.toString(),
+      'codigo_contrato': json['codigo_contrato']?.toString() ?? json['cliente']?['codigo_contrato']?.toString(),
     };
   }
 

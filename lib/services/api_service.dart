@@ -85,6 +85,9 @@ class ApiService {
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
     final data = _handleResponse(response);
+    if (data is Map<String, dynamic> && data.containsKey('order')) {
+      return Orden.fromJson(data['order']);
+    }
     return Orden.fromJson(data);
   }
 
