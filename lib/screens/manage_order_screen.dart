@@ -1296,7 +1296,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                     icon: const Icon(Icons.close, color: Colors.white),
                     label: const Text('Cancelar', style: TextStyle(color: Colors.white)),
                     onPressed: () {
-                      ctrl.points = previousStrokes;
                       _restoreOrientationAndPop(context);
                     },
                   ),
