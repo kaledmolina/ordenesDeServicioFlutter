@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/sync_service.dart';
 import 'login_screen.dart';
 import '../services/upload_service.dart';
 import '../models/photo_status_model.dart';
