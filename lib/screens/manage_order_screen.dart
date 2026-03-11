@@ -160,6 +160,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       final prefs = await SharedPreferences.getInstance();
       final key = '$_draftKeyPrefix${widget.orden.numeroOrden}';
       final draftString = prefs.getString(key);
+      
+      // Load photos from DB explicitly to ensure they are restored
+      await _loadPhotos();
+      
       if (draftString != null) {
         final data = jsonDecode(draftString) as Map<String, dynamic>;
         if (mounted) {
