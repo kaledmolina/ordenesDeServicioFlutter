@@ -250,7 +250,17 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     );
   }
 
-  List<String> _evidenceTypes = [];
+  List<String> _evidenceTypes = [
+    'Test velocidad',
+    'Vista general router',
+    'Mac router instalado',
+    'Mac britge intalada',
+    'Mac router desintalda',
+    'Mac britge desintalda',
+    'Serial camara intalada',
+    'Serial camara desintalada',
+    'Potencia',
+  ];
 
   Future<void> _initialize() async {
     await _loadPhotos();
@@ -397,9 +407,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   Future<void> _fetchEvidenceTypes() async {
     try {
       final types = await ApiService().getEvidenceTypes();
-      if (mounted) setState(() => _evidenceTypes = types);
+      if (mounted && types.isNotEmpty) {
+        setState(() => _evidenceTypes = types);
+      }
     } catch (e) {
-      debugPrint('Error fetching evidence types: $e');
+      debugPrint('Error fetching evidence types, using defaults: $e');
     }
   }
   
