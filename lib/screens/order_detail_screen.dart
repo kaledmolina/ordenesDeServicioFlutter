@@ -763,23 +763,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                           color: Colors.grey[200],
                         ),
                         clipBehavior: Clip.hardEdge,
-                        child: photo.url != null && photo.url!.isNotEmpty 
-                          ? FutureBuilder<String?>(
-                              future: AuthService.instance.getToken(),
-                              builder: (context, snapshot) {
-                                if (snapshot.connectionState == ConnectionState.waiting) {
-                                  return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                        child: (photo.path.isNotEmpty && File(photo.path).existsSync())
+                          ? Image.file(File(photo.path), fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image))
+                          : photo.url != null && photo.url!.isNotEmpty 
+                            ? FutureBuilder<String?>(
+                                future: AuthService.instance.getToken(),
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState == ConnectionState.waiting) {
+                                    return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+                                  }
+                                  final token = snapshot.data;
+                                  return Image.network(
+                                    photo.url!, 
+                                    headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+                                    fit: BoxFit.cover, 
+                                    errorBuilder: (_,__,___) => const Icon(Icons.broken_image)
+                                  );
                                 }
-                                final token = snapshot.data;
-                                return Image.network(
-                                  photo.url!, 
-                                  headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-                                  fit: BoxFit.cover, 
-                                  errorBuilder: (_,__,___) => const Icon(Icons.broken_image)
-                                );
-                              }
-                            )
-                          : Image.file(File(photo.path), fit: BoxFit.cover, errorBuilder: (_,__,___) => const Icon(Icons.broken_image)),
+                              )
+                            : const Icon(Icons.broken_image),
                       ),
                     ),
                     const SizedBox(height: 4),

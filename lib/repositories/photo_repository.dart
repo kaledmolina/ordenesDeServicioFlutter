@@ -1,7 +1,9 @@
 import '../services/api_service.dart';
 import '../services/database_service.dart';
 import '../models/photo_status_model.dart';
+import '../services/auth_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:path_provider/path_provider.dart';
 import 'dart:io';
@@ -76,6 +78,7 @@ class PhotoRepository {
   // Caching Methods
   Future<void> _cacheRemotePhotos(String orderNumber, List<dynamic> uploadedPhotos) async {
     try {
+      final token = await AuthService.instance.getToken();
       final prefs = await SharedPreferences.getInstance();
       final appDir = await getApplicationDocumentsDirectory();
       final cacheDir = Directory('${appDir.path}/cached_remote_photos');
@@ -94,11 +97,17 @@ class PhotoRepository {
         // Download if it doesn't exist locally
         if (!await file.exists()) {
           try {
-            final response = await http.get(Uri.parse(p['url']));
+            final response = await http.get(
+              Uri.parse(p['url']),
+              headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+            );
             if (response.statusCode == 200) {
               await file.writeAsBytes(response.bodyBytes);
+            } else {
+              debugPrint('Error caching photo ${p['id']}: ${response.statusCode}');
             }
           } catch(e) {
+            debugPrint('Exception caching photo ${p['id']}: $e');
             // ignore download errors, will just try again next time
           }
         }

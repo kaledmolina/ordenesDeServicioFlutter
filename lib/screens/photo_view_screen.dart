@@ -12,8 +12,13 @@ class PhotoViewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     Widget image;
-    // Use URL if available (handled by repository), else local file
-    if (photo.url != null && photo.url!.isNotEmpty) {
+    // Prioritize local file if it exists, otherwise use network URL
+    if (photo.path.isNotEmpty && File(photo.path).existsSync()) {
+      image = Image.file(
+        File(photo.path),
+        errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported, color: Colors.white)),
+      );
+    } else if (photo.url != null && photo.url!.isNotEmpty) {
       image = Image.network(
         photo.url!,
         headers: authToken != null ? {'Authorization': 'Bearer $authToken'} : null,
@@ -28,10 +33,7 @@ class PhotoViewScreen extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, color: Colors.white)),
       );
     } else {
-      image = Image.file(
-        File(photo.path),
-        errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported, color: Colors.white)),
-      );
+      image = const Center(child: Icon(Icons.broken_image, color: Colors.white));
     }
 
     return Scaffold(
