@@ -189,9 +189,14 @@ class OrderRepository {
   }
 
   Future<void> _saveOrdersToLocal(List<dynamic> ordersData) async {
-    final orders = ordersData.map((json) => _orderJsonToDbMap(json)).toList();
-    await _dbService.saveOrders(orders);
-    await _dbService.setLastSyncOrders(DateTime.now().millisecondsSinceEpoch ~/ 1000);
+    try {
+      final orders = ordersData.map((json) => _orderJsonToDbMap(json)).toList();
+      await _dbService.saveOrders(orders);
+      await _dbService.setLastSyncOrders(DateTime.now().millisecondsSinceEpoch ~/ 1000);
+    } catch (e, stack) {
+      debugPrint("CRITICAL: Error saving orders to local SQLite. This may lead to stale data. Error: $e");
+      debugPrint(stack.toString());
+    }
   }
 
   Future<void> _saveOrderToLocal(Orden order) async {
@@ -265,7 +270,9 @@ class OrderRepository {
       'fecha_programada': json['fecha_programada'],
       'status': (json['estado_orden'] != null && json['estado_orden'].toString().isNotEmpty) ? json['estado_orden'] : json['status'],
       'fecha_llegada': json['fecha_llegada'],
-      'solucion_tecnico': json['solucion_tecnico'],
+      'solucion_tecnico': (json['solucion_tecnico'] is List) 
+          ? (json['solucion_tecnico'] as List).join(', ') 
+          : json['solucion_tecnico']?.toString(),
       'mac_router': json['mac_router'],
       'mac_bridge': json['mac_bridge'],
       'mac_ont': json['mac_ont'],
