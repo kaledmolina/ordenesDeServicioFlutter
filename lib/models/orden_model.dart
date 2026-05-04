@@ -188,6 +188,7 @@ class Orden {
     '49 TRASLADO INTERNO': '49 TRASLADO INTERNO',
     '50 CAMBIO DE CONTRASEÑA': '50 CAMBIO DE CONTRASEÑA',
     '51 CAJA SIN POTENCIA': '51 CAJA SIN POTENCIA',
+    '52 CAJA NAP LLENA': '52 CAJA NAP LLENA',
   };
 
   // Improved parsing for array or string
