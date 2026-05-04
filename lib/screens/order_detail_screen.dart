@@ -353,13 +353,21 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       final obsController = TextEditingController();
       final user = await AuthService.instance.getCurrentUser();
       if (!mounted) return;
-      await showDialog(
+      await showModalBottomSheet(
         context: context, 
-        builder: (dialogCtx) => AlertDialog(
-          title: const Text('Reasignar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Column(
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+        builder: (dialogCtx) => Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
+            left: 20, right: 20, top: 20,
+          ),
+          child: Column(
              mainAxisSize: MainAxisSize.min,
+             crossAxisAlignment: CrossAxisAlignment.stretch,
              children: [
+               const Text('Reasignar Orden', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+               const SizedBox(height: 15),
                const Text('Por favor, indica el motivo detallado de la reasignación (mínimo 15 caracteres):'),
                const SizedBox(height: 10),
                TextField(
@@ -367,45 +375,51 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                  decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Motivo de la falla...'),
                  maxLines: 3,
                  maxLength: 150,
-               )
+               ),
+               const SizedBox(height: 15),
+               Row(
+                 mainAxisAlignment: MainAxisAlignment.end,
+                 children: [
+                   TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
+                   const SizedBox(width: 10),
+                   ElevatedButton(
+                     onPressed: () async {
+                         if (obsController.text.trim().length < 15) {
+                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo debe tener al menos 15 caracteres'), backgroundColor: Colors.orange));
+                             return;
+                         }
+                         
+                         final now = DateTime.now();
+                         final formattedDate = DateFormat('dd/MM/yyyy hh:mm a').format(now);
+                         final userName = user?.name ?? 'Técnico';
+                         final finalMotivo = '${obsController.text.trim()}\n[Escrito por: $userName el $formattedDate]';
+                         
+                         Navigator.pop(dialogCtx); // Close dialog
+                         setState(() {
+                            _isLoading = true;
+                            _loadingMessage = 'Procesando reasignación...';
+                         });
+                         try {
+                            await _orderRepo.reassignOrder(widget.orderNumber, finalMotivo);
+                            if (mounted) {
+                               ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden marcada para reasignar'), backgroundColor: Colors.blue));
+                               _hasStateChanged = true;
+                               _safePop('refresh');
+                            }
+                         } catch (e) {
+                            if (mounted) _msg('Error al reasignar: $e', Colors.red);
+                         } finally {
+                            if (mounted) setState(() => _isLoading = false);
+                         }
+                     }, 
+                     style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
+                     child: const Text('Reasignar')
+                   ),
+                 ],
+               ),
+               const SizedBox(height: 20),
              ],
           ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
-            ElevatedButton(
-              onPressed: () async {
-                  if (obsController.text.trim().length < 15) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo debe tener al menos 15 caracteres'), backgroundColor: Colors.orange));
-                      return;
-                  }
-                  
-                  final now = DateTime.now();
-                  final formattedDate = DateFormat('dd/MM/yyyy hh:mm a').format(now);
-                  final userName = user?.name ?? 'Técnico';
-                  final finalMotivo = '${obsController.text.trim()}\n[Escrito por: $userName el $formattedDate]';
-                  
-                  Navigator.pop(dialogCtx); // Close dialog
-                  setState(() {
-                     _isLoading = true;
-                     _loadingMessage = 'Procesando reasignación...';
-                  });
-                  try {
-                     await _orderRepo.reassignOrder(widget.orderNumber, finalMotivo);
-                     if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden marcada para reasignar'), backgroundColor: Colors.blue));
-                        _hasStateChanged = true;
-                        _safePop('refresh');
-                     }
-                  } catch (e) {
-                     if (mounted) _msg('Error al reasignar: $e', Colors.red);
-                  } finally {
-                     if (mounted) setState(() => _isLoading = false);
-                  }
-              }, 
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
-              child: const Text('Reasignar')
-            ),
-          ],
         )
       );
   }
@@ -417,16 +431,23 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       DateTime? selectedDate;
       String? selectedJornada;
       
-      await showDialog(
+      await showModalBottomSheet(
         context: context, 
+        isScrollControlled: true,
+        shape: const RoundedRectangleBorder(borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
         builder: (_) => StatefulBuilder(
-          builder: (dialogCtx, setDialogState) => AlertDialog(
-            title: const Text('Reprogramar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
-            content: SingleChildScrollView(
+          builder: (dialogCtx, setDialogState) => Padding(
+            padding: EdgeInsets.only(
+              bottom: MediaQuery.of(dialogCtx).viewInsets.bottom,
+              left: 20, right: 20, top: 20,
+            ),
+            child: SingleChildScrollView(
               child: Column(
                  mainAxisSize: MainAxisSize.min,
-                 crossAxisAlignment: CrossAxisAlignment.start,
+                 crossAxisAlignment: CrossAxisAlignment.stretch,
                  children: [
+                   const Text('Reprogramar Orden', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18)),
+                   const SizedBox(height: 15),
                    const Text('Fecha de reprogramación:'),
                    const SizedBox(height: 5),
                    InkWell(
@@ -477,59 +498,65 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                      controller: obsController,
                      decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Motivo...'),
                      maxLines: 2,
-                   )
+                   ),
+                   const SizedBox(height: 15),
+                   Row(
+                     mainAxisAlignment: MainAxisAlignment.end,
+                     children: [
+                       TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
+                       const SizedBox(width: 10),
+                       ElevatedButton(
+                         onPressed: () async {
+                             if (selectedDate == null) {
+                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes seleccionar una fecha'), backgroundColor: Colors.orange));
+                                 return;
+                             }
+                             if (selectedJornada == null) {
+                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes seleccionar una jornada'), backgroundColor: Colors.orange));
+                                 return;
+                             }
+                             if (obsController.text.trim().isEmpty) {
+                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo es obligatorio'), backgroundColor: Colors.orange));
+                                 return;
+                             }
+                             
+                             final now = DateTime.now();
+                             final formattedNow = DateFormat('dd/MM/yyyy hh:mm a').format(now);
+                             final formattedDate = DateFormat('dd/MM/yyyy').format(selectedDate!);
+                             final userName = user?.name ?? 'Técnico';
+                             
+                             final finalMotivo = '${obsController.text.trim()}\n[Reprogramado para: $formattedDate - $selectedJornada]\n[Escrito por: $userName el $formattedNow]';
+
+                             Navigator.pop(dialogCtx); // Close dialog
+                             setState(() {
+                                _isLoading = true;
+                                _loadingMessage = 'Reprogramando...';
+                             });
+                             try {
+                                await _orderRepo.rescheduleOrder(widget.orderNumber, finalMotivo);
+                              if (mounted) {
+                                 ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden reprogramada'), backgroundColor: Colors.green));
+                                 _hasStateChanged = true;
+                                 _safePop('refresh');
+                              }
+                           } catch (e) {
+                              if (mounted) _msg('Error al reprogramar: $e', Colors.red);
+                           } finally {
+                              if (mounted) setState(() => _isLoading = false);
+                           }
+                         }, 
+                         style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
+                         child: const Text('Reprogramar')
+                       ),
+                     ],
+                   ),
+                   const SizedBox(height: 20),
                  ],
               ),
             ),
-            actions: [
-              TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
-              ElevatedButton(
-                onPressed: () async {
-                    if (selectedDate == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes seleccionar una fecha'), backgroundColor: Colors.orange));
-                        return;
-                    }
-                    if (selectedJornada == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes seleccionar una jornada'), backgroundColor: Colors.orange));
-                        return;
-                    }
-                    if (obsController.text.trim().isEmpty) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo es obligatorio'), backgroundColor: Colors.orange));
-                        return;
-                    }
-                    
-                    final now = DateTime.now();
-                    final formattedNow = DateFormat('dd/MM/yyyy hh:mm a').format(now);
-                    final formattedDate = DateFormat('dd/MM/yyyy').format(selectedDate!);
-                    final userName = user?.name ?? 'Técnico';
-                    
-                    final finalMotivo = '${obsController.text.trim()}\n[Reprogramado para: $formattedDate - $selectedJornada]\n[Escrito por: $userName el $formattedNow]';
-
-                    Navigator.pop(dialogCtx); // Close dialog
-                    setState(() {
-                       _isLoading = true;
-                       _loadingMessage = 'Reprogramando...';
-                    });
-                    try {
-                       await _orderRepo.rescheduleOrder(widget.orderNumber, finalMotivo);
-                     if (mounted) {
-                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden reprogramada'), backgroundColor: Colors.green));
-                        _hasStateChanged = true;
-                        _safePop('refresh');
-                     }
-                  } catch (e) {
-                     if (mounted) _msg('Error al reprogramar: $e', Colors.red);
-                  } finally {
-                     if (mounted) setState(() => _isLoading = false);
-                  }
-              }, 
-              style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFF10447E), foregroundColor: Colors.white),
-              child: const Text('Reprogramar')
-            ),
-          ],
+          ),
         ),
-      ),
-    );
+      );
   }
 
   List<Widget> _buildActionButtons(Orden orden, String status) {

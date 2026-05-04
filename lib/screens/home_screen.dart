@@ -443,7 +443,12 @@ class _HomeScreenState extends State<HomeScreen> {
         // 2. Order List
         Expanded(
           child: _isLoading
-              ? const Center(child: CircularProgressIndicator())
+              ? ListView.separated(
+                  padding: const EdgeInsets.all(16),
+                  itemCount: 4, // Show 4 skeletons
+                  separatorBuilder: (_, __) => const SizedBox(height: 16),
+                  itemBuilder: (_, __) => _buildSkeletonCard(),
+                )
               : _orders.isEmpty
                   ? _buildEmptyState()
                   : RefreshIndicator(
@@ -505,6 +510,36 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // --- MODERN CARD DESIGN ---
+  
+  Widget _buildSkeletonCard() {
+    return Container(
+      height: 220,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(width: 120, height: 20, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(4))),
+              Container(width: 60, height: 20, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(10))),
+            ],
+          ),
+          const SizedBox(height: 24),
+          Container(width: 180, height: 16, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(4))),
+          const SizedBox(height: 8),
+          Container(width: 250, height: 12, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(4))),
+          const Spacer(),
+          Container(width: double.infinity, height: 45, decoration: BoxDecoration(color: Colors.grey[300], borderRadius: BorderRadius.circular(8))),
+        ],
+      ),
+    ).animate(onPlay: (controller) => controller.repeat()).shimmer(duration: 1200.ms, color: Colors.white60);
+  }
 
   Widget _buildModernOrderCard(Orden order) {
     return Container(
