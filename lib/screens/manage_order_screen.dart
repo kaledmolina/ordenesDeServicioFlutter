@@ -35,6 +35,49 @@ class ManageOrderScreen extends StatefulWidget {
   _ManageOrderScreenState createState() => _ManageOrderScreenState();
 }
 
+// TOP-LEVEL FUNCTION FOR ISOLATE PROCESSING
+Future<String> processImageWithWatermarkInIsolate(Map<String, String> args) async {
+  final originalPath = args['originalPath']!;
+  final targetPath = args['targetPath']!;
+  
+  try {
+    final originalFile = File(originalPath);
+    final bytes = await originalFile.readAsBytes();
+    img.Image? image = img.decodeImage(bytes);
+
+    if (image != null) {
+      final now = DateTime.now();
+      final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(now);
+      final text = 'Intalnet - $dateStr';
+      
+      if (image.width > 1600 || image.height > 1600) {
+         image = img.copyResize(image, width: image.width > image.height ? 1600 : null, height: image.height > image.width ? 1600 : null);
+      }
+
+      img.drawString(
+        image,
+        text,
+        font: img.arial24,
+        x: 20,
+        y: 20,
+        color: img.ColorRgb8(255, 165, 0), // Orange/Gold
+      );
+      
+      final encoded = img.encodeJpg(image, quality: 80);
+      final file = File(targetPath);
+      await file.writeAsBytes(encoded);
+      return targetPath;
+    }
+    await originalFile.copy(targetPath);
+    return targetPath;
+  } catch (e) {
+    debugPrint('Error adding watermark in isolate: $e');
+    final originalFile = File(originalPath);
+    await originalFile.copy(targetPath);
+    return targetPath;
+  }
+}
+
 class _ManageOrderScreenState extends State<ManageOrderScreen> {
   final _formKey = GlobalKey<FormState>();
   
@@ -627,45 +670,14 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
   Future<File> _addWatermark(File originalFile, String targetPath) async {
     try {
-      final bytes = await originalFile.readAsBytes();
-      img.Image? image = img.decodeImage(bytes);
-
-      if (image != null) {
-        // Create Watermark Text
-        final now = DateTime.now();
-        final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(now);
-        final text = 'Intalnet - $dateStr';
-
-        // Draw Text
-        // Using built-in font for simplicity. 'arial_24' or similar comes with package usually or we use standard.
-        // image package >= 4.0 uses different font handling.
-        // Let's use standard default font (arial_24) provided by library if available, or just render.
-        
-        // Resize if too big (Max 1600px) to prevent upload errors
-        if (image.width > 1600 || image.height > 1600) {
-           image = img.copyResize(image, width: image.width > image.height ? 1600 : null, height: image.height > image.width ? 1600 : null);
-        }
-
-        img.drawString(
-          image,
-          text,
-          font: img.arial24,
-          x: 20,
-          y: 20,
-          color: img.ColorRgb8(255, 165, 0), // Orange/Gold
-        );
-        
-        // Save to target
-        final encoded = img.encodeJpg(image, quality: 80);
-        final file = File(targetPath);
-        await file.writeAsBytes(encoded);
-        return file;
-
-      }
-      // Fallback if decode fails
-      return originalFile.copy(targetPath);
+      // Offload heavy image processing to a background isolate
+      final resultPath = await compute(processImageWithWatermarkInIsolate, {
+        'originalPath': originalFile.path,
+        'targetPath': targetPath,
+      });
+      return File(resultPath);
     } catch (e) {
-      debugPrint('Error adding watermark: $e');
+      debugPrint('Error delegando watermark al isolate: $e');
       return originalFile.copy(targetPath);
     }
   }

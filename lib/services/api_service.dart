@@ -6,6 +6,9 @@ import 'auth_service.dart';
 import '../models/orden_model.dart';
 import '../models/user_model.dart';
 
+// Top-level function for background JSON parsing
+dynamic _decodeJsonIsolate(String source) => jsonDecode(source);
+
 class ApiService {
   static const String _baseUrlDomain = 'https://ordenes.intalnet.com';
   static const String baseUrl = '$_baseUrlDomain/api';
@@ -19,7 +22,7 @@ class ApiService {
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
   Future<bool> checkApiStatus() async {
@@ -46,7 +49,7 @@ class ApiService {
       },
       body: jsonEncode({'fcm_token': fcmToken}),
     );
-    _handleResponse(response);
+    await _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> getOrders({int page = 1, String status = 'todas', String? search, String? barrio}) async {
@@ -62,7 +65,7 @@ class ApiService {
       Uri.parse(url),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
 
@@ -73,7 +76,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/orders/count-pending'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    final data = _handleResponse(response);
+    final data = await _handleResponse(response);
     return data['count'] as int;
   }
 
@@ -84,7 +87,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/orders/$orderNumber'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    final data = _handleResponse(response);
+    final data = await _handleResponse(response);
     if (data is Map<String, dynamic>) {
       if (data.containsKey('order')) return Orden.fromJson(data['order']);
       if (data.containsKey('data')) return Orden.fromJson(data['data']);
@@ -104,7 +107,7 @@ class ApiService {
       },
       body: data != null ? jsonEncode(data) : null,
     );
-    final responseData = _handleResponse(response);
+    final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
 
@@ -118,7 +121,7 @@ class ApiService {
         'Authorization': 'Bearer $token'
       },
     );
-    final responseData = _handleResponse(response);
+    final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
 
@@ -134,7 +137,7 @@ class ApiService {
       },
       body: data != null ? jsonEncode(data) : null,
     );
-    final responseData = _handleResponse(response);
+    final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
   
@@ -150,7 +153,7 @@ class ApiService {
       },
       body: jsonEncode(data),
     );
-    final responseData = _handleResponse(response);
+    final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
   
@@ -161,7 +164,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/orders/$orderNumber/reject'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> reassignOrder(String orderNumber, String motivo) async {
@@ -171,7 +174,7 @@ class ApiService {
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer $token'},
       body: jsonEncode({'motivo': motivo}),
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> rescheduleOrder(String orderNumber, String motivo) async {
@@ -181,7 +184,7 @@ class ApiService {
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer $token'},
       body: jsonEncode({'motivo': motivo}),
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
   // CAMBIO: Acepta un String en lugar de un int
@@ -196,7 +199,7 @@ class ApiService {
       },
       body: jsonEncode(data),
     );
-    _handleResponse(response);
+    await _handleResponse(response);
   }
   
   // CAMBIO: Acepta un String en lugar de un int
@@ -206,7 +209,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/orders/$orderNumber/photos'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    final data = _handleResponse(response);
+    final data = await _handleResponse(response);
     if (data is Map<String, dynamic> && data.containsKey('data')) {
       return data['data'] as List<dynamic>;
     }
@@ -219,7 +222,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/barrios'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    final data = _handleResponse(response);
+    final data = await _handleResponse(response);
     return List<String>.from(data);
   }
 
@@ -229,7 +232,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/evidence-types'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    final data = _handleResponse(response);
+    final data = await _handleResponse(response);
     return List<String>.from(data);
   }
 
@@ -243,7 +246,7 @@ class ApiService {
       Uri.parse(url),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
   Future<void> claimOrder(String orderNumber) async {
@@ -252,7 +255,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/orders/$orderNumber/claim'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    _handleResponse(response);
+    await _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> getRankings() async {
@@ -261,13 +264,14 @@ class ApiService {
       Uri.parse('$baseUrl/v1/rankings'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer \$token'},
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
 
 
-  dynamic _handleResponse(http.Response response) {
-    final body = jsonDecode(response.body);
+  Future<dynamic> _handleResponse(http.Response response) async {
+    // Parse JSON in a background isolate to prevent UI stutters
+    final body = await compute(_decodeJsonIsolate, response.body);
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;
     } else {
@@ -280,7 +284,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/profile'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
     );
-    return _handleResponse(response);
+    return await _handleResponse(response);
   }
 
   Future<Map<String, dynamic>> updateSignature(File signatureFile) async {
