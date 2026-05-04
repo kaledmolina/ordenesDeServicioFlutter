@@ -527,8 +527,9 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               child: const Text('Reprogramar')
             ),
           ],
-        )
-      );
+        ),
+      ),
+    );
   }
 
   List<Widget> _buildActionButtons(Orden orden, String status) {
