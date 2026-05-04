@@ -355,7 +355,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       if (!mounted) return;
       await showDialog(
         context: context, 
-        builder: (_) => AlertDialog(
+        builder: (dialogCtx) => AlertDialog(
           title: const Text('Reasignar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
           content: Column(
              mainAxisSize: MainAxisSize.min,
@@ -371,7 +371,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
              ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+            TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
             ElevatedButton(
               onPressed: () async {
                   if (obsController.text.trim().length < 15) {
@@ -384,7 +384,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                   final userName = user?.name ?? 'Técnico';
                   final finalMotivo = '${obsController.text.trim()}\n[Escrito por: $userName el $formattedDate]';
                   
-                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(dialogCtx); // Close dialog
                   setState(() {
                      _isLoading = true;
                      _loadingMessage = 'Procesando reasignación...';
@@ -420,7 +420,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       await showDialog(
         context: context, 
         builder: (_) => StatefulBuilder(
-          builder: (context, setDialogState) => AlertDialog(
+          builder: (dialogCtx, setDialogState) => AlertDialog(
             title: const Text('Reprogramar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
             content: SingleChildScrollView(
               child: Column(
@@ -482,7 +482,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+              TextButton(onPressed: () => Navigator.pop(dialogCtx), child: const Text('Cancelar')),
               ElevatedButton(
                 onPressed: () async {
                     if (selectedDate == null) {
@@ -505,7 +505,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                     
                     final finalMotivo = '${obsController.text.trim()}\n[Reprogramado para: $formattedDate - $selectedJornada]\n[Escrito por: $userName el $formattedNow]';
 
-                    Navigator.pop(context); // Close dialog
+                    Navigator.pop(dialogCtx); // Close dialog
                     setState(() {
                        _isLoading = true;
                        _loadingMessage = 'Reprogramando...';
