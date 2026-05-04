@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -83,6 +84,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
        _loadingMessage = 'Iniciando ruta...';
     });
     try {
+      final connectivityResult = await Connectivity().checkConnectivity();
+      if (!connectivityResult.contains(ConnectivityResult.mobile) && 
+          !connectivityResult.contains(ConnectivityResult.wifi)) {
+        if (mounted) _msg('Para iniciar una ruta debes estar conectado a internet.', Colors.red);
+        return;
+      }
+
       final hasActive = await _orderRepo.hasActiveOrder();
       if (hasActive) {
         if (mounted) _msg('Ya tienes una orden en proceso. Ejecútala para tomar otra.', Colors.orange);
@@ -115,6 +123,25 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       }
     } catch (e) {
       if (mounted) _msg('Error al rechazar: $e', Colors.red);
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _cancelStart() async {
+    setState(() {
+      _isLoading = true;
+      _loadingMessage = 'Cancelando ruta...';
+    });
+    try {
+      final updatedOrder = await _orderRepo.cancelStartOrder(widget.orderNumber);
+      if (mounted) {
+        setState(() => _currentOrder = updatedOrder);
+        _hasStateChanged = true;
+        _msg('Inicio de ruta cancelado. La orden vuelve a estar Asignada.', Colors.blue);
+      }
+    } catch (e) {
+      if (mounted) _msg('Error al cancelar inicio: $e', Colors.red);
     } finally {
       if (mounted) setState(() => _isLoading = false);
     }
@@ -324,6 +351,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
   // --- DIALOGS FOR SPECIAL ACTIONS ---
   Future<void> _promptForReassign() async {
       final obsController = TextEditingController();
+      final user = await AuthService.instance.getCurrentUser();
+      if (!mounted) return;
       await showDialog(
         context: context, 
         builder: (_) => AlertDialog(
@@ -349,13 +378,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo debe tener al menos 15 caracteres'), backgroundColor: Colors.orange));
                       return;
                   }
+                  
+                  final now = DateTime.now();
+                  final formattedDate = DateFormat('dd/MM/yyyy hh:mm a').format(now);
+                  final userName = user?.name ?? 'Técnico';
+                  final finalMotivo = '${obsController.text.trim()}\n[Escrito por: $userName el $formattedDate]';
+                  
                   Navigator.pop(context); // Close dialog
                   setState(() {
                      _isLoading = true;
                      _loadingMessage = 'Procesando reasignación...';
                   });
                   try {
-                     await _orderRepo.reassignOrder(widget.orderNumber, obsController.text.trim());
+                     await _orderRepo.reassignOrder(widget.orderNumber, finalMotivo);
                      if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden marcada para reasignar'), backgroundColor: Colors.blue));
                         _hasStateChanged = true;
@@ -377,37 +412,106 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   Future<void> _promptForReschedule() async {
       final obsController = TextEditingController();
+      final user = await AuthService.instance.getCurrentUser();
+      if (!mounted) return;
+      DateTime? selectedDate;
+      String? selectedJornada;
+      
       await showDialog(
         context: context, 
-        builder: (_) => AlertDialog(
-          title: const Text('Reprogramar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
-          content: Column(
-             mainAxisSize: MainAxisSize.min,
-             children: [
-               const Text('Por favor, indica el motivo de la reprogramación:'),
-               const SizedBox(height: 10),
-               TextField(
-                 controller: obsController,
-                 decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Motivo...'),
-                 maxLines: 2,
-               )
-             ],
-          ),
-          actions: [
-            TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
-            ElevatedButton(
-              onPressed: () async {
-                  if (obsController.text.trim().isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo es obligatorio'), backgroundColor: Colors.orange));
-                      return;
-                  }
-                  Navigator.pop(context); // Close dialog
-                  setState(() {
-                     _isLoading = true;
-                     _loadingMessage = 'Reprogramando...';
-                  });
-                  try {
-                     await _orderRepo.rescheduleOrder(widget.orderNumber, obsController.text.trim());
+        builder: (_) => StatefulBuilder(
+          builder: (context, setDialogState) => AlertDialog(
+            title: const Text('Reprogramar Orden', style: TextStyle(fontWeight: FontWeight.bold)),
+            content: SingleChildScrollView(
+              child: Column(
+                 mainAxisSize: MainAxisSize.min,
+                 crossAxisAlignment: CrossAxisAlignment.start,
+                 children: [
+                   const Text('Fecha de reprogramación:'),
+                   const SizedBox(height: 5),
+                   InkWell(
+                     onTap: () async {
+                        final date = await showDatePicker(
+                          context: context, 
+                          initialDate: DateTime.now(),
+                          firstDate: DateTime.now(),
+                          lastDate: DateTime.now().add(const Duration(days: 30))
+                        );
+                        if (date != null) {
+                           setDialogState(() => selectedDate = date);
+                        }
+                     },
+                     child: Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 15),
+                       decoration: BoxDecoration(border: Border.all(color: Colors.grey), borderRadius: BorderRadius.circular(4)),
+                       child: Row(
+                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                         children: [
+                           Text(selectedDate != null ? DateFormat('dd/MM/yyyy').format(selectedDate!) : 'Seleccionar fecha'),
+                           const Icon(Icons.calendar_today, size: 18, color: Colors.grey),
+                         ],
+                       ),
+                     ),
+                   ),
+                   const SizedBox(height: 15),
+                   const Text('Jornada:'),
+                   const SizedBox(height: 5),
+                   DropdownButtonFormField<String>(
+                     decoration: const InputDecoration(border: OutlineInputBorder(), contentPadding: EdgeInsets.symmetric(horizontal: 12)),
+                     value: selectedJornada,
+                     hint: const Text('Seleccionar jornada'),
+                     items: ['Mañana', 'Tarde'].map((String value) {
+                       return DropdownMenuItem<String>(
+                         value: value,
+                         child: Text(value),
+                       );
+                     }).toList(),
+                     onChanged: (newValue) {
+                       setDialogState(() => selectedJornada = newValue);
+                     },
+                   ),
+                   const SizedBox(height: 15),
+                   const Text('Motivo:'),
+                   const SizedBox(height: 5),
+                   TextField(
+                     controller: obsController,
+                     decoration: const InputDecoration(border: OutlineInputBorder(), hintText: 'Motivo...'),
+                     maxLines: 2,
+                   )
+                 ],
+              ),
+            ),
+            actions: [
+              TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+              ElevatedButton(
+                onPressed: () async {
+                    if (selectedDate == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes seleccionar una fecha'), backgroundColor: Colors.orange));
+                        return;
+                    }
+                    if (selectedJornada == null) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes seleccionar una jornada'), backgroundColor: Colors.orange));
+                        return;
+                    }
+                    if (obsController.text.trim().isEmpty) {
+                        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('El motivo es obligatorio'), backgroundColor: Colors.orange));
+                        return;
+                    }
+                    
+                    final now = DateTime.now();
+                    final formattedNow = DateFormat('dd/MM/yyyy hh:mm a').format(now);
+                    final formattedDate = DateFormat('dd/MM/yyyy').format(selectedDate!);
+                    final userName = user?.name ?? 'Técnico';
+                    
+                    final finalMotivo = '${obsController.text.trim()}\n[Reprogramado para: $formattedDate - $selectedJornada]\n[Escrito por: $userName el $formattedNow]';
+
+                    Navigator.pop(context); // Close dialog
+                    setState(() {
+                       _isLoading = true;
+                       _loadingMessage = 'Reprogramando...';
+                    });
+                    try {
+                       await _orderRepo.rescheduleOrder(widget.orderNumber, finalMotivo);
                      if (mounted) {
                         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Orden reprogramada'), backgroundColor: Colors.green));
                         _hasStateChanged = true;
@@ -490,6 +594,26 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             ),
           ),
         ),
+        const SizedBox(height: 16),
+        SizedBox(
+          width: double.infinity,
+          child: OutlinedButton.icon(
+            onPressed: () => _showConfirmationDialog(
+              title: 'Dejar para más tarde',
+              content: '¿Estás seguro de que deseas cancelar el inicio de esta ruta? La orden volverá a estar "Asignada".',
+              confirmText: 'Sí, cancelar inicio',
+              onConfirm: _cancelStart,
+            ),
+            icon: const Icon(Icons.history, color: Colors.grey),
+            label: const Text('DEJAR PARA MÁS TARDE', style: TextStyle(fontWeight: FontWeight.bold)),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: Colors.grey[700],
+              side: BorderSide(color: Colors.grey.shade400),
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+            ),
+          ),
+        ),
       ];
     }
     // 3. EN SITIO
@@ -555,7 +679,13 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                  const SizedBox(width: 12),
                  Expanded(
                    child: OutlinedButton(
-                     onPressed: _promptForReschedule,
+                     onPressed: () {
+                         if (status == Orden.ESTADO_ASIGNADA || status == Orden.ESTADO_REPROGRAMADA || status == Orden.ESTADO_REASIGNAR) {
+                             ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Debes INICIAR RUTA para poder reprogramar la orden.'), backgroundColor: Colors.orange));
+                             return;
+                         }
+                         _promptForReschedule();
+                     },
                      style: OutlinedButton.styleFrom(
                        foregroundColor: Colors.orange,
                        side: const BorderSide(color: Colors.orange),

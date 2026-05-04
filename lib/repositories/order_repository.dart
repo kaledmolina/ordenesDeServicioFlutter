@@ -86,6 +86,24 @@ class OrderRepository {
     }
   }
 
+  Future<Orden> cancelStartOrder(String orderNumber) async {
+    if (await _hasConnection()) {
+      try {
+        final order = await _apiService.cancelStartOrder(orderNumber);
+        await _updateLocalOrderStatus(orderNumber, 'asignada');
+        return order;
+      } catch (e) {
+        rethrow;
+      }
+    } else {
+      await _queueOperation('cancelStart', orderNumber, {});
+      await _updateLocalOrderStatus(orderNumber, 'asignada');
+      final localOrder = await _getOrderFromLocal(orderNumber);
+      if (localOrder != null) return localOrder;
+      throw Exception('Order not found locally');
+    }
+  }
+
   Future<Orden> reportOnSite(String orderNumber) async {
     if (await _hasConnection()) {
       try {

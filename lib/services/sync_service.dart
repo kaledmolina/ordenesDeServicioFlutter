@@ -86,6 +86,9 @@ class SyncService {
             case 'accept':
               await apiService.acceptOrder(orderNumber, data: data);
               break;
+            case 'cancelStart':
+              await apiService.cancelStartOrder(orderNumber);
+              break;
             case 'reportOnSite':
               await apiService.reportOnSite(orderNumber, data: data);
               break;

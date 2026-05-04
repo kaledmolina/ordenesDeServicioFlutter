@@ -108,6 +108,20 @@ class ApiService {
     return Orden.fromJson(responseData['order']);
   }
 
+  Future<Orden> cancelStartOrder(String orderNumber) async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/v1/orders/$orderNumber/cancel-start'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
+    );
+    final responseData = _handleResponse(response);
+    return Orden.fromJson(responseData['order']);
+  }
+
   // CAMBIO: Nuevo método para reportar en sitio con datos opcionales
   Future<Orden> reportOnSite(String orderNumber, {Map<String, dynamic>? data}) async {
     final token = await AuthService.instance.getToken();
