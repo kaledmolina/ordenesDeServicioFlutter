@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter_animate/flutter_animate.dart';
 import '../services/database_service.dart';
 
 class OfflinePendingScreen extends StatefulWidget {
@@ -55,7 +56,12 @@ class _OfflinePendingScreenState extends State<OfflinePendingScreen> {
         ],
       ),
       body: _isLoading 
-        ? const Center(child: CircularProgressIndicator())
+        ? ListView.separated(
+            padding: const EdgeInsets.all(16),
+            itemCount: 4,
+            separatorBuilder: (_, __) => const SizedBox(height: 12),
+            itemBuilder: (_, __) => _buildSkeletonCard(),
+          )
         : (_pendingOps.isEmpty && _pendingPhotos.isEmpty)
           ? _buildEmptyState()
           : RefreshIndicator(
@@ -209,5 +215,34 @@ class _OfflinePendingScreenState extends State<OfflinePendingScreen> {
         trailing: const Icon(Icons.image, color: Colors.grey),
       ),
     );
+  }
+
+  Widget _buildSkeletonCard() {
+    return Container(
+      height: 80,
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: Colors.grey.shade200),
+      ),
+      padding: const EdgeInsets.all(12),
+      child: Row(
+        children: [
+          Container(width: 48, height: 48, decoration: const BoxDecoration(color: Colors.black12, shape: BoxShape.circle)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(width: 120, height: 14, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(4))),
+                const SizedBox(height: 8),
+                Container(width: 80, height: 12, decoration: BoxDecoration(color: Colors.black12, borderRadius: BorderRadius.circular(4))),
+              ],
+            ),
+          ),
+        ],
+      ),
+    ).animate(onPlay: (controller) => controller.repeat()).shimmer(duration: 1200.ms, color: Colors.white60);
   }
 }

@@ -32,7 +32,8 @@ class _ConnectionStatusIndicatorState extends State<ConnectionStatusIndicator> {
   Future<void> _checkConnection() async {
     final result = await Connectivity().checkConnectivity();
     final isOnline = result.contains(ConnectivityResult.mobile) ||
-        result.contains(ConnectivityResult.wifi);
+        result.contains(ConnectivityResult.wifi) ||
+        result.contains(ConnectivityResult.ethernet);
     if (mounted && _isOnline != isOnline) {
       setState(() => _isOnline = isOnline);
     }
@@ -40,38 +41,47 @@ class _ConnectionStatusIndicatorState extends State<ConnectionStatusIndicator> {
 
   @override
   Widget build(BuildContext context) {
-    if (!_isOnline) {
-      return Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(
-          color: Colors.red,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.wifi_off, color: Colors.white, size: 16),
-            SizedBox(width: 4),
-            Text('Sin conexión', style: TextStyle(color: Colors.white, fontSize: 12)),
-          ],
-        ),
-      );
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: Colors.green,
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: const Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Icon(Icons.wifi, color: Colors.white, size: 16),
-          SizedBox(width: 4),
-          Text('En Línea', style: TextStyle(color: Colors.white, fontSize: 12)),
-        ],
-      ),
+    return AnimatedSwitcher(
+      duration: const Duration(milliseconds: 400),
+      transitionBuilder: (Widget child, Animation<double> animation) {
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(scale: animation, child: child),
+        );
+      },
+      child: _isOnline
+          ? const SizedBox.shrink(key: ValueKey('online')) // Opcional: mostrar algo si online
+          : Container(
+              key: const ValueKey('offline'),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: Colors.redAccent.withOpacity(0.9),
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.redAccent.withOpacity(0.4),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: const Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.wifi_off_rounded, color: Colors.white, size: 18),
+                  SizedBox(width: 6),
+                  Text(
+                    'Sin conexión',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      letterSpacing: 0.3,
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
   }
 }

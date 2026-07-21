@@ -11,6 +11,7 @@ import '../models/photo_status_model.dart';
 class UploadService {
   static final UploadService instance = UploadService._init();
   StreamSubscription? _connectivitySubscription;
+  Timer? _debounceTimer;
   bool _isSyncing = false;
 
   final _uploadStatusController = StreamController<PhotoDisplay>.broadcast();
@@ -37,9 +38,12 @@ class UploadService {
     // Delay initialization to avoid blocking app startup
     Future.delayed(const Duration(seconds: 5), () {
       _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
-        if (result.contains(ConnectivityResult.mobile) || result.contains(ConnectivityResult.wifi)) {
-          debugPrint("Conexión detectada. Intentando sincronizar...");
-          syncPendingUploads();
+        if (result.contains(ConnectivityResult.mobile) || result.contains(ConnectivityResult.wifi) || result.contains(ConnectivityResult.ethernet)) {
+          if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+          _debounceTimer = Timer(const Duration(seconds: 3), () {
+            debugPrint("Conexión detectada. Intentando sincronizar...");
+            syncPendingUploads();
+          });
         }
       });
       // Initial sync check after delay
@@ -49,6 +53,7 @@ class UploadService {
 
   void dispose() {
     _connectivitySubscription?.cancel();
+    _debounceTimer?.cancel();
     _uploadStatusController.close();
     _pendingCountController.close();
   }

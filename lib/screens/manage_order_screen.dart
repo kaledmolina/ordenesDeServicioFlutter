@@ -2,9 +2,11 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:async';
 import 'dart:typed_data';
+import 'dart:ui';
+import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
-import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -603,7 +605,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     final picker = ImagePicker();
     try {
       if (source == ImageSource.camera) {
-        final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
+        final pickedFile = await picker.pickImage(source: source, imageQuality: 80, maxWidth: 1200, maxHeight: 1200);
         if (pickedFile != null) {
           await _processAndUpload([pickedFile]);
         }
@@ -803,29 +805,41 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   Future<void> _finalizeOrder() async {
     List<String> missingFields = [];
 
+    bool isRetiro = widget.orden.tipoOrden != null && (widget.orden.tipoOrden!.contains('002') || widget.orden.tipoOrden!.toLowerCase().contains('retiro'));
+
     // 1. Solución Técnico check
-    if (_selectedSolution == null || _selectedSolution!.isEmpty) missingFields.add('Solución Técnico (Obligatorio)');
+    if (!isRetiro && (_selectedSolution == null || _selectedSolution!.isEmpty)) {
+      missingFields.add('Solución Técnico (Obligatorio)');
+    }
     
-    // 2. Normal Flow Checks
+    // MAC Check for Retiro
+    if (isRetiro) {
+      if (_macRouterController.text.trim().isEmpty && 
+          _macBridgeController.text.trim().isEmpty) {
+        missingFields.add('MAC del Router o Bridge Retirado es obligatoria');
+      }
+    }
+    
     // Signatures
     if (_savedSignatureFile == null) missingFields.add('Firma del Técnico (Debe crearla)');
     if (_savedSubscriberSignatureFile == null) missingFields.add('Firma del Cliente');
-        
-        // Photos (Except 037)
-        bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
-        
-        // Count only technician photos (they have 'WM_' in the file name or are local pending or have a type)
-        int techPhotoCount = _galleryPhotos.where((p) {
-          if (p.status == PhotoStatusType.local) return true;
-          if (p.type != null && p.type!.isNotEmpty) return true;
-          return p.url != null && p.url!.contains('WM_');
-        }).length;
-        
-        if (techPhotoCount == 0 && !isPasswordChange) {
-           missingFields.add('Al menos 1 foto propia como evidencia (las del panel admin no cuentan)');
-        }
-        
-        // REMOVED: Blocking check for pending uploads. 
+
+    // 2. Normal Flow Checks
+    if (!isRetiro) {
+      // Photos (Except 037)
+      bool isPasswordChange = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('037');
+      
+      // Count only technician photos (they have 'WM_' in the file name or are local pending or have a type)
+      int techPhotoCount = _galleryPhotos.where((p) {
+        if (p.status == PhotoStatusType.local) return true;
+        if (p.type != null && p.type!.isNotEmpty) return true;
+        return p.url != null && p.url!.contains('WM_');
+      }).length;
+      
+      if (techPhotoCount == 0 && !isPasswordChange) {
+         missingFields.add('Al menos 1 foto propia como evidencia (las del panel admin no cuentan)');
+      }
+    } 
         // Background service manages uploads now.
 
     // SHOW DETAILED ERROR DIALOG
@@ -1118,7 +1132,31 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                   ),
   
                  _buildCard('Información', Icons.info, [
-                    _buildTextField(_celularController, 'Celular', Icons.phone),
+                    _buildTextField(_celularController, 'Celular Principal (Editable)', Icons.phone),
+                    if (widget.orden.telefonoFacturacion != null && widget.orden.telefonoFacturacion!.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        initialValue: widget.orden.telefonoFacturacion,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Teléfono Facturación', 
+                          prefixIcon: Icon(Icons.receipt), 
+                          border: OutlineInputBorder()
+                        ),
+                      ),
+                    ],
+                    if (widget.orden.otroTelefono != null && widget.orden.otroTelefono!.isNotEmpty) ...[
+                      const SizedBox(height: 10),
+                      TextFormField(
+                        initialValue: widget.orden.otroTelefono,
+                        readOnly: true,
+                        decoration: const InputDecoration(
+                          labelText: 'Otro Teléfono', 
+                          prefixIcon: Icon(Icons.phone_android), 
+                          border: OutlineInputBorder()
+                        ),
+                      ),
+                    ],
                  ]),
                  _buildCard('Artículos', Icons.handyman, [
                     _buildArticlesList(),
@@ -1186,13 +1224,21 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                      _buildSubscriberSignatureArea(),
                   ]),
                  _buildCard('Cierre', Icons.check_circle, [
-                   ListTile(
-                     title: const Text('Solución Técnico'),
-                     subtitle: Text(_selectedSolution ?? 'Seleccionar...', style: const TextStyle(color: Colors.blue)),
-                     trailing: const Icon(Icons.arrow_forward_ios, size: 16),
-                     onTap: _showSolutionSelectionModal,
-                     contentPadding: EdgeInsets.zero,
-                   ),
+                   Builder(builder: (context) {
+                     bool isRetiro = widget.orden.tipoOrden != null && (widget.orden.tipoOrden!.contains('002') || widget.orden.tipoOrden!.toLowerCase().contains('retiro'));
+                     return ListTile(
+                       title: Row(
+                         children: [
+                           const Text('Solución Técnico'),
+                           if (!isRetiro) const Text(' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold)),
+                         ],
+                       ),
+                       subtitle: Text(_selectedSolution ?? 'Seleccionar...', style: const TextStyle(color: Colors.blue)),
+                       trailing: const Icon(Icons.arrow_forward_ios, size: 16),
+                       onTap: _showSolutionSelectionModal,
+                       contentPadding: EdgeInsets.zero,
+                     );
+                   }),
                    const Divider(),
                    _buildTextField(_obsOrigenController, _selectedSolution == 'Reprogramar' ? 'Motivo Reprogramación' : 'Observaciones', Icons.comment, maxLines: 3),
                    const SizedBox(height: 20),
@@ -1414,8 +1460,13 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                    ),
                  );
                } else if (photo.url != null && photo.url!.isNotEmpty) {
-                 imageWidget = Image.network(photo.url!, width: 100, height: 100, fit: BoxFit.cover,
-                   errorBuilder: (context, error, stackTrace) => Container(
+                 imageWidget = CachedNetworkImage(
+                   imageUrl: photo.url!, width: 100, height: 100, fit: BoxFit.cover,
+                   placeholder: (context, url) => Container(
+                     width: 100, height: 100, color: Colors.grey[300], 
+                     child: const Center(child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)))
+                   ),
+                   errorWidget: (context, url, error) => Container(
                      width: 100, height: 100, color: Colors.grey[300], 
                      child: const Icon(Icons.broken_image, color: Colors.grey)
                    ),
@@ -1561,7 +1612,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                child: InteractiveViewer(
                  child: (photo.path.isNotEmpty && File(photo.path).existsSync())
                   ? Image.file(File(photo.path))
-                  : (photo.url != null && photo.url!.isNotEmpty) ? Image.network(photo.url!) : const Icon(Icons.broken_image, size: 50, color: Colors.white),
+                  : (photo.url != null && photo.url!.isNotEmpty) ? CachedNetworkImage(
+                      imageUrl: photo.url!,
+                      placeholder: (context, url) => const Center(child: CircularProgressIndicator()),
+                      errorWidget: (context, url, error) => const Icon(Icons.broken_image, size: 50, color: Colors.white),
+                    ) : const Icon(Icons.broken_image, size: 50, color: Colors.white),
                ),
              ),
              Container(

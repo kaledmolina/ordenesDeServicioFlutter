@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import '../models/photo_status_model.dart';
 import '../services/api_service.dart';
 
@@ -19,18 +20,12 @@ class PhotoViewScreen extends StatelessWidget {
         errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.image_not_supported, color: Colors.white)),
       );
     } else if (photo.url != null && photo.url!.isNotEmpty) {
-      image = Image.network(
-        photo.url!,
-        headers: authToken != null ? {'Authorization': 'Bearer $authToken'} : null,
-        loadingBuilder: (context, child, loadingProgress) {
-           if (loadingProgress == null) return child;
-           return Center(child: CircularProgressIndicator(
-             value: loadingProgress.expectedTotalBytes != null
-                 ? loadingProgress.cumulativeBytesLoaded / loadingProgress.expectedTotalBytes!
-                 : null
-           ));
-        },
-        errorBuilder: (context, error, stackTrace) => const Center(child: Icon(Icons.broken_image, color: Colors.white)),
+      image = CachedNetworkImage(
+        imageUrl: photo.url!,
+        httpHeaders: authToken != null ? {'Authorization': 'Bearer $authToken'} : null,
+        placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+        errorWidget: (context, url, error) => const Center(child: Icon(Icons.broken_image, color: Colors.white)),
+        fit: BoxFit.contain,
       );
     } else {
       image = const Center(child: Icon(Icons.broken_image, color: Colors.white));

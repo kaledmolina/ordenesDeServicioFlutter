@@ -11,6 +11,7 @@ enum SyncStatus { idle, syncing, error }
 class SyncService {
   static final SyncService instance = SyncService._init();
   StreamSubscription? _connectivitySubscription;
+  Timer? _debounceTimer;
   bool _isSyncing = false;
   
   final _pendingOperationsController = StreamController<String>.broadcast();
@@ -37,9 +38,13 @@ class SyncService {
      Future.delayed(const Duration(seconds: 3), () {
        _connectivitySubscription = Connectivity().onConnectivityChanged.listen((result) {
          if (result.contains(ConnectivityResult.mobile) || 
-             result.contains(ConnectivityResult.wifi)) {
-           debugPrint("Conexión detectada. Modo Online.");
-           sync();
+             result.contains(ConnectivityResult.wifi) ||
+             result.contains(ConnectivityResult.ethernet)) {
+           if (_debounceTimer?.isActive ?? false) _debounceTimer!.cancel();
+           _debounceTimer = Timer(const Duration(seconds: 3), () {
+             debugPrint("Conexión detectada. Modo Online.");
+             sync();
+           });
          }
        });
      });
@@ -47,6 +52,7 @@ class SyncService {
 
   void dispose() {
     _connectivitySubscription?.cancel();
+    _debounceTimer?.cancel();
     _pendingOperationsController.close();
     _pendingCountController.close();
   }
@@ -64,7 +70,8 @@ class SyncService {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (!connectivityResult.contains(ConnectivityResult.mobile) && 
-          !connectivityResult.contains(ConnectivityResult.wifi)) {
+          !connectivityResult.contains(ConnectivityResult.wifi) &&
+          !connectivityResult.contains(ConnectivityResult.ethernet)) {
         return;
       }
       

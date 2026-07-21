@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -86,7 +87,8 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     try {
       final connectivityResult = await Connectivity().checkConnectivity();
       if (!connectivityResult.contains(ConnectivityResult.mobile) && 
-          !connectivityResult.contains(ConnectivityResult.wifi)) {
+          !connectivityResult.contains(ConnectivityResult.wifi) &&
+          !connectivityResult.contains(ConnectivityResult.ethernet)) {
         if (mounted) _msg('Para iniciar una ruta debes estar conectado a internet.', Colors.red);
         return;
       }
@@ -931,11 +933,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                                     return const Center(child: CircularProgressIndicator(strokeWidth: 2));
                                   }
                                   final token = snapshot.data;
-                                  return Image.network(
-                                    photo.url!, 
-                                    headers: token != null ? {'Authorization': 'Bearer $token'} : null,
+                                  return CachedNetworkImage(
+                                    imageUrl: photo.url!, 
+                                    httpHeaders: token != null ? {'Authorization': 'Bearer $token'} : null,
                                     fit: BoxFit.cover, 
-                                    errorBuilder: (_,__,___) => const Icon(Icons.broken_image)
+                                    placeholder: (context, url) => const Center(child: CircularProgressIndicator(strokeWidth: 2)),
+                                    errorWidget: (context, url, error) => const Icon(Icons.broken_image)
                                   );
                                 }
                               )
