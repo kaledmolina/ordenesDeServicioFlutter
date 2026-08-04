@@ -75,10 +75,21 @@ class LocationService {
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-        timeLimit: const Duration(seconds: 10),
-      );
+      Position? position;
+      try {
+        position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.medium,
+          timeLimit: const Duration(seconds: 5),
+        );
+      } catch (e) {
+        debugPrint('getCurrentPosition fallo/timeout, buscando última posición conocida: $e');
+        position = await Geolocator.getLastKnownPosition();
+      }
+
+      if (position == null) {
+        debugPrint('No se pudo obtener posición GPS actual ni última conocida.');
+        return;
+      }
 
       await _apiService.sendLocation(
         position.latitude,

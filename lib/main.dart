@@ -36,7 +36,6 @@ void main() async {
   await NotificationService.instance.initialize();
   UploadService.instance.start();
   SyncService.instance.start();
-  LocationService.instance.startTracking();
   runApp(const MyApp());
 }
 
