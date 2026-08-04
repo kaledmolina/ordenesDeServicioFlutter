@@ -1,7 +1,7 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
-import 'dart:io';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
@@ -13,6 +13,7 @@ class LocationService {
   LocationService._internal();
 
   Timer? _timer;
+  StreamSubscription<Position>? _positionStreamSubscription;
   bool _isTracking = false;
   final ApiService _apiService = ApiService();
 
@@ -60,12 +61,46 @@ class LocationService {
     if (!hasPermission) return;
 
     _isTracking = true;
-    debugPrint('Iniciando rastreo de ubicación en tiempo real...');
+    debugPrint('Iniciando rastreo de ubicación en segundo plano (Foreground Service)...');
 
-    // Send immediately once
+    // Enviar ubicación de inmediato al iniciar
     _updateCurrentLocation();
 
-    // Schedule periodic update
+    // Configurar settings de servicio en primer plano para Android e iOS
+    late LocationSettings locationSettings;
+
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      locationSettings = AndroidSettings(
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 10,
+        intervalDuration: interval,
+      );
+    } else if (defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.macOS) {
+      locationSettings = AppleSettings(
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 10,
+        pauseLocationUpdatesAutomatically: false,
+        showBackgroundLocationIndicator: false,
+      );
+    } else {
+      locationSettings = const LocationSettings(
+        accuracy: LocationAccuracy.medium,
+        distanceFilter: 10,
+      );
+    }
+
+    // Escuchar cambios de posición vía Stream continuo
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = Geolocator.getPositionStream(locationSettings: locationSettings).listen(
+      (Position position) async {
+        await _processPosition(position);
+      },
+      onError: (error) {
+        debugPrint('Error en stream de ubicación: $error');
+      },
+    );
+
+    // Timer de respaldo periódico en caso de que el dispositivo esté estático
     _timer?.cancel();
     _timer = Timer.periodic(interval, (_) {
       _updateCurrentLocation();
@@ -73,10 +108,37 @@ class LocationService {
   }
 
   void stopTracking() {
+    _positionStreamSubscription?.cancel();
+    _positionStreamSubscription = null;
     _timer?.cancel();
     _timer = null;
     _isTracking = false;
     debugPrint('Rastreo de ubicación detenido.');
+  }
+
+  Future<void> _processPosition(Position position) async {
+    try {
+      final isLoggedIn = await AuthService.instance.isLoggedIn();
+      if (!isLoggedIn) {
+        stopTracking();
+        return;
+      }
+
+      final deviceId = await _getDeviceId();
+      final deviceModel = Platform.isAndroid ? 'Android' : (Platform.isIOS ? 'iOS' : 'Móvil');
+
+      await _apiService.sendLocation(
+        position.latitude,
+        position.longitude,
+        speed: position.speed >= 0 ? position.speed : null,
+        deviceId: deviceId,
+        deviceModel: deviceModel,
+      );
+
+      debugPrint('Ubicación en segundo plano enviada: ${position.latitude}, ${position.longitude}');
+    } catch (e) {
+      debugPrint('Error enviando ubicación en segundo plano: $e');
+    }
   }
 
   Future<void> _updateCurrentLocation() async {
@@ -98,25 +160,11 @@ class LocationService {
         position = await Geolocator.getLastKnownPosition();
       }
 
-      if (position == null) {
-        debugPrint('No se pudo obtener posición GPS actual ni última conocida.');
-        return;
-      }
+      if (position == null) return;
 
-      final deviceId = await _getDeviceId();
-      final deviceModel = Platform.isAndroid ? 'Android' : (Platform.isIOS ? 'iOS' : 'Móvil');
-
-      await _apiService.sendLocation(
-        position.latitude,
-        position.longitude,
-        speed: position.speed >= 0 ? position.speed : null,
-        deviceId: deviceId,
-        deviceModel: deviceModel,
-      );
-
-      debugPrint('Ubicación enviada: ${position.latitude}, ${position.longitude}');
+      await _processPosition(position);
     } catch (e) {
-      debugPrint('Error enviando ubicación: $e');
+      debugPrint('Error en _updateCurrentLocation: $e');
     }
   }
 }
