@@ -54,7 +54,14 @@ android {
     buildTypes {
         getByName("release") {
             signingConfig = signingConfigs.getByName("release")
+            ndk {
+                debugSymbolLevel = "SYMBOL_TABLE"
+            }
         }
+    }
+
+    packaging {
+        doNotStrip("**/*.so")
     }
 }
 
