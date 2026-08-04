@@ -306,7 +306,7 @@ class ApiService {
     }
   }
 
-  Future<void> sendLocation(double latitude, double longitude, {double? speed, int? batteryLevel}) async {
+  Future<void> sendLocation(double latitude, double longitude, {double? speed, int? batteryLevel, String? deviceId, String? deviceModel}) async {
     final token = await AuthService.instance.getToken();
     if (token == null) return;
 
@@ -322,6 +322,8 @@ class ApiService {
         'longitude': longitude,
         if (speed != null) 'speed': speed,
         if (batteryLevel != null) 'battery_level': batteryLevel,
+        if (deviceId != null) 'device_id': deviceId,
+        if (deviceModel != null) 'device_model': deviceModel,
       }),
     );
     await _handleResponse(response);

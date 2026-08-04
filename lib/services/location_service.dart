@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/foundation.dart';
 import 'package:geolocator/geolocator.dart';
+import 'dart:io';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
 
@@ -13,6 +15,16 @@ class LocationService {
   Timer? _timer;
   bool _isTracking = false;
   final ApiService _apiService = ApiService();
+
+  Future<String> _getDeviceId() async {
+    final prefs = await SharedPreferences.getInstance();
+    String? deviceId = prefs.getString('unique_device_id');
+    if (deviceId == null) {
+      deviceId = 'dev_${DateTime.now().millisecondsSinceEpoch}';
+      await prefs.setString('unique_device_id', deviceId);
+    }
+    return deviceId;
+  }
 
   Future<bool> requestPermission() async {
     bool serviceEnabled;
@@ -91,10 +103,15 @@ class LocationService {
         return;
       }
 
+      final deviceId = await _getDeviceId();
+      final deviceModel = Platform.isAndroid ? 'Android' : (Platform.isIOS ? 'iOS' : 'Móvil');
+
       await _apiService.sendLocation(
         position.latitude,
         position.longitude,
         speed: position.speed >= 0 ? position.speed : null,
+        deviceId: deviceId,
+        deviceModel: deviceModel,
       );
 
       debugPrint('Ubicación enviada: ${position.latitude}, ${position.longitude}');
