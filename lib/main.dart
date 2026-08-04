@@ -47,7 +47,7 @@ class MyApp extends StatelessWidget {
     final textTheme = Theme.of(context).textTheme;
 
     return MaterialApp(
-      title: 'ordenes intalnet',
+      title: 'IntalSupport',
       theme: ThemeData(
         primaryColor: const Color(0xFF10447E),
         colorScheme: ColorScheme.fromSeed(
