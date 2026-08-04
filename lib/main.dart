@@ -12,6 +12,7 @@ import 'services/auth_service.dart';
 import 'firebase_options.dart';
 import 'services/upload_service.dart';
 import 'services/sync_service.dart';
+import 'services/location_service.dart';
 import 'widgets/app_background.dart';
 import 'screens/splash_screen.dart';
 
@@ -35,6 +36,7 @@ void main() async {
   await NotificationService.instance.initialize();
   UploadService.instance.start();
   SyncService.instance.start();
+  LocationService.instance.startTracking();
   runApp(const MyApp());
 }
 

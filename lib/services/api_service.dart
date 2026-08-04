@@ -305,4 +305,25 @@ class ApiService {
        throw Exception(body['message'] ?? 'Error updating signature');
     }
   }
+
+  Future<void> sendLocation(double latitude, double longitude, {double? speed, int? batteryLevel}) async {
+    final token = await AuthService.instance.getToken();
+    if (token == null) return;
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/v1/location'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token',
+      },
+      body: jsonEncode({
+        'latitude': latitude,
+        'longitude': longitude,
+        if (speed != null) 'speed': speed,
+        if (batteryLevel != null) 'battery_level': batteryLevel,
+      }),
+    );
+    await _handleResponse(response);
+  }
 }

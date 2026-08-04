@@ -20,6 +20,7 @@ import '../widgets/barrio_search_modal.dart';
 import '../widgets/processing_overlay.dart';
 import '../utils/business_hours.dart';
 import 'offline_pending_screen.dart';
+import '../services/location_service.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -58,6 +59,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchOrders();
     _fetchPendingCount();
     UploadService.instance.start(); // Ensure service is running
+    LocationService.instance.startTracking();
   }
   
   int _pendingCount = 0;
