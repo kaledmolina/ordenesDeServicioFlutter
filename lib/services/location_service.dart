@@ -41,7 +41,7 @@ class LocationService {
     return true;
   }
 
-  void startTracking({Duration interval = const Duration(seconds: 25)}) async {
+  void startTracking({Duration interval = const Duration(minutes: 5)}) async {
     if (_isTracking) return;
 
     final hasPermission = await requestPermission();
