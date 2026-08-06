@@ -129,10 +129,15 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   void initState() {
     super.initState();
     _celularController = TextEditingController(text: widget.orden.celular);
-    _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
-    _selectedSolution = widget.orden.solucionTecnico;
-    if ((widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('033')) && (_selectedSolution == null || _selectedSolution!.isEmpty)) {
+    final String tipo = widget.orden.tipoOrden ?? '';
+    if (tipo.contains('033') || tipo.toUpperCase().contains('RECONEXION')) {
       _selectedSolution = '50 RECONEXION';
+    } else if (tipo.contains('037') || tipo.toUpperCase().contains('CONTRASEÑA')) {
+      _selectedSolution = '50 CAMBIO DE CONTRASEÑA';
+    } else if (tipo.contains('038') || tipo.toUpperCase().contains('TRASLADO')) {
+      _selectedSolution = '49 TRASLADO INTERNO';
+    } else {
+      _selectedSolution = widget.orden.solucionTecnico;
     }
 
     _macRouterController.text = widget.orden.macRouter ?? '';
@@ -952,9 +957,17 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         subSig = await _savedSubscriberSignatureFile!.readAsBytes();
       }
       
-      final solutionToSend = (widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('033') && (_selectedSolution == null || _selectedSolution!.isEmpty))
-          ? ['50 RECONEXION']
-          : _selectedSolution?.split(', ').map((e) => e.trim()).toList();
+      final String tipo = widget.orden.tipoOrden ?? '';
+      List<String>? solutionToSend;
+      if (tipo.contains('033') || tipo.toUpperCase().contains('RECONEXION')) {
+        solutionToSend = ['50 RECONEXION'];
+      } else if (tipo.contains('037') || tipo.toUpperCase().contains('CONTRASEÑA')) {
+        solutionToSend = ['50 CAMBIO DE CONTRASEÑA'];
+      } else if (tipo.contains('038') || tipo.toUpperCase().contains('TRASLADO')) {
+        solutionToSend = ['49 TRASLADO INTERNO'];
+      } else {
+        solutionToSend = _selectedSolution?.split(', ').map((e) => e.trim()).toList();
+      }
 
       final closingData = {
         'celular': _celularController.text,
@@ -1655,15 +1668,39 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   void _showSolutionSelectionModal() {
     // Parse current selection into a list
     List<String> currentSelections = [];
-    if (_selectedSolution != null && _selectedSolution!.isNotEmpty) {
-       currentSelections = _selectedSolution!.split(', ').map((e) => e.trim()).toList();
+    final String tipo = widget.orden.tipoOrden ?? '';
+
+    if (tipo.contains('033') || tipo.toUpperCase().contains('RECONEXION')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Para las órdenes de Reconexión la solución es automáticamente: 50 RECONEXION'),
+          backgroundColor: Color(0xFF10447E),
+        ),
+      );
+      return;
     }
-    
-    // Sort options to match the ID order if possible or just values
-    bool isReconexion = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('033');
-    final options = isReconexion
-        ? ['50 RECONEXION']
-        : Orden.solucionTecnicoOptions.values.toList();
+    if (tipo.contains('037') || tipo.toUpperCase().contains('CONTRASEÑA')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Para Cambio de Contraseña la solución es únicamente: 50 CAMBIO DE CONTRASEÑA'),
+          backgroundColor: Color(0xFF10447E),
+        ),
+      );
+      return;
+    }
+    if (tipo.contains('038') || tipo.toUpperCase().contains('TRASLADO')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Para Traslado Interno la solución es únicamente: 49 TRASLADO INTERNO'),
+          backgroundColor: Color(0xFF10447E),
+        ),
+      );
+      return;
+    }
+
+    final options = Orden.solucionTecnicoOptions.values
+        .where((s) => s != '49 TRASLADO INTERNO' && s != '50 CAMBIO DE CONTRASEÑA' && s != '50 RECONEXION')
+        .toList();
     final allOptions = options;
 
     showDialog(
