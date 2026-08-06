@@ -59,7 +59,11 @@ class _HomeScreenState extends State<HomeScreen> {
     _fetchOrders();
     _fetchPendingCount();
     UploadService.instance.start(); // Ensure service is running
-    LocationService.instance.startTracking();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        LocationService.instance.ensureDisclosureAndStartTracking(context);
+      }
+    });
   }
   
   int _pendingCount = 0;

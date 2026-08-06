@@ -1,16 +1,20 @@
 import 'dart:async';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'api_service.dart';
 import 'auth_service.dart';
+import '../widgets/location_disclosure_dialog.dart';
 
 class LocationService {
   static final LocationService _instance = LocationService._internal();
   static LocationService get instance => _instance;
 
   LocationService._internal();
+
+  static const String _disclosureAcceptedKey = 'has_accepted_location_disclosure';
 
   Timer? _timer;
   StreamSubscription<Position>? _positionStreamSubscription;
@@ -27,7 +31,50 @@ class LocationService {
     return deviceId;
   }
 
+  Future<bool> hasAcceptedDisclosure() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_disclosureAcceptedKey) ?? false;
+  }
+
+  Future<void> setDisclosureAccepted(bool accepted) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_disclosureAcceptedKey, accepted);
+  }
+
+  /// Displays the Google Play mandatory Prominent Disclosure dialog before
+  /// requesting system permissions and starting location tracking.
+  Future<bool> ensureDisclosureAndStartTracking(
+    BuildContext context, {
+    Duration interval = const Duration(minutes: 5),
+  }) async {
+    bool accepted = await hasAcceptedDisclosure();
+    if (!accepted) {
+      if (!context.mounted) return false;
+      final result = await LocationDisclosureDialog.show(context);
+      if (result == true) {
+        await setDisclosureAccepted(true);
+        accepted = true;
+      } else {
+        await setDisclosureAccepted(false);
+        debugPrint('El usuario denegó el aviso destacado de ubicación.');
+        return false;
+      }
+    }
+
+    if (accepted) {
+      startTracking(interval: interval);
+      return true;
+    }
+    return false;
+  }
+
   Future<bool> requestPermission() async {
+    final accepted = await hasAcceptedDisclosure();
+    if (!accepted) {
+      debugPrint('No se puede solicitar permiso de ubicación sin consentimiento del aviso destacado.');
+      return false;
+    }
+
     bool serviceEnabled;
     LocationPermission permission;
 
