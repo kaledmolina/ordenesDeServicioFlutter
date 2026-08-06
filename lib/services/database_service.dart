@@ -84,6 +84,7 @@ class DatabaseService {
         direccion_asociado TEXT,
         telefono TEXT,
         otro_telefono TEXT,
+        telefono_facturacion TEXT,
         saldo_cliente TEXT,
         solicitado_por TEXT,
         estado_tv TEXT,
@@ -111,8 +112,6 @@ class DatabaseService {
         last_error TEXT
       )
     ''');
-
-
 
     // Tabla sync_metadata
     await db.execute('''
@@ -184,8 +183,6 @@ class DatabaseService {
         )
       ''');
 
-
-
       await db.execute('''
         CREATE TABLE sync_metadata (
           key TEXT PRIMARY KEY,
@@ -229,7 +226,7 @@ class DatabaseService {
         'mac_ont', 'otros_equipos', 'firma_tecnico', 'firma_suscriptor', 'articulos'
       ];
       for (var col in columns) {
-        try { await db.execute('ALTER TABLE orders ADD COLUMN \$col TEXT'); } catch (_) {}
+        try { await db.execute('ALTER TABLE orders ADD COLUMN $col TEXT'); } catch (_) {}
       }
     }
 
@@ -273,6 +270,7 @@ class DatabaseService {
     try { await db.execute('ALTER TABLE orders ADD COLUMN novedades_noc TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN codigo_contrato TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN barrio TEXT'); } catch (_) {}
+    try { await db.execute('ALTER TABLE orders ADD COLUMN telefono_facturacion TEXT'); } catch (_) {}
   }
 
   // ========== PENDING PHOTOS ==========

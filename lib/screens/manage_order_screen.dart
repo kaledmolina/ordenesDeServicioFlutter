@@ -129,6 +129,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   void initState() {
     super.initState();
     _celularController = TextEditingController(text: widget.orden.celular);
+    _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
     final String tipo = widget.orden.tipoOrden ?? '';
     if (tipo.contains('033') || tipo.toUpperCase().contains('RECONEXION')) {
       _selectedSolution = '50 RECONEXION';

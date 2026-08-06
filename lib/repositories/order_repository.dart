@@ -70,6 +70,7 @@ class OrderRepository {
     if (await _hasConnection()) {
       try {
         final order = await _apiService.acceptOrder(orderNumber);
+        await _saveOrderToLocal(order);
         await _updateLocalOrderStatus(orderNumber, 'en_proceso');
         return order;
       } catch (e) {
@@ -108,6 +109,7 @@ class OrderRepository {
     if (await _hasConnection()) {
       try {
         final order = await _apiService.reportOnSite(orderNumber);
+        await _saveOrderToLocal(order);
         await _updateLocalOrderStatus(orderNumber, 'en_sitio');
         return order;
       } catch (e) {
@@ -363,6 +365,7 @@ class OrderRepository {
       'direccion_asociado': order.direccionAsociado,
       'telefono': order.telefono,
       'otro_telefono': order.otroTelefono,
+      'telefono_facturacion': order.telefonoFacturacion,
       'saldo_cliente': order.saldoCliente,
       'solicitado_por': order.solicitadoPor,
       'estado_tv': order.estadoTv,
@@ -416,6 +419,7 @@ class OrderRepository {
       direccionAsociado: map['direccion_asociado']?.toString(),
       telefono: map['telefono']?.toString(),
       otroTelefono: map['otro_telefono']?.toString(),
+      telefonoFacturacion: map['telefono_facturacion']?.toString(),
       saldoCliente: map['saldo_cliente']?.toString(),
       solicitadoPor: map['solicitado_por']?.toString(),
       estadoTv: map['estado_tv']?.toString(),
