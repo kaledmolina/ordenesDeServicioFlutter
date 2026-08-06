@@ -92,11 +92,18 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   late TextEditingController _obsOrigenController;
   String? _selectedSolution;
 
-  // Equipment
+  // Equipment Retirados
   final _macRouterController = TextEditingController();
   final _macBridgeController = TextEditingController();
   final _macOntController = TextEditingController();
   final _otrosEquiposController = TextEditingController();
+
+  // Equipment Instalados
+  final _macRouterInstaladoController = TextEditingController();
+  final _macBridgeInstaladoController = TextEditingController();
+  final _macOntInstaladoController = TextEditingController();
+  final _vlanInstaladoController = TextEditingController();
+  final _otrosEquiposInstaladosController = TextEditingController();
 
   // Signatures
   final SignatureController _technicianSignatureController = SignatureController(penStrokeWidth: 3);
@@ -122,6 +129,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     'Bridge',
     'Camara',
     'Onu',
+    'Vlan',
     'Otros',
   ];
 
@@ -151,6 +159,19 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
            _articles = List<Map<String, dynamic>>.from(widget.orden.articulos!);
            for (var i = 0; i < _articles.length; i++) {
              _articles[i]['uuid'] = 'existing_$i';
+             final grupo = _articles[i]['grupo_articulo']?.toString().toLowerCase() ?? '';
+             final desc = _articles[i]['descripcion']?.toString() ?? '';
+             if (grupo.contains('router') && _macRouterInstaladoController.text.isEmpty) {
+               _macRouterInstaladoController.text = desc;
+             } else if (grupo.contains('bridge') && _macBridgeInstaladoController.text.isEmpty) {
+               _macBridgeInstaladoController.text = desc;
+             } else if ((grupo.contains('ont') || grupo.contains('onu')) && _macOntInstaladoController.text.isEmpty) {
+               _macOntInstaladoController.text = desc;
+             } else if (grupo.contains('vlan') && _vlanInstaladoController.text.isEmpty) {
+               _vlanInstaladoController.text = desc;
+             } else if (grupo.contains('otros') && _otrosEquiposInstaladosController.text.isEmpty) {
+               _otrosEquiposInstaladosController.text = desc;
+             }
            }
         } catch (e) {
            debugPrint('Error parsing existing articles: $e');
@@ -970,6 +991,30 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         solutionToSend = _selectedSolution?.split(', ').map((e) => e.trim()).toList();
       }
 
+      List<Map<String, dynamic>> finalArticles = [..._articles];
+
+      void addInstalledIfNotEmpty(String grupo, String text) {
+        if (text.trim().isNotEmpty) {
+          final existingIndex = finalArticles.indexWhere((a) => a['grupo_articulo']?.toString().toLowerCase() == grupo.toLowerCase());
+          if (existingIndex >= 0) {
+            finalArticles[existingIndex]['descripcion'] = text.trim();
+          } else {
+            finalArticles.add({
+              'grupo_articulo': grupo,
+              'descripcion': text.trim(),
+              'cantidad': 1,
+              'uuid': 'installed_${DateTime.now().millisecondsSinceEpoch}_$grupo'
+            });
+          }
+        }
+      }
+
+      addInstalledIfNotEmpty('Router', _macRouterInstaladoController.text);
+      addInstalledIfNotEmpty('Bridge', _macBridgeInstaladoController.text);
+      addInstalledIfNotEmpty('Ont', _macOntInstaladoController.text);
+      addInstalledIfNotEmpty('Vlan', _vlanInstaladoController.text);
+      addInstalledIfNotEmpty('Otros', _otrosEquiposInstaladosController.text);
+
       final closingData = {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
@@ -978,7 +1023,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macOntController.text,
         'otros_equipos': _otrosEquiposController.text,
-        'articulos': _articles,
+        'articulos': finalArticles,
         'firma_tecnico': techSig != null ? 'data:image/png;base64,${base64Encode(techSig)}' : null,
         'firma_suscriptor': subSig != null ? 'data:image/png;base64,${base64Encode(subSig)}' : null,
       };
@@ -1178,9 +1223,23 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                       ),
                     ],
                  ]),
-                 _buildCard('Artículos', Icons.handyman, [
-                    _buildArticlesList(),
-                    TextButton.icon(onPressed: _addArticle, icon: const Icon(Icons.add), label: const Text('Agregar Artículo')),
+                 _buildCard('Equipos Instalados', Icons.build_circle, [
+                    _buildTextField(_macRouterInstaladoController, 'MAC Router', Icons.router),
+                    const SizedBox(height: 10),
+                    _buildTextField(_macBridgeInstaladoController, 'MAC Bridge', Icons.settings_ethernet),
+                    const SizedBox(height: 10),
+                    _buildTextField(_macOntInstaladoController, 'MAC ONT', Icons.router),
+                    const SizedBox(height: 10),
+                    _buildTextField(_vlanInstaladoController, 'VLAN', Icons.alt_route),
+                    const SizedBox(height: 10),
+                    _buildTextField(_otrosEquiposInstaladosController, 'Otros Equipos', Icons.devices_other),
+                    if (_articles.isNotEmpty) ...[
+                      const SizedBox(height: 12),
+                      const Divider(),
+                      _buildArticlesList(),
+                    ],
+                    const SizedBox(height: 8),
+                    TextButton.icon(onPressed: _addArticle, icon: const Icon(Icons.add), label: const Text('Agregar Artículo Adicional')),
                  ]),
                  _buildCard('Equipos Retirados', Icons.router, [
                     _buildTextField(_macRouterController, 'MAC Router', Icons.router),
