@@ -22,18 +22,34 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkInspectionStatus() async {
-    // Add a minimum delay for the splash animation to be seen
-    await Future.delayed(const Duration(milliseconds: 2000));
+    // Minimum splash screen display time
+    await Future.delayed(const Duration(milliseconds: 1500));
 
-    await NotificationService.instance.requestPermissionAndRegisterToken();
+    // Request notification permissions non-blockingly so FCM delays never freeze the app
+    NotificationService.instance.requestPermissionAndRegisterToken().timeout(
+      const Duration(seconds: 3),
+      onTimeout: () {
+        debugPrint("Notification token registration timed out");
+        return null;
+      },
+    ).catchError((e) {
+      debugPrint("Notification error: $e");
+      return null;
+    });
 
-    final token = await AuthService.instance.getToken();
+    String? token;
+    try {
+      token = await AuthService.instance.getToken();
+    } catch (e) {
+      debugPrint("Error reading auth token: $e");
+    }
+
     if (mounted) {
       Navigator.of(context).pushReplacement(
         PageRouteBuilder(
           pageBuilder: (_, __, ___) => token != null ? const HomeScreen() : const LoginScreen(),
           transitionsBuilder: (_, a, __, c) => FadeTransition(opacity: a, child: c),
-          transitionDuration: const Duration(milliseconds: 500),
+          transitionDuration: const Duration(milliseconds: 400),
         ),
       );
     }
