@@ -632,7 +632,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     final picker = ImagePicker();
     try {
       if (source == ImageSource.camera) {
-        final pickedFile = await picker.pickImage(source: source, imageQuality: 80, maxWidth: 1200, maxHeight: 1200);
+        final pickedFile = await picker.pickImage(source: source, imageQuality: 80);
         if (pickedFile != null) {
           await _processAndUpload([pickedFile]);
         }

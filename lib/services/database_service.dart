@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
-  static const int _databaseVersion = 10;
+  static const int _databaseVersion = 11;
 
   DatabaseService._init();
 
@@ -139,6 +139,12 @@ class DatabaseService {
       'key': 'sync_status',
       'value': 'idle',
     });
+
+    // Índices para velocidad extrema de búsquedas y listas
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_estado ON orders(estado_orden)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_technician ON orders(technician_id)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_numero ON orders(numero_orden)');
+    await db.execute('CREATE INDEX IF NOT EXISTS idx_pending_photos_status ON pending_photos(sync_status)');
   }
 
   Future _onUpgrade(Database db, int oldVersion, int newVersion) async {
@@ -271,6 +277,11 @@ class DatabaseService {
     try { await db.execute('ALTER TABLE orders ADD COLUMN codigo_contrato TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN barrio TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN telefono_facturacion TEXT'); } catch (_) {}
+
+    try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_estado ON orders(estado_orden)'); } catch (_) {}
+    try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_technician ON orders(technician_id)'); } catch (_) {}
+    try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_numero ON orders(numero_orden)'); } catch (_) {}
+    try { await db.execute('CREATE INDEX IF NOT EXISTS idx_pending_photos_status ON pending_photos(sync_status)'); } catch (_) {}
   }
 
   // ========== PENDING PHOTOS ==========
