@@ -163,10 +163,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
              final desc = _articles[i]['descripcion']?.toString() ?? '';
              if (grupo.contains('router') && _macRouterInstaladoController.text.isEmpty) {
                _macRouterInstaladoController.text = desc;
-             } else if (grupo.contains('bridge') && _macBridgeInstaladoController.text.isEmpty) {
+             } else if ((grupo.contains('bridge') || grupo.contains('ont') || grupo.contains('onu')) && _macBridgeInstaladoController.text.isEmpty) {
                _macBridgeInstaladoController.text = desc;
-             } else if ((grupo.contains('ont') || grupo.contains('onu')) && _macOntInstaladoController.text.isEmpty) {
-               _macOntInstaladoController.text = desc;
              } else if (grupo.contains('vlan') && _vlanInstaladoController.text.isEmpty) {
                _vlanInstaladoController.text = desc;
              } else if (grupo.contains('otros') && _otrosEquiposInstaladosController.text.isEmpty) {
@@ -1011,7 +1009,6 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
 
       addInstalledIfNotEmpty('Router', _macRouterInstaladoController.text);
       addInstalledIfNotEmpty('Bridge', _macBridgeInstaladoController.text);
-      addInstalledIfNotEmpty('Ont', _macOntInstaladoController.text);
       addInstalledIfNotEmpty('Vlan', _vlanInstaladoController.text);
       addInstalledIfNotEmpty('Otros', _otrosEquiposInstaladosController.text);
 
@@ -1021,7 +1018,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         'solucion_tecnico': solutionToSend,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
-        'mac_ont': _macOntController.text,
+        'mac_ont': _macBridgeController.text.isNotEmpty ? _macBridgeController.text : _macOntController.text,
         'otros_equipos': _otrosEquiposController.text,
         'articulos': finalArticles,
         'firma_tecnico': techSig != null ? 'data:image/png;base64,${base64Encode(techSig)}' : null,
@@ -1229,9 +1226,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                    [
                      _buildTextField(_macRouterInstaladoController, 'MAC Router', Icons.router),
                      const SizedBox(height: 10),
-                     _buildTextField(_macBridgeInstaladoController, 'MAC Bridge', Icons.settings_ethernet),
-                     const SizedBox(height: 10),
-                     _buildTextField(_macOntInstaladoController, 'MAC ONT', Icons.router),
+                     _buildTextField(_macBridgeInstaladoController, 'MAC ONT / Bridge', Icons.settings_ethernet),
                      const SizedBox(height: 10),
                      _buildTextField(_vlanInstaladoController, 'VLAN', Icons.alt_route),
                      const SizedBox(height: 10),
@@ -1253,9 +1248,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                  _buildCard('Equipos Retirados', Icons.router, [
                     _buildTextField(_macRouterController, 'MAC Router', Icons.router),
                     const SizedBox(height: 10),
-                    _buildTextField(_macBridgeController, 'MAC Bridge', Icons.settings_ethernet),
-                    const SizedBox(height: 10),
-                    _buildTextField(_macOntController, 'MAC ONT', Icons.router),
+                    _buildTextField(_macBridgeController, 'MAC ONT / Bridge', Icons.settings_ethernet),
                     const SizedBox(height: 10),
                     _buildTextField(_otrosEquiposController, 'Otros Equipos', Icons.devices_other),
                  ]),
@@ -1346,9 +1339,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         ? _macBridgeInstaladoController.text.trim()
         : (_macRouterInstaladoController.text.trim().isNotEmpty
             ? _macRouterInstaladoController.text.trim()
-            : (_macOntInstaladoController.text.trim().isNotEmpty
-                ? _macOntInstaladoController.text.trim()
-                : ''));
+            : '');
 
     final cedula = widget.orden.cedula ?? '';
     final nombre = widget.orden.nombreCliente;
