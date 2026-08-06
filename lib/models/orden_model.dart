@@ -130,6 +130,7 @@ class Orden {
   // Option Maps (Mirrors PHP Constants)
   static const Map<String, String> tipoOrdenOptions = {
     '025': '025 REVISION TECNICA',
+    '033': '033 RECONEXION',
     '037': '037 CAMBIO CONTRASEÑA',
     '038': '038 TRASLADO INTERNO',
     '004': '004 SUSPENSION',
@@ -155,6 +156,8 @@ class Orden {
     'INSTALACION AUTOMONITOREO': 'INSTALACION AUTOMONITOREO',
     'REVISION AUTOMONITOREO': 'REVISION AUTOMONITOREO',
     'REUBICACION DE EQUIPO': 'REUBICACION DE EQUIPO',
+    'reconexión equipo internet TV': 'reconexión equipo internet TV',
+    'reconexión equipo internet': 'reconexión equipo internet',
     'OTRO': 'OTRO',
   };
 
@@ -187,6 +190,7 @@ class Orden {
     '26 REUBICACION DE FIBRA': '26 REUBICACION DE FIBRA',
     '49 TRASLADO INTERNO': '49 TRASLADO INTERNO',
     '50 CAMBIO DE CONTRASEÑA': '50 CAMBIO DE CONTRASEÑA',
+    '50 RECONEXION': '50 RECONEXION',
     '51 CAJA SIN POTENCIA': '51 CAJA SIN POTENCIA',
     '52 CAJA NAP LLENA': '52 CAJA NAP LLENA',
   };

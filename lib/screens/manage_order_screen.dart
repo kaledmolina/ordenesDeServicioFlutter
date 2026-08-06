@@ -131,7 +131,9 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _celularController = TextEditingController(text: widget.orden.celular);
     _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
     _selectedSolution = widget.orden.solucionTecnico;
-    
+    if ((widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('033')) && (_selectedSolution == null || _selectedSolution!.isEmpty)) {
+      _selectedSolution = '50 RECONEXION';
+    }
 
     _macRouterController.text = widget.orden.macRouter ?? '';
     _macBridgeController.text = widget.orden.macBridge ?? '';
@@ -950,10 +952,14 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         subSig = await _savedSubscriberSignatureFile!.readAsBytes();
       }
       
+      final solutionToSend = (widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('033') && (_selectedSolution == null || _selectedSolution!.isEmpty))
+          ? ['50 RECONEXION']
+          : _selectedSolution?.split(', ').map((e) => e.trim()).toList();
+
       final closingData = {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
-        'solucion_tecnico': _selectedSolution?.split(', ').map((e) => e.trim()).toList(),
+        'solucion_tecnico': solutionToSend,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macOntController.text,
@@ -1654,7 +1660,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     }
     
     // Sort options to match the ID order if possible or just values
-    final options = Orden.solucionTecnicoOptions.values.toList();
+    bool isReconexion = widget.orden.tipoOrden != null && widget.orden.tipoOrden!.contains('033');
+    final options = isReconexion
+        ? ['50 RECONEXION']
+        : Orden.solucionTecnicoOptions.values.toList();
     final allOptions = options;
 
     showDialog(
