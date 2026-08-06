@@ -206,6 +206,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _macBridgeController.addListener(_onFieldChanged);
     _macOntController.addListener(_onFieldChanged);
     _otrosEquiposController.addListener(_onFieldChanged);
+    _macRouterInstaladoController.addListener(_onFieldChanged);
+    _macBridgeInstaladoController.addListener(_onFieldChanged);
+    _macOntInstaladoController.addListener(_onFieldChanged);
+    _vlanInstaladoController.addListener(_onFieldChanged);
+    _otrosEquiposInstaladosController.addListener(_onFieldChanged);
   }
 
   void _onFieldChanged() {
@@ -224,6 +229,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macOntController.text,
         'otros': _otrosEquiposController.text,
+        'mac_router_instalado': _macRouterInstaladoController.text,
+        'mac_bridge_instalado': _macBridgeInstaladoController.text,
+        'mac_ont_instalado': _macOntInstaladoController.text,
+        'vlan_instalado': _vlanInstaladoController.text,
+        'otros_instalados': _otrosEquiposInstaladosController.text,
         'articles': _articles,
       };
       await prefs.setString('$_draftKeyPrefix${widget.orden.numeroOrden}', jsonEncode(draftData));
@@ -249,6 +259,12 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
             _macBridgeController.text = data['mac_bridge'] ?? _macBridgeController.text;
             _macOntController.text = data['mac_ont'] ?? _macOntController.text;
             _otrosEquiposController.text = data['otros'] ?? _otrosEquiposController.text;
+            
+            _macRouterInstaladoController.text = data['mac_router_instalado'] ?? _macRouterInstaladoController.text;
+            _macBridgeInstaladoController.text = data['mac_bridge_instalado'] ?? _macBridgeInstaladoController.text;
+            _macOntInstaladoController.text = data['mac_ont_instalado'] ?? _macOntInstaladoController.text;
+            _vlanInstaladoController.text = data['vlan_instalado'] ?? _vlanInstaladoController.text;
+            _otrosEquiposInstaladosController.text = data['otros_instalados'] ?? _otrosEquiposInstaladosController.text;
              
             if (data['articles'] != null) {
               _articles = List<Map<String, dynamic>>.from(data['articles']);
@@ -516,6 +532,11 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     _macBridgeController.dispose();
     _macOntController.dispose();
     _otrosEquiposController.dispose();
+    _macRouterInstaladoController.dispose();
+    _macBridgeInstaladoController.dispose();
+    _macOntInstaladoController.dispose();
+    _vlanInstaladoController.dispose();
+    _otrosEquiposInstaladosController.dispose();
     _technicianSignatureController.dispose();
     _subscriberSignatureController.dispose();
     super.dispose();
