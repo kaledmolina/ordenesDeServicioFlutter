@@ -1223,24 +1223,33 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                       ),
                     ],
                  ]),
-                 _buildCard('Equipos Instalados', Icons.build_circle, [
-                    _buildTextField(_macRouterInstaladoController, 'MAC Router', Icons.router),
-                    const SizedBox(height: 10),
-                    _buildTextField(_macBridgeInstaladoController, 'MAC Bridge', Icons.settings_ethernet),
-                    const SizedBox(height: 10),
-                    _buildTextField(_macOntInstaladoController, 'MAC ONT', Icons.router),
-                    const SizedBox(height: 10),
-                    _buildTextField(_vlanInstaladoController, 'VLAN', Icons.alt_route),
-                    const SizedBox(height: 10),
-                    _buildTextField(_otrosEquiposInstaladosController, 'Otros Equipos', Icons.devices_other),
-                    if (_articles.isNotEmpty) ...[
-                      const SizedBox(height: 12),
-                      const Divider(),
-                      _buildArticlesList(),
-                    ],
-                    const SizedBox(height: 8),
-                    TextButton.icon(onPressed: _addArticle, icon: const Icon(Icons.add), label: const Text('Agregar Artículo Adicional')),
-                 ]),
+                 _buildCard(
+                   'Equipos Instalados', 
+                   Icons.build_circle, 
+                   [
+                     _buildTextField(_macRouterInstaladoController, 'MAC Router', Icons.router),
+                     const SizedBox(height: 10),
+                     _buildTextField(_macBridgeInstaladoController, 'MAC Bridge', Icons.settings_ethernet),
+                     const SizedBox(height: 10),
+                     _buildTextField(_macOntInstaladoController, 'MAC ONT', Icons.router),
+                     const SizedBox(height: 10),
+                     _buildTextField(_vlanInstaladoController, 'VLAN', Icons.alt_route),
+                     const SizedBox(height: 10),
+                     _buildTextField(_otrosEquiposInstaladosController, 'Otros Equipos', Icons.devices_other),
+                     if (_articles.isNotEmpty) ...[
+                       const SizedBox(height: 12),
+                       const Divider(),
+                       _buildArticlesList(),
+                     ],
+                     const SizedBox(height: 8),
+                     TextButton.icon(onPressed: _addArticle, icon: const Icon(Icons.add), label: const Text('Agregar Artículo Adicional')),
+                   ],
+                   trailing: IconButton(
+                     icon: const Icon(Icons.copy, color: Color(0xFF10447E)),
+                     tooltip: 'Copiar Datos de Activación',
+                     onPressed: _copyActivationData,
+                   ),
+                 ),
                  _buildCard('Equipos Retirados', Icons.router, [
                     _buildTextField(_macRouterController, 'MAC Router', Icons.router),
                     const SizedBox(height: 10),
@@ -1332,7 +1341,56 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     );
   }
 
-  Widget _buildCard(String title, IconData icon, List<Widget> children) {
+  void _copyActivationData() {
+    final macBridge = _macBridgeInstaladoController.text.trim().isNotEmpty
+        ? _macBridgeInstaladoController.text.trim()
+        : (_macRouterInstaladoController.text.trim().isNotEmpty
+            ? _macRouterInstaladoController.text.trim()
+            : (_macOntInstaladoController.text.trim().isNotEmpty
+                ? _macOntInstaladoController.text.trim()
+                : ''));
+
+    final cedula = widget.orden.cedula ?? '';
+    final nombre = widget.orden.nombreCliente;
+    final plan = widget.orden.planInternet ?? '';
+    
+    String barrio = widget.orden.barrio ?? '';
+    if (barrio.isNotEmpty && !barrio.toUpperCase().startsWith('B/')) {
+      barrio = 'B/$barrio';
+    }
+
+    final vlanRaw = _vlanInstaladoController.text.trim();
+    String vlanText = '';
+    if (vlanRaw.isNotEmpty) {
+      if (vlanRaw.toUpperCase().startsWith('ACTIVAR VLAN')) {
+        vlanText = vlanRaw;
+      } else {
+        vlanText = 'ACTIVAR VLAN $vlanRaw';
+      }
+    } else {
+      vlanText = 'ACTIVAR VLAN';
+    }
+
+    final copyText = [
+      macBridge,
+      cedula,
+      nombre,
+      plan,
+      barrio,
+      vlanText,
+    ].where((line) => line.isNotEmpty).join('\n');
+
+    Clipboard.setData(ClipboardData(text: copyText));
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Datos copiados al portapapeles'),
+        backgroundColor: Color(0xFF10447E),
+        duration: Duration(seconds: 2),
+      ),
+    );
+  }
+
+  Widget _buildCard(String title, IconData icon, List<Widget> children, {Widget? trailing}) {
     return Card(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       margin: const EdgeInsets.only(bottom: 16),
@@ -1341,7 +1399,13 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(children: [Icon(icon, color: const Color(0xFF10447E)), const SizedBox(width: 10), Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Row(children: [Icon(icon, color: const Color(0xFF10447E)), const SizedBox(width: 10), Text(title, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))]),
+                if (trailing != null) trailing,
+              ],
+            ),
             const Divider(height: 24),
             ...children
           ],
