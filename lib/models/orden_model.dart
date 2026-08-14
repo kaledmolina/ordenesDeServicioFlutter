@@ -64,6 +64,8 @@ class Orden {
   final String? otroTelefono;
   final String? telefonoFacturacion;
   final DateTime? deadlineAt;
+  final int? prioridad;
+  final String? coordenadas;
 
   // Celular alias for UI compatibility (maps to telefono)
   String? get celular => telefono;
@@ -125,6 +127,8 @@ class Orden {
     this.otroTelefono,
     this.telefonoFacturacion,
     this.deadlineAt,
+    this.prioridad,
+    this.coordenadas,
   });
 
   // Option Maps (Mirrors PHP Constants)
@@ -236,6 +240,8 @@ class Orden {
       otroTelefono: json['otro_telefono']?.toString() ?? json['cliente']?['otro_telefono']?.toString(),
       telefonoFacturacion: json['telefono_facturacion']?.toString() ?? json['cliente']?['telefono_facturacion']?.toString(),
       deadlineAt: DateTime.tryParse(json['deadline_at'] ?? '')?.toLocal(),
+      prioridad: int.tryParse(json['prioridad']?.toString() ?? '') ?? 0,
+      coordenadas: json['coordenadas']?.toString(),
     );
   }
 }

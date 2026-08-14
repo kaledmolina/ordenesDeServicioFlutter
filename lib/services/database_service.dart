@@ -96,7 +96,9 @@ class DatabaseService {
         plan_internet TEXT,
         novedades_noc TEXT,
         codigo_contrato TEXT,
-        barrio TEXT
+        barrio TEXT,
+        coordenadas TEXT,
+        prioridad INTEGER DEFAULT 0
       )
     ''');
 
@@ -277,6 +279,8 @@ class DatabaseService {
     try { await db.execute('ALTER TABLE orders ADD COLUMN codigo_contrato TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN barrio TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN telefono_facturacion TEXT'); } catch (_) {}
+    try { await db.execute('ALTER TABLE orders ADD COLUMN coordenadas TEXT'); } catch (_) {}
+    try { await db.execute('ALTER TABLE orders ADD COLUMN prioridad INTEGER DEFAULT 0'); } catch (_) {}
 
     try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_estado ON orders(estado_orden)'); } catch (_) {}
     try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_technician ON orders(technician_id)'); } catch (_) {}

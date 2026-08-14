@@ -327,6 +327,8 @@ class OrderRepository {
       'novedades_noc': json['novedades_noc']?.toString(),
       'codigo_contrato': json['codigo_contrato']?.toString() ?? json['cliente']?['codigo_contrato']?.toString(),
       'barrio': json['barrio']?.toString() ?? json['cliente']?['barrio']?.toString(),
+      'coordenadas': json['coordenadas']?.toString(),
+      'prioridad': json['prioridad'] != null ? int.tryParse(json['prioridad'].toString()) ?? 0 : 0,
     };
   }
 
@@ -378,6 +380,8 @@ class OrderRepository {
       'novedades_noc': order.novedadesNoc,
       'codigo_contrato': order.codigoContrato,
       'barrio': order.barrio,
+      'coordenadas': order.coordenadas,
+      'prioridad': order.prioridad ?? 0,
     };
   }
 
@@ -432,8 +436,9 @@ class OrderRepository {
       novedadesNoc: map['novedades_noc']?.toString(),
       codigoContrato: map['codigo_contrato']?.toString(),
       barrio: map['barrio']?.toString(),
+      coordenadas: map['coordenadas']?.toString(),
+      prioridad: map['prioridad'] != null ? int.tryParse(map['prioridad'].toString()) ?? 0 : 0,
     );
   }
-
 }
 

@@ -56,6 +56,37 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       }
     }
   }
+
+  Future<void> _launchCaller(String phoneNumber) async {
+    final Uri launchUri = Uri(scheme: 'tel', path: phoneNumber);
+    if (await canLaunchUrl(launchUri)) {
+      await launchUrl(launchUri);
+    }
+  }
+
+  Future<void> _openGoogleMaps(String coordinates) async {
+    final trimmed = coordinates.trim();
+    if (trimmed.isEmpty) return;
+    Uri url;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      url = Uri.parse(trimmed);
+    } else {
+      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(trimmed)}');
+    }
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(url);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir Google Maps: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
   
   Future<void> _loadOrderDetails() async {
     setState(() {
@@ -735,14 +766,16 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   // --- HELPERS ---
   Widget _buildDetailSection(Orden orden) {
-    // final dateFormatter = DateFormat('dd/MM/yyyy hh:mm a', 'es_CO');
-    
     return Column(
       children: [
         _buildInfoContainer('Información General', [
             _buildDetailRow('Cliente', orden.nombreCliente, isTitle: true),
+            if (orden.prioridad != null && orden.prioridad! > 0)
+              _buildDetailRow('Prioridad Asignada', '🔥 ${orden.prioridad} Puntos de Prioridad'),
             if (orden.cedula != null) _buildDetailRow('Cédula', orden.cedula, isCopyable: true),
-            _buildDetailRow('Dirección', orden.direccion, icon: Icons.map),
+            _buildDetailRow('Dirección', orden.direccion, icon: Icons.home),
+            if (orden.coordenadas != null && orden.coordenadas!.trim().isNotEmpty)
+              _buildDetailRow('Coordenadas (GPS)', orden.coordenadas, icon: Icons.map, isMap: true),
             if (orden.barrio != null) _buildDetailRow('Barrio', orden.barrio),
             _buildDetailRow('Celular Principal', orden.telefono ?? 'N/A', icon: Icons.phone, isPhone: orden.telefono != null),
             _buildDetailRow('Teléfono Facturación', orden.telefonoFacturacion?.isNotEmpty == true ? orden.telefonoFacturacion : 'N/A', icon: Icons.receipt, isPhone: orden.telefonoFacturacion?.isNotEmpty == true),
@@ -791,7 +824,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String? value, {bool isTitle = false, IconData? icon, bool isPhone = false, bool isCopyable = false}) {
+  Widget _buildDetailRow(String label, String? value, {bool isTitle = false, IconData? icon, bool isPhone = false, bool isCopyable = false, bool isMap = false}) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -807,7 +840,36 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 if (!isTitle) Text(label, style: const TextStyle(fontSize: 12, color: Colors.grey)),
-                if (isPhone || isCopyable)
+                if (isMap)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(value, style: const TextStyle(fontSize: 14, color: Color(0xFF10447E), fontWeight: FontWeight.bold)),
+                      ),
+                      const SizedBox(width: 8),
+                      InkWell(
+                        onTap: () => _openGoogleMaps(value),
+                        borderRadius: BorderRadius.circular(8),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10447E).withOpacity(0.08),
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: const Color(0xFF10447E).withOpacity(0.3)),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: const [
+                              Icon(Icons.directions, size: 14, color: Color(0xFF10447E)),
+                              SizedBox(width: 4),
+                              Text('Abrir Maps', style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF10447E))),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ],
+                  )
+                else if (isPhone || isCopyable)
                   Row(
                     children: [
                       if (isPhone)

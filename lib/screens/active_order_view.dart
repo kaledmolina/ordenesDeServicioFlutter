@@ -36,6 +36,30 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
     }
   }
 
+  Future<void> _openGoogleMaps(String coordinates) async {
+    final trimmed = coordinates.trim();
+    if (trimmed.isEmpty) return;
+    Uri url;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      url = Uri.parse(trimmed);
+    } else {
+      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(trimmed)}');
+    }
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(url);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir Google Maps: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Future<void> _findActiveOrder() async {
     setState(() {
       _isLoading = true;
@@ -61,8 +85,12 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
 
         if (allPotential.isNotEmpty) {
           final now = DateTime.now();
-          // Sort by critical (>48h) then by oldest
+          // Sort by priority points first, then critical (>48h) then by oldest
           allPotential.sort((a, b) {
+            final aPuntos = a.prioridad ?? 0;
+            final bPuntos = b.prioridad ?? 0;
+            if (aPuntos != bPuntos) return bPuntos.compareTo(aPuntos);
+
             final aDuration = now.difference(a.fechaHora).inHours;
             final bDuration = now.difference(b.fechaHora).inHours;
             final aIsCritical = aDuration >= 48;
@@ -194,10 +222,16 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                     Text('Orden N° ${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
                   ],
                 ),
-                Container(
-                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                   decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
-                   child: const Text('SUGERIDA', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                Row(
+                  children: [
+                    if (order.prioridad != null && order.prioridad! > 0)
+                      _buildPriorityBadge(order.prioridad!),
+                    Container(
+                       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                       decoration: BoxDecoration(color: Colors.orange, borderRadius: BorderRadius.circular(8)),
+                       child: const Text('SUGERIDA', style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -225,16 +259,50 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                               ),
                            const SizedBox(height: 4),
                            Row(
+                             crossAxisAlignment: CrossAxisAlignment.start,
                              children: [
-                               const Icon(Icons.location_on, size: 14, color: Colors.grey),
+                               const Padding(
+                                 padding: EdgeInsets.only(top: 2),
+                                 child: Icon(Icons.location_on, size: 14, color: Colors.grey),
+                               ),
                                const SizedBox(width: 4),
                                Expanded(
                                  child: Column(
                                    crossAxisAlignment: CrossAxisAlignment.start,
                                    children: [
-                                       Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+                                       Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w500), maxLines: 2, overflow: TextOverflow.ellipsis),
                                        if (order.barrio != null && order.barrio!.isNotEmpty)
                                          Text(order.barrio!, style: TextStyle(color: const Color(0xFF10447E), fontSize: 12, fontWeight: FontWeight.bold)),
+                                       if (order.coordenadas != null && order.coordenadas!.trim().isNotEmpty) ...[
+                                         const SizedBox(height: 6),
+                                         InkWell(
+                                           onTap: () => _openGoogleMaps(order.coordenadas!),
+                                           borderRadius: BorderRadius.circular(8),
+                                           child: Container(
+                                             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                             decoration: BoxDecoration(
+                                               color: const Color(0xFF10447E).withOpacity(0.08),
+                                               borderRadius: BorderRadius.circular(8),
+                                               border: Border.all(color: const Color(0xFF10447E).withOpacity(0.3)),
+                                             ),
+                                             child: Row(
+                                               mainAxisSize: MainAxisSize.min,
+                                               children: const [
+                                                 Icon(Icons.map_outlined, size: 14, color: Color(0xFF10447E)),
+                                                 SizedBox(width: 4),
+                                                 Text(
+                                                   'Ver en Google Maps',
+                                                   style: TextStyle(
+                                                     color: Color(0xFF10447E),
+                                                     fontSize: 11,
+                                                     fontWeight: FontWeight.bold,
+                                                   ),
+                                                 ),
+                                               ],
+                                             ),
+                                           ),
+                                         ),
+                                       ],
                                        if (order.planInternet != null && order.planInternet!.isNotEmpty)
                                          Padding(
                                            padding: const EdgeInsets.only(top: 2),
@@ -393,6 +461,34 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
           )
         ]
       ],
+    );
+  }
+
+  Widget _buildPriorityBadge(int points) {
+    if (points <= 0) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🔥', style: TextStyle(fontSize: 10)),
+          const SizedBox(width: 3),
+          Text(
+            '$points Pts',
+            style: const TextStyle(
+              color: Color(0xFFDC2626),
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

@@ -37,6 +37,30 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
     }
   }
 
+  Future<void> _openGoogleMaps(String coordinates) async {
+    final trimmed = coordinates.trim();
+    if (trimmed.isEmpty) return;
+    Uri url;
+    if (trimmed.startsWith('http://') || trimmed.startsWith('https://')) {
+      url = Uri.parse(trimmed);
+    } else {
+      url = Uri.parse('https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(trimmed)}');
+    }
+    try {
+      if (await canLaunchUrl(url)) {
+        await launchUrl(url, mode: LaunchMode.externalApplication);
+      } else {
+        await launchUrl(url);
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir Google Maps: $e'), backgroundColor: Colors.red),
+        );
+      }
+    }
+  }
+
   Future<void> _fetchBarrios() async {
     try {
       final barrios = await _apiService.getBarrios();
@@ -48,11 +72,18 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
 
   Future<void> _fetchOrders() async {
     setState(() => _isLoading = true);
-    setState(() => _isLoading = true);
     try {
       final data = await _apiService.getPendingOrders(barrio: _selectedBarrio);
+      final rawList = List<dynamic>.from(data['data'] ?? []);
+      // Sort: highest priority first
+      rawList.sort((a, b) {
+        final aPuntos = int.tryParse(a['prioridad']?.toString() ?? '0') ?? 0;
+        final bPuntos = int.tryParse(b['prioridad']?.toString() ?? '0') ?? 0;
+        if (aPuntos != bPuntos) return bPuntos.compareTo(aPuntos);
+        return (b['created_at'] ?? '').toString().compareTo((a['created_at'] ?? '').toString());
+      });
       setState(() {
-        _orders = data['data'] ?? []; // Pagination returns data inside 'data'
+        _orders = rawList;
         _isLoading = false;
         _error = null;
       });
@@ -192,7 +223,13 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text('#${order.numeroOrden}', style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                _buildClassificationBadge(order.clasificacion),
+                Row(
+                  children: [
+                    if (order.prioridad != null && order.prioridad! > 0)
+                      _buildPriorityBadge(order.prioridad!),
+                    _buildClassificationBadge(order.clasificacion),
+                  ],
+                ),
               ],
             ),
           ),
@@ -228,6 +265,36 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                   const SizedBox(height: 4),
                   if (order.barrio != null && order.barrio!.isNotEmpty)
                     _buildInfoRow(Icons.map, order.barrio!, iconColor: const Color(0xFF10447E), textColor: const Color(0xFF10447E), fontWeight: FontWeight.bold),
+                  if (order.coordenadas != null && order.coordenadas!.trim().isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    InkWell(
+                      onTap: () => _openGoogleMaps(order.coordenadas!),
+                      borderRadius: BorderRadius.circular(8),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF10447E).withOpacity(0.08),
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: const Color(0xFF10447E).withOpacity(0.3)),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: const [
+                            Icon(Icons.map_outlined, size: 14, color: Color(0xFF10447E)),
+                            SizedBox(width: 4),
+                            Text(
+                              'Ver en Google Maps',
+                              style: TextStyle(
+                                color: Color(0xFF10447E),
+                                fontSize: 11,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
                  const SizedBox(height: 8),
                  Row(
                    children: [
@@ -328,6 +395,34 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
           )
         ]
       ],
+    );
+  }
+
+  Widget _buildPriorityBadge(int points) {
+    if (points <= 0) return const SizedBox.shrink();
+    return Container(
+      margin: const EdgeInsets.only(right: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+      decoration: BoxDecoration(
+        color: const Color(0xFFEF4444).withOpacity(0.12),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: const Color(0xFFEF4444).withOpacity(0.5), width: 0.8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const Text('🔥', style: TextStyle(fontSize: 10)),
+          const SizedBox(width: 3),
+          Text(
+            '$points Pts',
+            style: const TextStyle(
+              color: Color(0xFFDC2626),
+              fontWeight: FontWeight.bold,
+              fontSize: 10,
+            ),
+          ),
+        ],
+      ),
     );
   }
 
