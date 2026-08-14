@@ -221,12 +221,6 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-   Future<void> _launchCaller(String phoneNumber) async {
-    final Uri url = Uri(scheme: 'tel', path: phoneNumber);
-    if (await canLaunchUrl(url)) {
-      await launchUrl(url);
-    }
-  }
 
   // --- UI ---
   @override
