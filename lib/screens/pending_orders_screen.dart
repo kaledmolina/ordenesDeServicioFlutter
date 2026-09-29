@@ -4,6 +4,7 @@ import '../services/api_service.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/orden_model.dart';
 import '../widgets/barrio_search_modal.dart';
+import '../widgets/service_type_badge.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class PendingOrdersScreen extends StatefulWidget {
@@ -239,7 +240,36 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
              child: Column(
                crossAxisAlignment: CrossAxisAlignment.start,
                children: [
-                  _buildInfoRow(Icons.person, order.nombreCliente),
+                 // Service Type Badge + Tipo Orden Tag
+                 Row(
+                   children: [
+                     ServiceTypeBadge(order: order),
+                     const SizedBox(width: 8),
+                     Flexible(
+                       child: Container(
+                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                         decoration: BoxDecoration(
+                           color: Colors.grey.shade100,
+                           borderRadius: BorderRadius.circular(6),
+                           border: Border.all(color: Colors.grey.shade300),
+                         ),
+                         child: Text(
+                           order.tipoOrdenLabel,
+                           style: TextStyle(
+                             fontSize: 10,
+                             fontWeight: FontWeight.w700,
+                             color: Colors.grey.shade700,
+                           ),
+                           maxLines: 1,
+                           overflow: TextOverflow.ellipsis,
+                         ),
+                       ),
+                     ),
+                   ],
+                 ),
+                 const SizedBox(height: 10),
+
+                 _buildInfoRow(Icons.person, order.nombreCliente),
                   if (order.cedula != null && order.cedula!.isNotEmpty) ...[
                     const SizedBox(height: 4),
                     Row(
@@ -263,8 +293,8 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                  const SizedBox(height: 8),
                   _buildInfoRow(Icons.location_on, order.direccion?.isNotEmpty == true ? order.direccion! : 'Sin dirección'),
                   const SizedBox(height: 4),
-                  if (order.barrio != null && order.barrio!.isNotEmpty)
-                    _buildInfoRow(Icons.map, order.barrio!, iconColor: const Color(0xFF10447E), textColor: const Color(0xFF10447E), fontWeight: FontWeight.bold),
+                  if (order.barrioDisplay != null && order.barrioDisplay!.isNotEmpty)
+                    _buildInfoRow(Icons.map, order.barrioDisplay!, iconColor: const Color(0xFF10447E), textColor: const Color(0xFF10447E), fontWeight: FontWeight.bold),
                   if (order.coordenadas != null && order.coordenadas!.trim().isNotEmpty) ...[
                     const SizedBox(height: 6),
                     InkWell(

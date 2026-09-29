@@ -18,6 +18,7 @@ import 'profile_screen.dart'; // Import ProfileScreen
 import 'active_order_view.dart';
 import '../widgets/barrio_search_modal.dart';
 import '../widgets/processing_overlay.dart';
+import '../widgets/service_type_badge.dart';
 import '../utils/business_hours.dart';
 import 'offline_pending_screen.dart';
 import '../services/location_service.dart';
@@ -634,14 +635,43 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                 // Client & Countdown
-                 Row(
-                   crossAxisAlignment: CrossAxisAlignment.start,
-                   children: [
-                     Expanded(
-                       child: Column(
-                         crossAxisAlignment: CrossAxisAlignment.start,
-                         children: [
+                // Service Type Badge + Tipo Orden Tag
+                Row(
+                  children: [
+                    ServiceTypeBadge(order: order),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.grey.shade100,
+                          borderRadius: BorderRadius.circular(6),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Text(
+                          order.tipoOrdenLabel,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            color: Colors.grey.shade700,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                // Client & Countdown
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
                            Text(order.nombreCliente, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
                            if (order.cedula != null && order.cedula!.isNotEmpty)
                              Padding(
@@ -679,8 +709,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                    crossAxisAlignment: CrossAxisAlignment.start,
                                    children: [
                                        Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w500), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                       if (order.barrio != null && order.barrio!.isNotEmpty)
-                                         Text(order.barrio!, style: TextStyle(color: const Color(0xFF10447E), fontSize: 12, fontWeight: FontWeight.bold)),
+                                        if (order.barrioDisplay != null && order.barrioDisplay!.isNotEmpty)
+                                          Text(order.barrioDisplay!, style: TextStyle(color: const Color(0xFF10447E), fontSize: 12, fontWeight: FontWeight.bold)),
                                        if (order.coordenadas != null && order.coordenadas!.trim().isNotEmpty) ...[
                                          const SizedBox(height: 6),
                                          InkWell(

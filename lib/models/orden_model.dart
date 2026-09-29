@@ -67,6 +67,8 @@ class Orden {
   final int? prioridad;
   final String? coordenadas;
 
+  final String? tipoServicio;
+
   // Celular alias for UI compatibility (maps to telefono)
   String? get celular => telefono;
 
@@ -76,6 +78,116 @@ class Orden {
 
   // Status alias for UI compatibility (maps to estadoOrden)
   String get status => estadoOrden?.toLowerCase() ?? 'pendiente';
+
+  // Service Type: Basado en los 3 tipos de servicios (Internet, TV, Automonitoreo)
+  // y en los lineamientos oficiales de planes de la empresa:
+  // 1. COMBO_AUTOMONITOREO (Internet + TV + Automonitoreo / 3 Servicios)
+  // 2. INTERNET_AUTOMONITOREO (Internet + Automonitoreo)
+  // 3. COMBO (TV + Internet)
+  // 4. TV (Solo Televisión)
+  // 5. INTERNET (Solo Internet)
+  String get tipoServicioNormalizado {
+    final plan = (planInternet ?? '').trim().toUpperCase();
+    final raw = (tipoServicio ?? '').trim().toUpperCase();
+    final sol = (solicitudSuscriptor ?? '').trim().toUpperCase();
+
+    // 1. Detección de Automonitoreo
+    final hasAutomonitoreo = plan.contains('AUTOMONITOREO') ||
+        plan.contains('MONITOREO') ||
+        plan.contains('3 SERVICIOS') ||
+        raw.contains('AUTOMONITOREO') ||
+        raw.contains('MONITOREO') ||
+        sol.contains('AUTOMONITOREO') ||
+        sol.contains('MONITOREO') ||
+        sol.contains('CAMARA') ||
+        sol.contains('CÁMARA');
+
+    // 2. Detección de TV
+    final tvRegex = RegExp(r'(\+\s*TV|\bTV\b|TDT|TELEVISI|3\s*SERVICIOS)', caseSensitive: false);
+    final hasTvInPlan = tvRegex.hasMatch(plan);
+    final hasTvInSol = tvRegex.hasMatch(sol) || sol.contains('COMBO') || sol.contains('TV E INTERNET');
+    final hasTvInRaw = raw == 'TV' || raw.contains('COMBO') || raw.contains('TV');
+    final hasTvInClient = estadoTv != null &&
+        estadoTv!.isNotEmpty &&
+        estadoTv!.toUpperCase() != 'SIN SERVICIO' &&
+        estadoTv!.toUpperCase() != 'RETIRADO';
+
+    final hasTv = hasTvInPlan || hasTvInSol || hasTvInRaw || hasTvInClient;
+
+    // Códigos directos si ya vienen clasificados desde el backend
+    if (raw == 'COMBO_AUTOMONITOREO' || raw == 'INTERNET_TV_AUTOMONITOREO') {
+      return 'COMBO_AUTOMONITOREO';
+    }
+    if (raw == 'INTERNET_AUTOMONITOREO') {
+      return 'INTERNET_AUTOMONITOREO';
+    }
+
+    // Clasificación según lineamientos:
+    if (hasAutomonitoreo) {
+      if (hasTv || plan.contains('3 SERVICIOS')) {
+        return 'COMBO_AUTOMONITOREO';
+      }
+      return 'INTERNET_AUTOMONITOREO';
+    }
+
+    if (hasTvInPlan || plan.contains('2 SERVICIOS')) {
+      return 'COMBO';
+    }
+
+    if (raw == 'COMBO' || raw.contains('COMBO') || (raw.contains('TV') && raw.contains('INT')) || raw.contains('TV / INT')) {
+      return 'COMBO';
+    }
+
+    if (sol.contains('COMBO') || sol.contains('TV E INTERNET') || sol.contains('INTERNET TV') || (sol.contains('TV') && sol.contains('INTERNET'))) {
+      return 'COMBO';
+    }
+
+    if (hasTv && (plan.isNotEmpty || sol.contains('INTERNET') || sol.contains('WIFI') || sol.contains('FIBRA'))) {
+      return 'COMBO';
+    }
+
+    if (raw == 'TV' || (hasTvInSol && !sol.contains('INTERNET') && plan.isEmpty) || (hasTvInClient && plan.isEmpty)) {
+      return 'TV';
+    }
+
+    return 'INTERNET';
+  }
+
+  bool get isComboAutomonitoreo => tipoServicioNormalizado == 'COMBO_AUTOMONITOREO';
+  bool get isInternetAutomonitoreo => tipoServicioNormalizado == 'INTERNET_AUTOMONITOREO';
+  bool get isAutomonitoreo => isComboAutomonitoreo || isInternetAutomonitoreo;
+  bool get isCombo => tipoServicioNormalizado == 'COMBO' || isComboAutomonitoreo;
+  bool get isSoloInternet => tipoServicioNormalizado == 'INTERNET';
+  bool get isSoloTv => tipoServicioNormalizado == 'TV';
+
+  String get tipoServicioDisplay {
+    switch (tipoServicioNormalizado) {
+      case 'COMBO_AUTOMONITOREO':
+        return 'TV + Internet + Automonitoreo';
+      case 'INTERNET_AUTOMONITOREO':
+        return 'Internet + Automonitoreo';
+      case 'COMBO':
+        return 'TV + Internet';
+      case 'TV':
+        return 'Solo Televisión';
+      case 'INTERNET':
+      default:
+        return 'Solo Internet';
+    }
+  }
+
+  // Nombre limpio del barrio (sin código numérico como '096 - EL DORADO')
+  String? get barrioDisplay {
+    if (barrio == null || barrio!.trim().isEmpty) return null;
+    final b = barrio!.trim();
+    if (b.contains(' - ')) {
+      final parts = b.split(' - ');
+      if (parts.length > 1 && parts[1].trim().isNotEmpty) {
+        return parts[1].trim();
+      }
+    }
+    return b;
+  }
 
   Orden({
     required this.id,
@@ -129,6 +241,7 @@ class Orden {
     this.deadlineAt,
     this.prioridad,
     this.coordenadas,
+    this.tipoServicio,
   });
 
   // Option Maps (Mirrors PHP Constants)
@@ -242,6 +355,7 @@ class Orden {
       deadlineAt: DateTime.tryParse(json['deadline_at'] ?? '')?.toLocal(),
       prioridad: int.tryParse(json['prioridad']?.toString() ?? '') ?? 0,
       coordenadas: json['coordenadas']?.toString(),
+      tipoServicio: json['tipo_servicio']?.toString() ?? json['cliente']?['tipo_servicio']?.toString(),
     );
   }
 }

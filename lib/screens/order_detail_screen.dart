@@ -18,6 +18,7 @@ import '../widgets/app_background.dart';
 import '../widgets/connection_status_indicator.dart';
 import 'signature_screen.dart';
 import '../widgets/processing_overlay.dart';
+import '../widgets/service_type_badge.dart';
 import '../services/auth_service.dart';
 
 class OrderDetailScreen extends StatefulWidget {
@@ -760,17 +761,95 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   // --- HELPERS ---
   Widget _buildDetailSection(Orden orden) {
+    Color serviceCardBorderColor;
+    Color serviceCardTextColor;
+    IconData serviceIcon;
+
+    if (orden.isComboAutomonitoreo) {
+      serviceCardBorderColor = const Color(0xFF10B981); // Emerald
+      serviceCardTextColor = const Color(0xFF065F46);
+      serviceIcon = Icons.shield_outlined;
+    } else if (orden.isInternetAutomonitoreo) {
+      serviceCardBorderColor = const Color(0xFF14B8A6); // Teal
+      serviceCardTextColor = const Color(0xFF115E59);
+      serviceIcon = Icons.shield_outlined;
+    } else if (orden.isCombo) {
+      serviceCardBorderColor = const Color(0xFFA855F7); // Purple
+      serviceCardTextColor = const Color(0xFF6B21A8);
+      serviceIcon = Icons.devices;
+    } else if (orden.isSoloTv) {
+      serviceCardBorderColor = const Color(0xFFF59E0B); // Amber
+      serviceCardTextColor = const Color(0xFF92400E);
+      serviceIcon = Icons.tv;
+    } else {
+      serviceCardBorderColor = const Color(0xFF0284C7); // Sky
+      serviceCardTextColor = const Color(0xFF075985);
+      serviceIcon = Icons.wifi;
+    }
+
     return Column(
       children: [
+        // Prominent Service Type Card
+        Container(
+          width: double.infinity,
+          margin: const EdgeInsets.only(bottom: 16),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: serviceCardBorderColor,
+              width: 1.5,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: serviceCardBorderColor.withOpacity(0.08),
+                blurRadius: 10,
+                offset: const Offset(0, 3),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'TIPO DE SERVICIO',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 0.8,
+                      color: Color(0xFF6B7280),
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    orden.tipoServicioDisplay,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                      color: serviceCardTextColor,
+                    ),
+                  ),
+                ],
+              ),
+              ServiceTypeBadge(order: orden),
+            ],
+          ),
+        ),
+
         _buildInfoContainer('Información General', [
             _buildDetailRow('Cliente', orden.nombreCliente, isTitle: true),
+            _buildDetailRow('Tipo de Orden', orden.tipoOrdenLabel, icon: Icons.assignment),
             if (orden.prioridad != null && orden.prioridad! > 0)
               _buildDetailRow('Prioridad Asignada', '🔥 ${orden.prioridad} Puntos de Prioridad'),
             if (orden.cedula != null) _buildDetailRow('Cédula', orden.cedula, isCopyable: true),
             _buildDetailRow('Dirección', orden.direccion, icon: Icons.home),
             if (orden.coordenadas != null && orden.coordenadas!.trim().isNotEmpty)
               _buildDetailRow('Coordenadas (GPS)', orden.coordenadas, icon: Icons.map, isMap: true),
-            if (orden.barrio != null) _buildDetailRow('Barrio', orden.barrio),
+            if (orden.barrioDisplay != null) _buildDetailRow('Barrio', orden.barrioDisplay!),
             _buildDetailRow('Celular Principal', orden.telefono ?? 'N/A', icon: Icons.phone, isPhone: orden.telefono != null),
             _buildDetailRow('Teléfono Facturación', orden.telefonoFacturacion?.isNotEmpty == true ? orden.telefonoFacturacion : 'N/A', icon: Icons.receipt, isPhone: orden.telefonoFacturacion?.isNotEmpty == true),
             _buildDetailRow('Otro Teléfono', orden.otroTelefono?.isNotEmpty == true ? orden.otroTelefono : 'N/A', icon: Icons.phone_android, isPhone: orden.otroTelefono?.isNotEmpty == true),
@@ -778,8 +857,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         ]),
         const SizedBox(height: 16),
         _buildInfoContainer('Detalles Técnicos', [
+             _buildDetailRow('Tipo de Servicio', orden.tipoServicioDisplay, icon: serviceIcon),
              if (orden.codigoContrato != null) _buildDetailRow('Código', orden.codigoContrato),
-             _buildDetailRow('Plan', orden.planInternet),
+             _buildDetailRow(
+               'Plan Contratado',
+               (orden.planInternet != null && orden.planInternet!.isNotEmpty)
+                   ? orden.planInternet
+                   : 'Sin plan registrado',
+               icon: Icons.speed,
+               isHighlight: true,
+               highlightColor: const Color(0xFF7C3AED),
+             ),
              _buildDetailRow('Saldo', orden.saldoCliente),
              if (orden.macRouter != null) _buildDetailRow('MAC Router', orden.macRouter),
              if (orden.observaciones != null) _buildDetailRow('Observaciones', orden.observaciones),
@@ -818,7 +906,17 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     );
   }
 
-  Widget _buildDetailRow(String label, String? value, {bool isTitle = false, IconData? icon, bool isPhone = false, bool isCopyable = false, bool isMap = false}) {
+  Widget _buildDetailRow(
+    String label,
+    String? value, {
+    bool isTitle = false,
+    IconData? icon,
+    bool isPhone = false,
+    bool isCopyable = false,
+    bool isMap = false,
+    bool isHighlight = false,
+    Color? highlightColor,
+  }) {
     if (value == null || value.isEmpty) return const SizedBox.shrink();
     return Padding(
       padding: const EdgeInsets.only(bottom: 12.0),
@@ -826,7 +924,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (icon != null) ...[
-             Icon(icon, size: 16, color: Colors.grey),
+             Icon(icon, size: 16, color: isHighlight ? (highlightColor ?? Colors.purple) : Colors.grey),
              const SizedBox(width: 8),
           ],
           Expanded(
@@ -862,6 +960,24 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                         ),
                       ),
                     ],
+                  )
+                else if (isHighlight)
+                  Container(
+                    margin: const EdgeInsets.only(top: 4),
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                    decoration: BoxDecoration(
+                      color: (highlightColor ?? Colors.purple).withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: (highlightColor ?? Colors.purple).withOpacity(0.25)),
+                    ),
+                    child: Text(
+                      value,
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w800,
+                        color: highlightColor ?? const Color(0xFF6B21A8),
+                      ),
+                    ),
                   )
                 else if (isPhone || isCopyable)
                   Row(
