@@ -13,6 +13,7 @@ class ApiService {
   static const String _baseUrlDomain = 'http://127.0.0.1:8000';
   static const String baseUrl = '$_baseUrlDomain/api';
   static const String domain = _baseUrlDomain;
+  static const Duration defaultTimeout = Duration(seconds: 10);
 
   String getBaseUrl() => baseUrl;
 
@@ -21,7 +22,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/login'),
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json'},
       body: jsonEncode({'email': email, 'password': password}),
-    );
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
@@ -48,13 +49,19 @@ class ApiService {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode({'fcm_token': fcmToken}),
-    );
+    ).timeout(defaultTimeout);
     await _handleResponse(response);
   }
 
-  Future<Map<String, dynamic>> getOrders({int page = 1, String status = 'todas', String? search, String? barrio}) async {
+  Future<Map<String, dynamic>> getOrders({
+    int page = 1,
+    int perPage = 50,
+    String status = 'todas',
+    String? search,
+    String? barrio,
+  }) async {
     final token = await AuthService.instance.getToken();
-    String url = '$baseUrl/v1/orders?page=$page&status=$status';
+    String url = '$baseUrl/v1/orders?page=$page&per_page=$perPage&status=$status';
     if (search != null && search.isNotEmpty) {
       url += '&search=$search';
     }
@@ -64,7 +71,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse(url),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
@@ -75,7 +82,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$baseUrl/v1/orders/count-pending'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     final data = await _handleResponse(response);
     return data['count'] as int;
   }
@@ -86,7 +93,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$baseUrl/v1/orders/$orderNumber'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     final data = await _handleResponse(response);
     if (data is Map<String, dynamic>) {
       if (data.containsKey('order')) return Orden.fromJson(data['order']);
@@ -106,7 +113,7 @@ class ApiService {
         'Authorization': 'Bearer $token'
       },
       body: data != null ? jsonEncode(data) : null,
-    );
+    ).timeout(defaultTimeout);
     final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
@@ -120,7 +127,7 @@ class ApiService {
         'Accept': 'application/json',
         'Authorization': 'Bearer $token'
       },
-    );
+    ).timeout(defaultTimeout);
     final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
@@ -136,7 +143,7 @@ class ApiService {
         'Authorization': 'Bearer $token'
       },
       body: data != null ? jsonEncode(data) : null,
-    );
+    ).timeout(defaultTimeout);
     final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
@@ -152,7 +159,7 @@ class ApiService {
         'Authorization': 'Bearer $token'
       },
       body: jsonEncode(data),
-    );
+    ).timeout(defaultTimeout);
     final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
@@ -163,7 +170,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/v1/orders/$orderNumber/reject'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
@@ -173,7 +180,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/orders/$orderNumber/reassign'),
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer $token'},
       body: jsonEncode({'motivo': motivo}),
-    );
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
@@ -183,7 +190,7 @@ class ApiService {
       Uri.parse('$baseUrl/v1/orders/$orderNumber/reschedule'),
       headers: {'Content-Type': 'application/json', 'Accept': 'application/json', 'Authorization': 'Bearer $token'},
       body: jsonEncode({'motivo': motivo}),
-    );
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
@@ -198,7 +205,7 @@ class ApiService {
         'Authorization': 'Bearer $token',
       },
       body: jsonEncode(data),
-    );
+    ).timeout(defaultTimeout);
     await _handleResponse(response);
   }
   
@@ -208,7 +215,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$baseUrl/v1/orders/$orderNumber/photos'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     final data = await _handleResponse(response);
     if (data is Map<String, dynamic> && data.containsKey('data')) {
       return data['data'] as List<dynamic>;
@@ -221,7 +228,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$baseUrl/v1/barrios'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     final data = await _handleResponse(response);
     return List<String>.from(data);
   }
@@ -231,7 +238,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$baseUrl/v1/evidence-types'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     final data = await _handleResponse(response);
     return List<String>.from(data);
   }
@@ -245,7 +252,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse(url),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
@@ -254,7 +261,7 @@ class ApiService {
     final response = await http.post(
       Uri.parse('$baseUrl/v1/orders/$orderNumber/claim'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     await _handleResponse(response);
   }
 
@@ -262,20 +269,22 @@ class ApiService {
     final token = await AuthService.instance.getToken();
     final response = await http.get(
       Uri.parse('$baseUrl/v1/rankings'),
-      headers: {'Accept': 'application/json', 'Authorization': 'Bearer \$token'},
-    );
+      headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
-
-
   Future<dynamic> _handleResponse(http.Response response) async {
-    // Parse JSON in a background isolate to prevent UI stutters
-    final body = await compute(_decodeJsonIsolate, response.body);
+    dynamic body;
+    if (response.body.length > 20480) {
+      body = await compute(_decodeJsonIsolate, response.body);
+    } else {
+      body = jsonDecode(response.body);
+    }
     if (response.statusCode >= 200 && response.statusCode < 300) {
       return body;
     } else {
-      throw Exception(body['message'] ?? 'Ocurrió un error');
+      throw Exception(body is Map ? (body['message'] ?? 'Ocurrió un error') : 'Ocurrió un error');
     }
   }
   Future<Map<String, dynamic>> getProfile() async {
@@ -283,7 +292,7 @@ class ApiService {
     final response = await http.get(
       Uri.parse('$baseUrl/v1/profile'),
       headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
-    );
+    ).timeout(defaultTimeout);
     return await _handleResponse(response);
   }
 
@@ -295,10 +304,10 @@ class ApiService {
       ..headers['Accept'] = 'application/json'
       ..files.add(await http.MultipartFile.fromPath('signature', signatureFile.path));
       
-    final response = await request.send();
-    final responseBody = await response.stream.bytesToString();
+    final streamedResponse = await request.send().timeout(const Duration(seconds: 20));
+    final responseBody = await streamedResponse.stream.bytesToString();
     
-    if (response.statusCode >= 200 && response.statusCode < 300) {
+    if (streamedResponse.statusCode >= 200 && streamedResponse.statusCode < 300) {
       return jsonDecode(responseBody);
     } else {
        final body = jsonDecode(responseBody);
@@ -325,7 +334,7 @@ class ApiService {
         if (deviceId != null) 'device_id': deviceId,
         if (deviceModel != null) 'device_model': deviceModel,
       }),
-    );
+    ).timeout(defaultTimeout);
     await _handleResponse(response);
   }
 }

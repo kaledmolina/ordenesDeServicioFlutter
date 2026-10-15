@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import '../models/orden_model.dart';
 import '../services/api_service.dart';
+import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../services/sync_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
@@ -10,22 +11,33 @@ class OrderRepository {
   final ApiService _apiService = ApiService();
   final DatabaseService _dbService = DatabaseService.instance;
 
-  Future<List<Orden>> getOrders({int page = 1, String status = 'todas', String? search, String? barrio}) async {
+  Future<List<Orden>> getOrders({
+    int page = 1,
+    String status = 'todas',
+    String? search,
+    String? barrio,
+  }) async {
     if (await _hasConnection()) {
       try {
-        final response = await _apiService.getOrders(page: page, status: status, search: search, barrio: barrio);
-        print('API Response Data Length: ${(response['data'] as List).length}');
+        final response = await _apiService.getOrders(
+          page: page,
+          status: status,
+          search: search,
+          barrio: barrio,
+        );
         
-        final ordersData = response['data'] as List;
-        await _saveOrdersToLocal(ordersData);
+        final ordersData = (response['data'] as List?) ?? [];
+        final isFilteredSearch = (search != null && search.trim().isNotEmpty) ||
+            (barrio != null && barrio.trim().isNotEmpty);
+            
+        await _saveOrdersToLocal(ordersData, status: status, isFilteredSearch: isFilteredSearch);
         return ordersData.map((json) => Orden.fromJson(json)).toList();
       } catch (e, stack) {
-        print('Error fetching orders from API: $e');
-        print('Stack trace: $stack');
-        return await _getOrdersFromLocal(status: status);
+        debugPrint('Error fetching orders from API: $e. Falling back to local cache.');
+        return await _getOrdersFromLocal(status: status, search: search, barrio: barrio);
       }
     } else {
-      return await _getOrdersFromLocal(status: status);
+      return await _getOrdersFromLocal(status: status, search: search, barrio: barrio);
     }
   }
 
@@ -37,14 +49,54 @@ class OrderRepository {
     return await _apiService.getBarrios();
   }
 
+  /// Obtiene la orden en curso (en proceso o en sitio) de forma ultra rápida:
+  /// primero revisa la base de datos local y, si hay conexión, valida en servidor en paralelo.
+  Future<Orden?> getActiveOrder() async {
+    try {
+      final user = await AuthService.instance.getCurrentUser();
+      final localOrders = await _dbService.getOrdersInProcess(technicianId: user?.id);
+      if (localOrders.isNotEmpty) {
+        return _dbMapToOrden(localOrders.first);
+      }
+
+      if (await _hasConnection()) {
+        final responses = await Future.wait([
+          _apiService.getOrders(status: 'en_proceso', page: 1),
+          _apiService.getOrders(status: 'en_sitio', page: 1),
+        ]).timeout(const Duration(seconds: 5));
+
+        final inProcessData = (responses[0]['data'] as List?) ?? [];
+        final onSiteData = (responses[1]['data'] as List?) ?? [];
+
+        if (inProcessData.isNotEmpty) {
+          await _saveOrdersToLocal(inProcessData, status: 'en_proceso');
+          return Orden.fromJson(inProcessData.first);
+        } else if (onSiteData.isNotEmpty) {
+          await _saveOrdersToLocal(onSiteData, status: 'en_sitio');
+          return Orden.fromJson(onSiteData.first);
+        }
+      }
+    } catch (e) {
+      debugPrint('Error getting active order: $e');
+    }
+    return null;
+  }
+
   Future<bool> hasActiveOrder() async {
     try {
-      final inProcess = await getOrders(status: 'en_proceso');
-      final onSite = await getOrders(status: 'en_sitio');
-      return inProcess.isNotEmpty || onSite.isNotEmpty;
+      final user = await AuthService.instance.getCurrentUser();
+      // Verificación local instantánea (<1ms)
+      final localInProcess = await _dbService.getOrdersInProcess(technicianId: user?.id);
+      if (localInProcess.isNotEmpty) return true;
+
+      if (await _hasConnection()) {
+        final active = await getActiveOrder();
+        return active != null;
+      }
+      return false;
     } catch (e) {
-      print('Error checking active orders: $e');
-      return false; // Fail safe, assume no active order if error (or maybe true to be safe? but false lets user try)
+      debugPrint('Error checking active orders: $e');
+      return false;
     }
   }
 
@@ -131,6 +183,8 @@ class OrderRepository {
       try {
         final order = await _apiService.closeOrder(orderNumber, closingData);
         await _updateLocalOrderStatus(orderNumber, 'ejecutada');
+        // Purgar órdenes ejecutadas locales ya sincronizadas para que no se acumulen
+        await _dbService.purgeSyncedExecutedOrders();
         return order;
       } catch (e) {
         rethrow;
@@ -209,13 +263,36 @@ class OrderRepository {
         connectivityResult.contains(ConnectivityResult.ethernet);
   }
 
-  Future<void> _saveOrdersToLocal(List<dynamic> ordersData) async {
+  Future<void> _saveOrdersToLocal(
+    List<dynamic> ordersData, {
+    String status = 'todas',
+    bool isFilteredSearch = false,
+  }) async {
     try {
       final orders = ordersData.map((json) => _orderJsonToDbMap(json)).toList();
       await _dbService.saveOrders(orders);
+
+      // Reconciliación offline: Si estamos descargando la lista oficial de un estado
+      // (sin filtros de texto/barrio), eliminamos de SQLite cualquier orden vieja que
+      // el servidor ya no tenga asignada, evitando que reaparezcan órdenes ejecutadas
+      if (!isFilteredSearch && status != 'todas') {
+        final user = await AuthService.instance.getCurrentUser();
+        final serverNumbers = orders
+            .map((o) => o['numero_orden']?.toString())
+            .where((n) => n != null && n.isNotEmpty)
+            .cast<String>()
+            .toList();
+
+        await _dbService.reconcileOrdersForStatus(
+          status: status,
+          serverOrderNumbers: serverNumbers,
+          technicianId: user?.id,
+        );
+      }
+
       await _dbService.setLastSyncOrders(DateTime.now().millisecondsSinceEpoch ~/ 1000);
     } catch (e, stack) {
-      debugPrint("CRITICAL: Error saving orders to local SQLite. This may lead to stale data. Error: $e");
+      debugPrint("CRITICAL: Error saving orders to local SQLite. Error: $e");
       debugPrint(stack.toString());
     }
   }
@@ -225,8 +302,18 @@ class OrderRepository {
     await _dbService.saveOrder(orderMap);
   }
 
-  Future<List<Orden>> _getOrdersFromLocal({String? status}) async {
-    final ordersData = await _dbService.getOrders(status: status);
+  Future<List<Orden>> _getOrdersFromLocal({
+    String? status,
+    String? search,
+    String? barrio,
+  }) async {
+    final user = await AuthService.instance.getCurrentUser();
+    final ordersData = await _dbService.getOrders(
+      status: status,
+      search: search,
+      barrio: barrio,
+      technicianId: user?.id,
+    );
     return ordersData.map((map) => _dbMapToOrden(map)).toList();
   }
 
@@ -329,6 +416,8 @@ class OrderRepository {
       'barrio': json['barrio']?.toString() ?? json['cliente']?['barrio']?.toString(),
       'coordenadas': json['coordenadas']?.toString(),
       'prioridad': json['prioridad'] != null ? int.tryParse(json['prioridad'].toString()) ?? 0 : 0,
+      'clasificacion': json['clasificacion']?.toString(),
+      'tipo_servicio': json['tipo_servicio']?.toString() ?? json['cliente']?['tipo_servicio']?.toString(),
     };
   }
 
@@ -382,6 +471,8 @@ class OrderRepository {
       'barrio': order.barrio,
       'coordenadas': order.coordenadas,
       'prioridad': order.prioridad ?? 0,
+      'clasificacion': order.clasificacion,
+      'tipo_servicio': order.tipoServicio,
     };
   }
 
@@ -399,7 +490,6 @@ class OrderRepository {
       fechaProgramada: map['fecha_programada'] != null
           ? DateTime.tryParse(map['fecha_programada'].toString())?.toLocal()
           : null,
-      // status: REMOVED
       fechaLlegada: map['fecha_llegada'] != null ? DateTime.tryParse(map['fecha_llegada'].toString())?.toLocal() : null,
       solucionTecnico: map['solucion_tecnico']?.toString(),
       macRouter: map['mac_router']?.toString(),
@@ -417,7 +507,7 @@ class OrderRepository {
       tipoFuncion: map['tipo_funcion']?.toString(),
       fechaTrn: map['fecha_trn'] != null ? DateTime.tryParse(map['fecha_trn'].toString())?.toLocal() : null,
       fechaVencimiento: map['fecha_vencimiento'] != null ? DateTime.tryParse(map['fecha_vencimiento'].toString())?.toLocal() : null,
-      estadoOrden: map['estado_orden']?.toString() ?? map['status']?.toString(), // Map local status to estadoOrden
+      estadoOrden: map['estado_orden']?.toString() ?? map['status']?.toString(),
       tipo: map['tipo']?.toString(),
       estadoInterno: map['estado_interno']?.toString(),
       direccionAsociado: map['direccion_asociado']?.toString(),
@@ -438,6 +528,8 @@ class OrderRepository {
       barrio: map['barrio']?.toString(),
       coordenadas: map['coordenadas']?.toString(),
       prioridad: map['prioridad'] != null ? int.tryParse(map['prioridad'].toString()) ?? 0 : 0,
+      clasificacion: map['clasificacion']?.toString(),
+      tipoServicio: map['tipo_servicio']?.toString(),
     );
   }
 }

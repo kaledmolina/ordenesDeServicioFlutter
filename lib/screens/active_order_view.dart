@@ -68,43 +68,43 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
     });
 
     try {
-      // Check for orders in 'en_proceso' or 'en_sitio'
-      final inProcess = await _orderRepo.getOrders(status: 'en_proceso');
-      final onSite = await _orderRepo.getOrders(status: 'en_sitio');
-
-      if (inProcess.isNotEmpty) {
-        _activeOrder = inProcess.first;
-      } else if (onSite.isNotEmpty) {
-        _activeOrder = onSite.first;
-      } else {
-        _activeOrder = null;
-        
-        // Find Suggestion: Assigned or Pending
-        final assigned = await _orderRepo.getOrders(status: 'asignada');
-        final pending = await _orderRepo.getOrders(status: 'pendiente');
-        final allPotential = [...assigned, ...pending];
-
-        if (allPotential.isNotEmpty) {
-          final now = DateTime.now();
-          // Sort by priority points first, then critical (>48h) then by oldest
-          allPotential.sort((a, b) {
-            final aPuntos = a.prioridad ?? 0;
-            final bPuntos = b.prioridad ?? 0;
-            if (aPuntos != bPuntos) return bPuntos.compareTo(aPuntos);
-
-            final aDuration = now.difference(a.fechaHora).inHours;
-            final bDuration = now.difference(b.fechaHora).inHours;
-            final aIsCritical = aDuration >= 48;
-            final bIsCritical = bDuration >= 48;
-
-            if (aIsCritical && !bIsCritical) return -1;
-            if (!aIsCritical && bIsCritical) return 1;
-            return a.fechaHora.compareTo(b.fechaHora); // Oldest first
-          });
-          _suggestedOrder = allPotential.first;
-        } else {
+      final active = await _orderRepo.getActiveOrder();
+      if (active != null) {
+        if (mounted) {
+          setState(() {
+            _activeOrder = active;
             _suggestedOrder = null;
+            _isLoading = false;
+          });
         }
+        return;
+      }
+
+      _activeOrder = null;
+
+      // Sugerencia: Buscar orden prioritaria de las asignadas
+      final assigned = await _orderRepo.getOrders(status: 'asignada');
+      final allPotential = List<Orden>.from(assigned);
+
+      if (allPotential.isNotEmpty) {
+        final now = DateTime.now();
+        allPotential.sort((a, b) {
+          final aPuntos = a.prioridad ?? 0;
+          final bPuntos = b.prioridad ?? 0;
+          if (aPuntos != bPuntos) return bPuntos.compareTo(aPuntos);
+
+          final aDuration = now.difference(a.fechaHora).inHours;
+          final bDuration = now.difference(b.fechaHora).inHours;
+          final aIsCritical = aDuration >= 48;
+          final bIsCritical = bDuration >= 48;
+
+          if (aIsCritical && !bIsCritical) return -1;
+          if (!aIsCritical && bIsCritical) return 1;
+          return a.fechaHora.compareTo(b.fechaHora); // Oldest first
+        });
+        _suggestedOrder = allPotential.first;
+      } else {
+        _suggestedOrder = null;
       }
     } catch (e) {
       _error = e.toString();

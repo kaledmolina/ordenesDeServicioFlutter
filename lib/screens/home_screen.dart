@@ -107,63 +107,80 @@ class _HomeScreenState extends State<HomeScreen> {
     super.dispose();
   }
 
-  Future<void> _fetchOrders({bool isRefresh = false}) async {
-    if (_isLoading && !isRefresh) return;
-    setState(() => _isLoading = true);
+  List<Orden> _processAndSortOrders(List<Orden> orders) {
+    final now = DateTime.now();
+    const activeStatuses = ['asignada', 'en_proceso', 'en_sitio', 'pendiente', 'reasignar', 'reprogramada'];
 
-    try {
-      final orders = await _orderRepo.getOrders(page: 1, status: _currentStatusFilter, search: _searchQuery, barrio: _selectedBarrio);
-      // Custom Sorting Logic
-      final now = DateTime.now();
-      final activeStatuses = ['asignada', 'en_proceso', 'en_sitio', 'pendiente', 'reasignar', 'reprogramada'];
-      
-      final activeOrders = <Orden>[];
-      final inactiveOrders = <Orden>[];
+    final activeOrders = <Orden>[];
+    final inactiveOrders = <Orden>[];
 
-      for (var order in orders) {
-        if (activeStatuses.contains(order.status.toLowerCase())) {
-          activeOrders.add(order);
-        } else {
-          inactiveOrders.add(order);
-        }
+    for (var order in orders) {
+      if (activeStatuses.contains(order.status.toLowerCase())) {
+        activeOrders.add(order);
+      } else {
+        inactiveOrders.add(order);
+      }
+    }
+
+    // Precalcular horas transcurridas una sola vez por orden (O(N)) para evitar lag en el hilo UI
+    final elapsedMap = <String, int>{};
+    for (var order in activeOrders) {
+      elapsedMap[order.numeroOrden] = BusinessHours.getElapsedHours(order.fechaHora, now);
+    }
+
+    // Sort Active Orders
+    activeOrders.sort((a, b) {
+      // 1. Prioridad numérica
+      final aPrioridad = a.prioridad ?? 0;
+      final bPrioridad = b.prioridad ?? 0;
+      if (aPrioridad != bPrioridad) {
+        return bPrioridad.compareTo(aPrioridad);
       }
 
+      // 2. Criticidad (> 48 horas hábiles)
+      final aElapsed = elapsedMap[a.numeroOrden] ?? 0;
+      final bElapsed = elapsedMap[b.numeroOrden] ?? 0;
+      final aIsCritical = aElapsed >= 48;
+      final bIsCritical = bElapsed >= 48;
 
+      if (aIsCritical && !bIsCritical) return -1;
+      if (!aIsCritical && bIsCritical) return 1;
 
-      // Sort Active Orders
-      activeOrders.sort((a, b) {
-        // 1. Priority Points Check (Highest priority points first)
-        final aPrioridad = a.prioridad ?? 0;
-        final bPrioridad = b.prioridad ?? 0;
-        if (aPrioridad != bPrioridad) {
-          return bPrioridad.compareTo(aPrioridad);
-        }
+      // 3. Más antigua primero
+      return a.fechaHora.compareTo(b.fechaHora);
+    });
 
-        // 2. Criticality Check ( > 48 Business hours old)
-        final aElapsed = BusinessHours.getElapsedHours(a.fechaHora, now);
-        final bElapsed = BusinessHours.getElapsedHours(b.fechaHora, now);
-        
-        final aIsCritical = aElapsed >= 48;
-        final bIsCritical = bElapsed >= 48;
+    // Sort Inactive Orders (más reciente primero)
+    inactiveOrders.sort((a, b) => b.fechaHora.compareTo(a.fechaHora));
 
-        if (aIsCritical && !bIsCritical) return -1; // a comes first
-        if (!aIsCritical && bIsCritical) return 1;  // b comes first
+    return [...activeOrders, ...inactiveOrders];
+  }
 
-        // 3. Oldest first
-        return a.fechaHora.compareTo(b.fechaHora);
-      });
+  Future<void> _fetchOrders({bool isRefresh = false}) async {
+    if (_isLoading && !isRefresh) return;
+    
+    // Solo mostrar skeleton si la lista actual está vacía
+    if (_orders.isEmpty) {
+      setState(() => _isLoading = true);
+    }
 
-      // Sort Inactive Orders (Newest first)
-      inactiveOrders.sort((a, b) => b.fechaHora.compareTo(a.fechaHora));
+    try {
+      final orders = await _orderRepo.getOrders(
+        page: 1,
+        status: _currentStatusFilter,
+        search: _searchQuery,
+        barrio: _selectedBarrio,
+      );
+
+      final sorted = _processAndSortOrders(orders);
 
       if (mounted) {
         setState(() {
-          _orders = [...activeOrders, ...inactiveOrders];
+          _orders = sorted;
         });
-        
-        // Update pending count if refreshing or initial load
+
         if (isRefresh) {
-           _fetchPendingCount();
+          _fetchPendingCount();
         }
       }
     } catch (e) {
@@ -418,7 +435,7 @@ class _HomeScreenState extends State<HomeScreen> {
                TextField(
                 onChanged: (value) {
                   if (_debounce?.isActive ?? false) _debounce!.cancel();
-                  _debounce = Timer(const Duration(milliseconds: 500), () {
+                  _debounce = Timer(const Duration(milliseconds: 300), () {
                     setState(() => _searchQuery = value);
                     _fetchOrders(isRefresh: true);
                   });
@@ -496,9 +513,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         separatorBuilder: (_, __) => const SizedBox(height: 16),
                         itemBuilder: (context, index) {
                           final order = _orders[index];
-                          return _buildModernOrderCard(order)
-                              .animate(delay: (50 * index).clamp(0, 300).ms)
-                              .fadeIn().slideX();
+                          return KeyedSubtree(
+                            key: ValueKey(order.numeroOrden),
+                            child: _buildModernOrderCard(order),
+                          );
                         },
                       ),
                     ),

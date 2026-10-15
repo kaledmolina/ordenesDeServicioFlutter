@@ -124,6 +124,8 @@ class SyncService {
       }
 
       await UploadService.instance.syncPendingUploads();
+      // Purgar órdenes ejecutadas locales que ya han sido sincronizadas
+      await dbService.purgeSyncedExecutedOrders();
     } finally {
       _isSyncing = false;
       _updatePendingCount(); // Final count update

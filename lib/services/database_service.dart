@@ -5,7 +5,7 @@ import 'package:path/path.dart';
 class DatabaseService {
   static final DatabaseService instance = DatabaseService._init();
   static Database? _database;
-  static const int _databaseVersion = 11;
+  static const int _databaseVersion = 12;
 
   DatabaseService._init();
 
@@ -40,11 +40,6 @@ class DatabaseService {
         last_error TEXT
       )
     ''');
-// ... (rest of _createDB omitted for brevity in tool call, but context needs it to be valid)
-// WAIT, I cannot replace the whole file or large chunks easily if I don't include enough context or if it's too big.
-// I should split this into multiple replacement chunks using multi_replace_file_content or do sequential replaces.
-// Since I can't use multi_replace yet (or rather, I should use replace_file_content for single blocks), I'll do sequential.
-
 
     // Tabla orders
     await db.execute('''
@@ -98,7 +93,9 @@ class DatabaseService {
         codigo_contrato TEXT,
         barrio TEXT,
         coordenadas TEXT,
-        prioridad INTEGER DEFAULT 0
+        prioridad INTEGER DEFAULT 0,
+        clasificacion TEXT,
+        tipo_servicio TEXT
       )
     ''');
 
@@ -281,10 +278,14 @@ class DatabaseService {
     try { await db.execute('ALTER TABLE orders ADD COLUMN telefono_facturacion TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN coordenadas TEXT'); } catch (_) {}
     try { await db.execute('ALTER TABLE orders ADD COLUMN prioridad INTEGER DEFAULT 0'); } catch (_) {}
+    try { await db.execute('ALTER TABLE orders ADD COLUMN clasificacion TEXT'); } catch (_) {}
+    try { await db.execute('ALTER TABLE orders ADD COLUMN tipo_servicio TEXT'); } catch (_) {}
 
+    try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_status ON orders(status)'); } catch (_) {}
     try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_estado ON orders(estado_orden)'); } catch (_) {}
     try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_technician ON orders(technician_id)'); } catch (_) {}
     try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_numero ON orders(numero_orden)'); } catch (_) {}
+    try { await db.execute('CREATE INDEX IF NOT EXISTS idx_orders_barrio ON orders(barrio)'); } catch (_) {}
     try { await db.execute('CREATE INDEX IF NOT EXISTS idx_pending_photos_status ON pending_photos(sync_status)'); } catch (_) {}
   }
 
@@ -339,29 +340,41 @@ class DatabaseService {
   }
 
   Future<void> saveOrders(List<Map<String, dynamic>> orders) async {
+    if (orders.isEmpty) return;
     final db = await database;
+
+    final numbers = orders
+        .map((o) => o['numero_orden']?.toString())
+        .where((n) => n != null && n.isNotEmpty)
+        .cast<String>()
+        .toSet()
+        .toList();
+
+    if (numbers.isEmpty) return;
+
+    // Obtener todas las órdenes existentes en una sola consulta ultra rápida
+    final placeholders = List.filled(numbers.length, '?').join(',');
+    final existingRows = await db.query(
+      'orders',
+      where: 'numero_orden IN ($placeholders)',
+      whereArgs: numbers,
+    );
+
+    final existingMap = {
+      for (var row in existingRows) row['numero_orden'].toString(): Map<String, dynamic>.from(row)
+    };
+
     final batch = db.batch();
-    
     for (var order in orders) {
       final number = order['numero_orden']?.toString();
       if (number == null) continue;
 
-      // Intentar obtener la orden existente para hacer un merge
-      final existing = await db.query(
-        'orders',
-        where: 'numero_orden = ?',
-        whereArgs: [number],
-      );
-
-      if (existing.isNotEmpty) {
-        final existingMap = Map<String, dynamic>.from(existing.first);
+      final existing = existingMap[number];
+      if (existing != null) {
         final newMap = Map<String, dynamic>.from(order);
-        
-        // Solo actualizar campos que tengan valor en el nuevo mapa
-        // y preservar los que ya existen si el nuevo es null
         newMap.forEach((key, value) {
-          if (value == null && existingMap[key] != null) {
-            newMap[key] = existingMap[key];
+          if (value == null && existing[key] != null) {
+            newMap[key] = existing[key];
           }
         });
 
@@ -382,26 +395,171 @@ class DatabaseService {
     await batch.commit(noResult: true);
   }
 
-  Future<List<Map<String, dynamic>>> getOrders({String? status}) async {
+  /// Reconcilia las órdenes de un estado específico con la lista devuelta por el servidor.
+  /// Cualquier orden local en este estado que NO esté en [serverOrderNumbers]
+  /// y NO tenga operaciones pendientes offline será eliminada de SQLite.
+  Future<void> reconcileOrdersForStatus({
+    required String status,
+    required List<String> serverOrderNumbers,
+    int? technicianId,
+  }) async {
     final db = await database;
-    if (status != null && status != 'todas') {
-      return await db.query(
-        'orders',
-        where: 'status = ?',
-        whereArgs: [status],
-        orderBy: 'fecha_hora DESC',
-      );
+
+    // Proteger órdenes con operaciones o fotos pendientes de subir
+    final pendingOps = await db.query('pending_operations', columns: ['order_number']);
+    final pendingPhotos = await db.query('pending_photos', columns: ['order_number']);
+
+    final protectedNumbers = <String>{
+      ...pendingOps.map((r) => r['order_number'].toString()),
+      ...pendingPhotos.map((r) => r['order_number'].toString()),
+    };
+
+    final serverSet = serverOrderNumbers.toSet();
+
+    final whereClauses = <String>[];
+    final whereArgs = <dynamic>[];
+
+    final s = status.toLowerCase().trim();
+    if (s == 'especiales') {
+      whereClauses.add("(LOWER(status) IN ('reasignar', 'reprogramada') OR LOWER(estado_orden) IN ('reasignar', 'reprogramada'))");
+    } else if (s != 'todas' && s.isNotEmpty) {
+      whereClauses.add("(LOWER(status) = ? OR LOWER(estado_orden) = ?)");
+      whereArgs.addAll([s, s]);
     }
-    return await db.query('orders', orderBy: 'fecha_hora DESC');
+
+    if (technicianId != null) {
+      whereClauses.add("(technician_id = ? OR technician_id IS NULL)");
+      whereArgs.add(technicianId);
+    }
+
+    final localRows = await db.query(
+      'orders',
+      columns: ['numero_orden'],
+      where: whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null,
+      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+    );
+
+    final toRemove = <String>[];
+    for (var row in localRows) {
+      final num = row['numero_orden']?.toString();
+      if (num != null && !serverSet.contains(num) && !protectedNumbers.contains(num)) {
+        toRemove.add(num);
+      }
+    }
+
+    if (toRemove.isNotEmpty) {
+      final batch = db.batch();
+      for (var num in toRemove) {
+        batch.delete('orders', where: 'numero_orden = ?', whereArgs: [num]);
+      }
+      await batch.commit(noResult: true);
+    }
   }
 
-  Future<List<Map<String, dynamic>>> getOrdersInProcess() async {
+  /// Elimina órdenes ejecutadas o cerradas locales que ya no tienen operaciones pendientes
+  Future<void> purgeSyncedExecutedOrders() async {
     final db = await database;
+
+    final pendingOps = await db.query('pending_operations', columns: ['order_number']);
+    final pendingPhotos = await db.query('pending_photos', columns: ['order_number']);
+
+    final protectedNumbers = <String>{
+      ...pendingOps.map((r) => r['order_number'].toString()),
+      ...pendingPhotos.map((r) => r['order_number'].toString()),
+    };
+
+    final executedRows = await db.query(
+      'orders',
+      columns: ['numero_orden'],
+      where: "LOWER(status) IN ('ejecutada', 'cerrada', 'anulada') OR LOWER(estado_orden) IN ('ejecutada', 'cerrada', 'anulada')",
+    );
+
+    final toDelete = <String>[];
+    for (var row in executedRows) {
+      final num = row['numero_orden']?.toString();
+      if (num != null && !protectedNumbers.contains(num)) {
+        toDelete.add(num);
+      }
+    }
+
+    if (toDelete.isNotEmpty) {
+      final batch = db.batch();
+      for (var num in toDelete) {
+        batch.delete('orders', where: 'numero_orden = ?', whereArgs: [num]);
+      }
+      await batch.commit(noResult: true);
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getOrders({
+    String? status,
+    String? search,
+    String? barrio,
+    int? technicianId,
+  }) async {
+    final db = await database;
+    final whereClauses = <String>[];
+    final whereArgs = <dynamic>[];
+
+    // 1. Filtro de Estado
+    if (status != null && status != 'todas' && status.isNotEmpty) {
+      final s = status.toLowerCase().trim();
+      if (s == 'especiales') {
+        whereClauses.add("(LOWER(status) IN ('reasignar', 'reprogramada') OR LOWER(estado_orden) IN ('reasignar', 'reprogramada'))");
+      } else {
+        whereClauses.add("(LOWER(status) = ? OR LOWER(estado_orden) = ?)");
+        whereArgs.addAll([s, s]);
+      }
+    }
+
+    // 2. Filtro de Búsqueda Offline
+    if (search != null && search.trim().isNotEmpty) {
+      final term = '%${search.trim()}%';
+      whereClauses.add(
+        "(numero_orden LIKE ? OR nombre_cliente LIKE ? OR direccion LIKE ? OR cedula LIKE ? OR telefono LIKE ? OR codigo_contrato LIKE ?)"
+      );
+      whereArgs.addAll([term, term, term, term, term, term]);
+    }
+
+    // 3. Filtro de Barrio Offline
+    if (barrio != null && barrio.trim().isNotEmpty) {
+      whereClauses.add("barrio LIKE ?");
+      whereArgs.add('%${barrio.trim()}%');
+    }
+
+    // 4. Técnico asignado
+    if (technicianId != null) {
+      whereClauses.add("(technician_id = ? OR technician_id IS NULL)");
+      whereArgs.add(technicianId);
+    }
+
+    final whereString = whereClauses.isNotEmpty ? whereClauses.join(' AND ') : null;
+
     return await db.query(
       'orders',
-      where: 'status = ?',
-      whereArgs: ['en proceso'],
-      orderBy: 'fecha_hora DESC',
+      where: whereString,
+      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'prioridad DESC, fecha_hora DESC',
+    );
+  }
+
+  Future<List<Map<String, dynamic>>> getOrdersInProcess({int? technicianId}) async {
+    final db = await database;
+    final whereClauses = <String>[
+      "(LOWER(status) IN ('en_proceso', 'en_sitio', 'en proceso', 'en sitio') OR LOWER(estado_orden) IN ('en_proceso', 'en_sitio', 'en proceso', 'en sitio'))"
+    ];
+    final whereArgs = <dynamic>[];
+
+    if (technicianId != null) {
+      whereClauses.add("(technician_id = ? OR technician_id IS NULL)");
+      whereArgs.add(technicianId);
+    }
+
+    return await db.query(
+      'orders',
+      where: whereClauses.join(' AND '),
+      whereArgs: whereArgs.isNotEmpty ? whereArgs : null,
+      orderBy: 'prioridad DESC, fecha_hora DESC',
     );
   }
 
