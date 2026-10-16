@@ -303,10 +303,10 @@ class _ActiveOrderViewState extends State<ActiveOrderView> {
                                        Text(order.direccion ?? 'Sin Dirección', style: TextStyle(color: Colors.grey[800], fontSize: 13, fontWeight: FontWeight.w500), maxLines: 2, overflow: TextOverflow.ellipsis),
                                         if (order.barrioDisplay != null && order.barrioDisplay!.isNotEmpty)
                                           Text(order.barrioDisplay!, style: TextStyle(color: const Color(0xFF10447E), fontSize: 12, fontWeight: FontWeight.bold)),
-                                       if (order.coordenadas != null && order.coordenadas!.trim().isNotEmpty) ...[
+                                       if (order.mapQuery != null && order.mapQuery!.isNotEmpty) ...[
                                          const SizedBox(height: 6),
                                          InkWell(
-                                           onTap: () => _openGoogleMaps(order.coordenadas!),
+                                           onTap: () => _openGoogleMaps(order.mapQuery!),
                                            borderRadius: BorderRadius.circular(8),
                                            child: Container(
                                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

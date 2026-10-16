@@ -79,6 +79,22 @@ class Orden {
   // Status alias for UI compatibility (maps to estadoOrden)
   String get status => estadoOrden?.toLowerCase() ?? 'pendiente';
 
+  // Target query for Google Maps (coordinates if available, otherwise address + barrio)
+  String? get mapQuery {
+    if (coordenadas != null && coordenadas!.trim().isNotEmpty) {
+      return coordenadas!.trim();
+    }
+    final dir = direccion?.trim();
+    final bar = barrioDisplay?.trim();
+    if (dir != null && dir.isNotEmpty && dir.toLowerCase() != 'sin dirección') {
+      if (bar != null && bar.isNotEmpty) {
+        return '$dir, $bar';
+      }
+      return dir;
+    }
+    return null;
+  }
+
   // Service Type: Basado en los 3 tipos de servicios (Internet, TV, Automonitoreo)
   // y en los lineamientos oficiales de planes de la empresa:
   // 1. COMBO_AUTOMONITOREO (Internet + TV + Automonitoreo / 3 Servicios)
