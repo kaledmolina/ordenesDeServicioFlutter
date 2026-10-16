@@ -10,7 +10,7 @@ import '../models/user_model.dart';
 dynamic _decodeJsonIsolate(String source) => jsonDecode(source);
 
 class ApiService {
-  static const String _baseUrlDomain = 'http://127.0.0.1:8000';
+  static const String _baseUrlDomain = 'https://ordenes.intalnet.com';
   static const String baseUrl = '$_baseUrlDomain/api';
   static const String domain = _baseUrlDomain;
   static const Duration defaultTimeout = Duration(seconds: 10);
