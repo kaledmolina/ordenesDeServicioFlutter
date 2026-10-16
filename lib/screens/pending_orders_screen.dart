@@ -295,10 +295,10 @@ class _PendingOrdersScreenState extends State<PendingOrdersScreen> {
                   const SizedBox(height: 4),
                   if (order.barrioDisplay != null && order.barrioDisplay!.isNotEmpty)
                     _buildInfoRow(Icons.map, order.barrioDisplay!, iconColor: const Color(0xFF10447E), textColor: const Color(0xFF10447E), fontWeight: FontWeight.bold),
-                  if (order.coordenadas != null && order.coordenadas!.trim().isNotEmpty) ...[
+                  if (order.mapQuery != null && order.mapQuery!.isNotEmpty) ...[
                     const SizedBox(height: 6),
                     InkWell(
-                      onTap: () => _openGoogleMaps(order.coordenadas!),
+                      onTap: () => _openGoogleMaps(order.mapQuery!),
                       borderRadius: BorderRadius.circular(8),
                       child: Container(
                         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

@@ -846,9 +846,15 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
             if (orden.prioridad != null && orden.prioridad! > 0)
               _buildDetailRow('Prioridad Asignada', '🔥 ${orden.prioridad} Puntos de Prioridad'),
             if (orden.cedula != null) _buildDetailRow('Cédula', orden.cedula, isCopyable: true),
-            _buildDetailRow('Dirección', orden.direccion, icon: Icons.home),
+            _buildDetailRow(
+              'Dirección', 
+              orden.direccion, 
+              icon: Icons.home,
+              isMap: orden.mapQuery != null && orden.mapQuery!.isNotEmpty,
+              mapQuery: orden.mapQuery,
+            ),
             if (orden.coordenadas != null && orden.coordenadas!.trim().isNotEmpty)
-              _buildDetailRow('Coordenadas (GPS)', orden.coordenadas, icon: Icons.map, isMap: true),
+              _buildDetailRow('Coordenadas (GPS)', orden.coordenadas, icon: Icons.map, isMap: true, mapQuery: orden.coordenadas),
             if (orden.barrioDisplay != null) _buildDetailRow('Barrio', orden.barrioDisplay!),
             _buildDetailRow('Celular Principal', orden.telefono ?? 'N/A', icon: Icons.phone, isPhone: orden.telefono != null),
             _buildDetailRow('Teléfono Facturación', orden.telefonoFacturacion?.isNotEmpty == true ? orden.telefonoFacturacion : 'N/A', icon: Icons.receipt, isPhone: orden.telefonoFacturacion?.isNotEmpty == true),
@@ -914,6 +920,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
     bool isPhone = false,
     bool isCopyable = false,
     bool isMap = false,
+    String? mapQuery,
     bool isHighlight = false,
     Color? highlightColor,
   }) {
@@ -940,7 +947,7 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
                       ),
                       const SizedBox(width: 8),
                       InkWell(
-                        onTap: () => _openGoogleMaps(value),
+                        onTap: () => _openGoogleMaps(mapQuery ?? value),
                         borderRadius: BorderRadius.circular(8),
                         child: Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
