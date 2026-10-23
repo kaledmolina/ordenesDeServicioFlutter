@@ -20,6 +20,7 @@ import 'signature_screen.dart';
 import '../widgets/processing_overlay.dart';
 import '../widgets/service_type_badge.dart';
 import '../services/auth_service.dart';
+import '../services/daily_auxiliary_service.dart';
 
 class OrderDetailScreen extends StatefulWidget {
   final String orderNumber;
@@ -112,6 +113,19 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
 
   // --- ACTIONS ---
   Future<void> _takeOrder() async {
+    // 1. Validar que el técnico defina su auxiliar para la jornada de hoy (o marque trabajo solo)
+    final hasDailyAuxSet = await DailyAuxiliaryService.instance.ensureDailyAuxiliarySet(
+      context,
+      orderNumber: widget.orderNumber,
+      canDismissWithoutChoice: false,
+    );
+    if (!hasDailyAuxSet) {
+      if (mounted) {
+        _msg('Debes seleccionar tu auxiliar de hoy (o elegir "Trabajo solo") para iniciar tu jornada.', Colors.orange);
+      }
+      return;
+    }
+
     setState(() {
        _isLoading = true;
        _loadingMessage = 'Iniciando ruta...';
@@ -685,6 +699,12 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
           width: double.infinity,
           child: ElevatedButton.icon(
             onPressed: () async {
+              await DailyAuxiliaryService.instance.ensureDailyAuxiliarySet(
+                context,
+                orderNumber: widget.orderNumber,
+                canDismissWithoutChoice: true,
+              );
+              if (!mounted) return;
               final result = await Navigator.of(context).push(
                 MaterialPageRoute(builder: (_) => ManageOrderScreen(orden: orden)),
               );

@@ -29,6 +29,7 @@ import '../widgets/app_background.dart';
 import '../widgets/processing_overlay.dart';
 import 'photo_view_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../services/daily_auxiliary_service.dart';
 
 class ManageOrderScreen extends StatefulWidget {
   final Orden orden;
@@ -118,6 +119,12 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   Key _signatureKey = UniqueKey();
   File? _savedSubscriberSignatureFile;
 
+  // Auxiliary Technician
+  int? _selectedAuxiliaryTechId;
+  String? _selectedAuxiliaryTechName;
+  List<Map<String, dynamic>> _auxiliaryTechnicians = [];
+  bool _isLoadingAuxTechs = false;
+
   // Articles
   List<Map<String, dynamic>> _articles = [];
   final List<String> _predefinedArticles = [
@@ -138,6 +145,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     super.initState();
     _celularController = TextEditingController(text: widget.orden.celular);
     _obsOrigenController = TextEditingController(text: widget.orden.observaciones);
+    _selectedAuxiliaryTechId = widget.orden.tecnicoAuxiliarId;
     final String tipo = widget.orden.tipoOrden ?? '';
     if (tipo.contains('033') || tipo.toUpperCase().contains('RECONEXION')) {
       _selectedSolution = '50 RECONEXION';
@@ -182,6 +190,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
        await _loadPhotos();
        await _loadDraft();
        await _loadSubscriberSignature();
+       await _setupDailyAuxiliary();
        await _initialize();
     });
     _startDeadlineTimer();
@@ -235,6 +244,8 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         'vlan_instalado': _vlanInstaladoController.text,
         'otros_instalados': _otrosEquiposInstaladosController.text,
         'articles': _articles,
+        'tecnico_auxiliar_id': _selectedAuxiliaryTechId,
+        'tecnico_auxiliar_name': _selectedAuxiliaryTechName,
       };
       await prefs.setString('$_draftKeyPrefix${widget.orden.numeroOrden}', jsonEncode(draftData));
     } catch(e) {
@@ -268,6 +279,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
              
             if (data['articles'] != null) {
               _articles = List<Map<String, dynamic>>.from(data['articles']);
+            }
+            if (data['tecnico_auxiliar_id'] != null) {
+              _selectedAuxiliaryTechId = int.tryParse(data['tecnico_auxiliar_id'].toString());
+              _selectedAuxiliaryTechName = data['tecnico_auxiliar_name'];
             }
           });
           ScaffoldMessenger.of(context).showSnackBar(
@@ -519,6 +534,74 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
       }
     } catch (e) {
       debugPrint('Error fetching evidence types, using defaults: $e');
+    }
+  }
+
+  Future<void> _setupDailyAuxiliary() async {
+    setState(() => _isLoadingAuxTechs = true);
+    try {
+      final techs = await DailyAuxiliaryService.instance.fetchTechnicians(
+        orderNumber: widget.orden.numeroOrden,
+      );
+      _auxiliaryTechnicians = techs;
+
+      // Si aún no hay auxiliar asignado a esta orden ni en borrador, cargar el del día
+      if (_selectedAuxiliaryTechId == null) {
+        final dailyAux = await DailyAuxiliaryService.instance.getDailyAuxiliary();
+        if (dailyAux != null && mounted) {
+          setState(() {
+            _selectedAuxiliaryTechId = dailyAux['id'];
+            _selectedAuxiliaryTechName = dailyAux['name'];
+          });
+        } else if (!await DailyAuxiliaryService.instance.isSetForToday() && mounted) {
+          // Si es la primera orden del día y no lo ha definido aún, solicitarlo
+          final choice = await DailyAuxiliaryService.instance.showDailyAuxiliaryPicker(
+            context,
+            orderNumber: widget.orden.numeroOrden,
+            canDismissWithoutChoice: true,
+          );
+          if (choice != null && mounted) {
+            setState(() {
+              _selectedAuxiliaryTechId = choice['id'];
+              _selectedAuxiliaryTechName = choice['name'];
+            });
+            _saveDraft();
+          }
+        }
+      }
+
+      // Si tenemos id pero no nombre, resolver nombre de la lista
+      if (_selectedAuxiliaryTechId != null && (_selectedAuxiliaryTechName == null || _selectedAuxiliaryTechName!.isEmpty)) {
+        final match = _auxiliaryTechnicians.firstWhere(
+          (t) => t['id'] == _selectedAuxiliaryTechId,
+          orElse: () => {},
+        );
+        if (match.isNotEmpty && mounted) {
+          setState(() {
+            _selectedAuxiliaryTechName = match['name'];
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error configurando auxiliar del día: $e');
+    } finally {
+      if (mounted) setState(() => _isLoadingAuxTechs = false);
+    }
+  }
+
+  Future<void> _showAuxiliaryTechnicianModal() async {
+    final choice = await DailyAuxiliaryService.instance.showDailyAuxiliaryPicker(
+      context,
+      orderNumber: widget.orden.numeroOrden,
+      currentAuxiliaryId: _selectedAuxiliaryTechId,
+      canDismissWithoutChoice: true,
+    );
+    if (choice != null && mounted) {
+      setState(() {
+        _selectedAuxiliaryTechId = choice['id'];
+        _selectedAuxiliaryTechName = choice['name'];
+      });
+      _saveDraft();
     }
   }
   
@@ -1037,6 +1120,7 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
         'celular': _celularController.text,
         'observaciones': _obsOrigenController.text,
         'solucion_tecnico': solutionToSend,
+        'tecnico_auxiliar_id': _selectedAuxiliaryTechId,
         'mac_router': _macRouterController.text,
         'mac_bridge': _macBridgeController.text,
         'mac_ont': _macBridgeController.text.isNotEmpty ? _macBridgeController.text : _macOntController.text,
@@ -1326,6 +1410,34 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                      _buildSubscriberSignatureArea(),
                   ]),
                  _buildCard('Cierre', Icons.check_circle, [
+                   ListTile(
+                     title: const Text('Técnico Auxiliar del Día'),
+                     subtitle: Text(
+                       _selectedAuxiliaryTechName ??
+                           (_selectedAuxiliaryTechId != null
+                               ? 'Técnico #$_selectedAuxiliaryTechId'
+                               : 'Sin auxiliar hoy (Trabajo solo)'),
+                       style: TextStyle(
+                         color: _selectedAuxiliaryTechId != null
+                             ? const Color(0xFF10447E)
+                             : Colors.grey.shade700,
+                         fontWeight: _selectedAuxiliaryTechId != null
+                             ? FontWeight.bold
+                             : FontWeight.normal,
+                       ),
+                     ),
+                     leading: Icon(
+                       _selectedAuxiliaryTechId != null ? Icons.group : Icons.person_outline,
+                       color: const Color(0xFF10447E),
+                     ),
+                     trailing: TextButton.icon(
+                       icon: const Icon(Icons.edit, size: 16),
+                       label: const Text('Cambiar'),
+                       onPressed: _showAuxiliaryTechnicianModal,
+                     ),
+                     contentPadding: EdgeInsets.zero,
+                   ),
+                   const Divider(),
                    Builder(builder: (context) {
                      bool isRetiro = widget.orden.tipoOrden != null && (widget.orden.tipoOrden!.contains('002') || widget.orden.tipoOrden!.toLowerCase().contains('retiro'));
                      return ListTile(

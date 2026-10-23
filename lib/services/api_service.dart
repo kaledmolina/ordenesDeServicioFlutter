@@ -243,6 +243,27 @@ class ApiService {
     return List<String>.from(data);
   }
 
+  Future<List<Map<String, dynamic>>> getAuxiliaryTechnicians([String? orderNumber]) async {
+    try {
+      final token = await AuthService.instance.getToken();
+      final url = (orderNumber != null && orderNumber.isNotEmpty)
+          ? '$baseUrl/v1/orders/$orderNumber/auxiliary-technicians'
+          : '$baseUrl/v1/auxiliary-technicians';
+      final response = await http.get(
+        Uri.parse(url),
+        headers: {'Accept': 'application/json', 'Authorization': 'Bearer $token'},
+      ).timeout(defaultTimeout);
+      final data = await _handleResponse(response);
+      if (data is List) {
+        return data.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      }
+      return [];
+    } catch (e) {
+      debugPrint('Error obteniendo técnicos auxiliares: $e');
+      return [];
+    }
+  }
+
   Future<Map<String, dynamic>> getPendingOrders({int page = 1, String? barrio}) async {
     final token = await AuthService.instance.getToken();
     String url = '$baseUrl/v1/pending-orders?page=$page';

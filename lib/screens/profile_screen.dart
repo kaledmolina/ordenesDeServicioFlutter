@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
+import '../services/daily_auxiliary_service.dart';
 import '../services/location_service.dart';
 import '../widgets/location_disclosure_dialog.dart';
 import 'login_screen.dart';
@@ -17,6 +18,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   User? _currentUser;
   bool _isLoading = true;
   bool _hasLocationConsent = false;
+  Map<String, dynamic>? _dailyAuxiliary;
 
   @override
   void initState() {
@@ -27,10 +29,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
   Future<void> _loadUser() async {
     final user = await AuthService.instance.getCurrentUser();
     final hasConsent = await LocationService.instance.hasAcceptedDisclosure();
+    final dailyAux = await DailyAuxiliaryService.instance.getDailyAuxiliary();
     if (mounted) {
       setState(() {
         _currentUser = user;
         _hasLocationConsent = hasConsent;
+        _dailyAuxiliary = dailyAux;
         _isLoading = false;
       });
     }
@@ -114,6 +118,50 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   _buildProfileItem(Icons.work, 'Rol', 'Técnico de Campo'),
                   const Divider(),
                   _buildProfileItem(Icons.verified_user, 'Estado', 'Activo'),
+                  const Divider(),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 8.0),
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF10447E).withOpacity(0.1),
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(Icons.people_alt, color: Color(0xFF10447E)),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text('Auxiliar de Hoy', style: TextStyle(fontSize: 14, color: Colors.grey[500])),
+                              Text(
+                                _dailyAuxiliary != null
+                                    ? (_dailyAuxiliary!['name'] ?? 'Sin auxiliar')
+                                    : 'No configurado aún',
+                                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF111827)),
+                              ),
+                            ],
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () async {
+                            final res = await DailyAuxiliaryService.instance.showDailyAuxiliaryPicker(
+                              context,
+                              currentAuxiliaryId: _dailyAuxiliary?['id'],
+                              canDismissWithoutChoice: true,
+                            );
+                            if (res != null) {
+                              _loadUser();
+                            }
+                          },
+                          child: const Text('Cambiar'),
+                        ),
+                      ],
+                    ),
+                  ),
                 ],
               ),
             ).animate().fadeIn(delay: 200.ms).slideY(begin: 0.2, end: 0),
