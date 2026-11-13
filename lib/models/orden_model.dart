@@ -95,74 +95,98 @@ class Orden {
     return null;
   }
 
-  // Service Type: Basado en los 3 tipos de servicios (Internet, TV, Automonitoreo)
-  // y en los lineamientos oficiales de planes de la empresa:
-  // 1. COMBO_AUTOMONITOREO (Internet + TV + Automonitoreo / 3 Servicios)
-  // 2. INTERNET_AUTOMONITOREO (Internet + Automonitoreo)
-  // 3. COMBO (TV + Internet)
-  // 4. TV (Solo Televisión)
-  // 5. INTERNET (Solo Internet)
+  // Service Type: Basado estrictamente en lo que va a instalar el técnico en terreno
+  // según el plan contratado:
+  // 1. Planes individuales de solo internet:
+  //    - Plan 200 Megas internet (ID 44)
+  //    - Plan 400 Megas internet (ID 45)
+  //    - Plan 600 Megas internet (ID 46)
+  //    -> INTERNET ("Solo Internet")
+  // 2. Combos Internet + Televisión (Internet + TV):
+  //    - Plan ultra 200 megas (ID 56)
+  //    - Plan Básico Hogar 200 Megas+tv (ID 47)
+  //    - Plan Básico Hogar 400 Megas+tv (ID 48)
+  //    - Plan Básico Hogar 600 Megas+tv (ID 49)
+  //    -> COMBO ("TV + Internet")
+  // 3. Automonitoreo (Cámaras de Seguridad):
+  //    A. Solo Internet + Automonitoreo (Sin Televisión):
+  //       - PLAN 400 Megas Internet + Servicio de automonitoreo (ID 55)
+  //       - Plan 600 Megas internet + Servicio de automonitoreo (ID 58)
+  //       -> INTERNET_AUTOMONITOREO ("Internet + Automonitoreo")
+  //    B. Triple Combo: Internet + Televisión + Automonitoreo:
+  //       - Plan Plus 400 Megas+TV+Servicio Automonitoreo (ID 51)
+  //       - Plan 600 Megas + TV + Servicio de automonitoreo (ID 57)
+  //       -> COMBO_AUTOMONITOREO ("TV + Internet + Automonitoreo")
   String get tipoServicioNormalizado {
     final plan = (planInternet ?? '').trim().toUpperCase();
     final raw = (tipoServicio ?? '').trim().toUpperCase();
     final sol = (solicitudSuscriptor ?? '').trim().toUpperCase();
 
-    // 1. Detección de Automonitoreo
-    final hasAutomonitoreo = plan.contains('AUTOMONITOREO') ||
-        plan.contains('MONITOREO') ||
-        plan.contains('3 SERVICIOS') ||
-        raw.contains('AUTOMONITOREO') ||
-        raw.contains('MONITOREO') ||
-        sol.contains('AUTOMONITOREO') ||
-        sol.contains('MONITOREO') ||
-        sol.contains('CAMARA') ||
-        sol.contains('CÁMARA');
+    // 1. Si la orden tiene un plan de internet registrado, el plan determina exactamente
+    // lo que el técnico va a instalar en terreno (evita que estados previos de TV del cliente alteren la orden):
+    if (plan.isNotEmpty) {
+      // A. Automonitoreo (Cámaras de Seguridad)
+      final hasAutomonitoreo = plan.contains('AUTOMONITOREO') ||
+          plan.contains('MONITOREO') ||
+          plan.contains('CAMARA') ||
+          plan.contains('CÁMARA');
 
-    // 2. Detección de TV
-    final tvRegex = RegExp(r'(\+\s*TV|\bTV\b|TDT|TELEVISI|3\s*SERVICIOS)', caseSensitive: false);
-    final hasTvInPlan = tvRegex.hasMatch(plan);
-    final hasTvInSol = tvRegex.hasMatch(sol) || sol.contains('COMBO') || sol.contains('TV E INTERNET');
-    final hasTvInRaw = raw == 'TV' || raw.contains('COMBO') || raw.contains('TV');
-    final hasTvInClient = estadoTv != null &&
-        estadoTv!.isNotEmpty &&
-        estadoTv!.toUpperCase() != 'SIN SERVICIO' &&
-        estadoTv!.toUpperCase() != 'RETIRADO';
+      if (hasAutomonitoreo) {
+        final hasTv = plan.contains('+TV') ||
+            plan.contains('+ TV') ||
+            plan.contains('+tv') ||
+            plan.contains('TV') ||
+            plan.contains('3 SERVICIOS');
+        return hasTv ? 'COMBO_AUTOMONITOREO' : 'INTERNET_AUTOMONITOREO';
+      }
 
-    final hasTv = hasTvInPlan || hasTvInSol || hasTvInRaw || hasTvInClient;
+      // B. Combos Internet + Televisión (Internet + TV)
+      // Incluye: Plan Ultra 200 megas (ID 56), Plan Básico Hogar 200, 400 y 600 Megas+tv (IDs 47, 48, 49)
+      final isUltra200 = plan.contains('ULTRA');
+      final tvRegex = RegExp(r'(\+\s*TV|\bTV\b|TDT|TELEVISI|2\s*SERVICIOS|3\s*SERVICIOS)', caseSensitive: false);
+      final isBasicoHogar = plan.contains('BÁSICO HOGAR') || plan.contains('BASICO HOGAR');
 
-    // Códigos directos si ya vienen clasificados desde el backend
+      if (isUltra200 || isBasicoHogar || tvRegex.hasMatch(plan)) {
+        return 'COMBO';
+      }
+
+      // C. Planes individuales de solo internet:
+      // IDs 44, 45, 46: Plan 200 Megas internet, Plan 400 Megas internet, Plan 600 Megas internet
+      return 'INTERNET';
+    }
+
+    // 2. Si no hay plan contratado registrado, basarse en tipo_servicio (raw) o solicitud de la orden:
     if (raw == 'COMBO_AUTOMONITOREO' || raw == 'INTERNET_TV_AUTOMONITOREO') {
       return 'COMBO_AUTOMONITOREO';
     }
-    if (raw == 'INTERNET_AUTOMONITOREO') {
+    if (raw == 'INTERNET_AUTOMONITOREO' || raw == 'CAMARA' || raw == 'CÁMARA') {
       return 'INTERNET_AUTOMONITOREO';
     }
-
-    // Clasificación según lineamientos:
-    if (hasAutomonitoreo) {
-      if (hasTv || plan.contains('3 SERVICIOS')) {
-        return 'COMBO_AUTOMONITOREO';
-      }
-      return 'INTERNET_AUTOMONITOREO';
-    }
-
-    if (hasTvInPlan || plan.contains('2 SERVICIOS')) {
+    if (raw == 'COMBO' || (raw.contains('TV') && raw.contains('INT')) || raw.contains('TV / INT')) {
       return 'COMBO';
     }
-
-    if (raw == 'COMBO' || raw.contains('COMBO') || (raw.contains('TV') && raw.contains('INT')) || raw.contains('TV / INT')) {
-      return 'COMBO';
+    if (raw == 'TV') {
+      return 'TV';
+    }
+    if (raw == 'INTERNET') {
+      return 'INTERNET';
     }
 
-    if (sol.contains('COMBO') || sol.contains('TV E INTERNET') || sol.contains('INTERNET TV') || (sol.contains('TV') && sol.contains('INTERNET'))) {
+    // 3. Revisar reporte / solicitud del suscriptor
+    final hasAutoInSol = sol.contains('AUTOMONITOREO') ||
+        sol.contains('MONITOREO') ||
+        sol.contains('CAMARA') ||
+        sol.contains('CÁMARA');
+    final tvRegexSol = RegExp(r'(\+\s*TV|\bTV\b|TDT|TELEVISI)', caseSensitive: false);
+    final hasTvInSol = tvRegexSol.hasMatch(sol) || sol.contains('COMBO') || sol.contains('TV E INTERNET');
+
+    if (hasAutoInSol) {
+      return hasTvInSol ? 'COMBO_AUTOMONITOREO' : 'INTERNET_AUTOMONITOREO';
+    }
+    if (sol.contains('COMBO') || sol.contains('TV E INTERNET') || (sol.contains('TV') && sol.contains('INTERNET'))) {
       return 'COMBO';
     }
-
-    if (hasTv && (plan.isNotEmpty || sol.contains('INTERNET') || sol.contains('WIFI') || sol.contains('FIBRA'))) {
-      return 'COMBO';
-    }
-
-    if (raw == 'TV' || (hasTvInSol && !sol.contains('INTERNET') && plan.isEmpty) || (hasTvInClient && plan.isEmpty)) {
+    if (hasTvInSol && !sol.contains('INTERNET')) {
       return 'TV';
     }
 
