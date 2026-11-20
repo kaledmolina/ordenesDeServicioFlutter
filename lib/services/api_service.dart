@@ -10,7 +10,13 @@ import '../models/user_model.dart';
 dynamic _decodeJsonIsolate(String source) => jsonDecode(source);
 
 class ApiService {
-  static const String _baseUrlDomain = 'https://ordenes.intalnet.com';
+  /// Dominio del backend, SIN `/api`. Se puede sobreescribir al compilar/correr:
+  ///   flutter run --dart-define=API_BASE_URL=http://192.168.1.50:8000
+  /// Si no se define, usa producción.
+  static const String _baseUrlDomain = String.fromEnvironment(
+    'API_BASE_URL',
+    defaultValue: 'https://ordenes.intalnet.com',
+  );
   static const String baseUrl = '$_baseUrlDomain/api';
   static const String domain = _baseUrlDomain;
   static const Duration defaultTimeout = Duration(seconds: 10);

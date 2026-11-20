@@ -4,4 +4,9 @@
          to allow setting breakpoints, to provide hot reload, etc.
     -->
     <uses-permission android:name="android.permission.INTERNET"/>
+
+    <!-- Solo en builds de debug: permite apuntar la app a un backend local por HTTP
+         (por ejemplo --dart-define=API_BASE_URL=http://192.168.1.50:8000).
+         Las builds de release conservan el bloqueo de tráfico en claro de Android. -->
+    <application android:usesCleartextTraffic="true" />
 </manifest>
