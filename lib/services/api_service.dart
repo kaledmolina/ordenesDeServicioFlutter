@@ -163,6 +163,23 @@ class ApiService {
     final responseData = await _handleResponse(response);
     return Orden.fromJson(responseData['order']);
   }
+
+  /// Crea una orden de escalamiento (039 ESCALAMIENTO) a partir de una orden ejecutada.
+  /// El backend clona los datos de la orden original y la deja pendiente, sin técnico.
+  Future<Orden> createEscalation(String orderNumber, Map<String, dynamic> data) async {
+    final token = await AuthService.instance.getToken();
+    final response = await http.post(
+      Uri.parse('$baseUrl/v1/orders/$orderNumber/escalation'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'Authorization': 'Bearer $token'
+      },
+      body: jsonEncode(data),
+    ).timeout(defaultTimeout);
+    final responseData = await _handleResponse(response);
+    return Orden.fromJson(responseData['order']);
+  }
   
   // CAMBIO: Acepta un String en lugar de un int
   Future<Map<String, dynamic>> rejectOrder(String orderNumber) async {

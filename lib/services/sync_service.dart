@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import '../services/api_service.dart';
@@ -102,6 +103,24 @@ class SyncService {
             case 'close':
               await apiService.closeOrder(orderNumber, data);
               break;
+            case 'escalation': {
+              final nueva = await apiService.createEscalation(orderNumber, {
+                'tipo_novedad': data['tipo_novedad'],
+                if (data['detalle'] != null) 'detalle': data['detalle'],
+                if (data['coordenadas'] != null) 'coordenadas': data['coordenadas'],
+              });
+              // La foto quedó guardada en el equipo: ahora sí tiene número de orden
+              // al cual subirse.
+              final fotoPath = data['foto_path'] as String?;
+              if (fotoPath != null && fotoPath.isNotEmpty && await File(fotoPath).exists()) {
+                await dbService.addPendingPhoto(
+                  nueva.numeroOrden,
+                  fotoPath,
+                  tipo: 'Novedad escalamiento',
+                );
+              }
+              break;
+            }
             case 'reject':
               await apiService.rejectOrder(orderNumber);
               break;

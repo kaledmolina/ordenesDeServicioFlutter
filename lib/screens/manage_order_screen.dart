@@ -18,14 +18,14 @@ import '../models/orden_model.dart';
 import '../models/photo_status_model.dart';
 import '../repositories/order_repository.dart';
 import '../repositories/photo_repository.dart';
-import 'package:image/image.dart' as img;
-import 'package:intl/intl.dart';
 import '../services/auth_service.dart';
 import '../services/sync_service.dart';
 import '../services/upload_service.dart';
 import '../services/api_service.dart';
+import '../utils/image_watermark.dart';
 import '../widgets/connection_status_indicator.dart';
 import '../widgets/app_background.dart';
+import '../widgets/escalation_sheet.dart';
 import '../widgets/processing_overlay.dart';
 import 'photo_view_screen.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -39,48 +39,6 @@ class ManageOrderScreen extends StatefulWidget {
   _ManageOrderScreenState createState() => _ManageOrderScreenState();
 }
 
-// TOP-LEVEL FUNCTION FOR ISOLATE PROCESSING
-Future<String> processImageWithWatermarkInIsolate(Map<String, String> args) async {
-  final originalPath = args['originalPath']!;
-  final targetPath = args['targetPath']!;
-  
-  try {
-    final originalFile = File(originalPath);
-    final bytes = await originalFile.readAsBytes();
-    img.Image? image = img.decodeImage(bytes);
-
-    if (image != null) {
-      final now = DateTime.now();
-      final dateStr = DateFormat('yyyy-MM-dd HH:mm').format(now);
-      final text = 'Intalnet - $dateStr';
-      
-      if (image.width > 1600 || image.height > 1600) {
-         image = img.copyResize(image, width: image.width > image.height ? 1600 : null, height: image.height > image.width ? 1600 : null);
-      }
-
-      img.drawString(
-        image,
-        text,
-        font: img.arial24,
-        x: 20,
-        y: 20,
-        color: img.ColorRgb8(255, 165, 0), // Orange/Gold
-      );
-      
-      final encoded = img.encodeJpg(image, quality: 80);
-      final file = File(targetPath);
-      await file.writeAsBytes(encoded);
-      return targetPath;
-    }
-    await originalFile.copy(targetPath);
-    return targetPath;
-  } catch (e) {
-    debugPrint('Error adding watermark in isolate: $e');
-    final originalFile = File(originalPath);
-    await originalFile.copy(targetPath);
-    return targetPath;
-  }
-}
 
 class _ManageOrderScreenState extends State<ManageOrderScreen> {
   final _formKey = GlobalKey<FormState>();
@@ -840,6 +798,36 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   void _showSnackbar(String msg, Color color) {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg), backgroundColor: color));
   }
+
+  /// Abre la hoja para reportar la novedad y crear la orden de escalamiento.
+  /// La orden original ya quedó ejecutada con el cierre normal.
+  Future<void> _openEscalationSheet() async {
+    if (!mounted) return;
+
+    final result = await showModalBottomSheet<Map<String, dynamic>>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (_) => EscalationSheet(orden: widget.orden),
+    );
+
+    if (result == null || !mounted) return;
+
+    final offline = result['offline'] == true;
+    final numero = result['numero_orden'];
+
+    if (offline) {
+      _showSnackbar(
+        'Novedad guardada. La orden de escalamiento se creará cuando vuelva la conexión.',
+        Colors.orange,
+      );
+    } else {
+      _showSnackbar(
+        'Orden de escalamiento #$numero creada y pendiente de asignación.',
+        Colors.green,
+      );
+    }
+  }
   
   void _addArticle() {
     String? selected = _predefinedArticles.first;
@@ -1192,6 +1180,30 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                               style: TextStyle(color: Colors.grey.shade700, fontSize: 15, height: 1.4),
                             ),
                             const SizedBox(height: 24),
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton.icon(
+                                onPressed: () async {
+                                  Navigator.pop(ctx);
+                                  await _openEscalationSheet();
+                                  if (!mounted) return;
+                                  Navigator.of(context).pop('refresh');
+                                },
+                                icon: const Icon(Icons.report_problem_outlined),
+                                label: const Text(
+                                  'REPORTAR NOVEDAD',
+                                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.orange.shade800,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                                  padding: const EdgeInsets.symmetric(vertical: 14),
+                                  elevation: 0,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 12),
                             SizedBox(
                               width: double.infinity,
                               child: ElevatedButton(

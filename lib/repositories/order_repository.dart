@@ -5,6 +5,7 @@ import '../services/api_service.dart';
 import '../services/auth_service.dart';
 import '../services/database_service.dart';
 import '../services/sync_service.dart';
+import '../services/upload_service.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class OrderRepository {
@@ -198,6 +199,52 @@ class OrderRepository {
       if (localOrder != null) return localOrder;
       throw Exception('Order not found locally');
     }
+  }
+
+  /// Crea la orden de escalamiento (039 ESCALAMIENTO) a partir de la orden ejecutada.
+  ///
+  /// Si no hay conexión, encola la operación y devuelve `offline: true`: [SyncService]
+  /// la crea cuando vuelva la señal, incluida la foto (que queda guardada en el equipo).
+  Future<Map<String, dynamic>> createEscalation(
+    String orderNumber, {
+    required String tipoNovedad,
+    String? detalle,
+    String? coordenadas,
+    String? fotoPath,
+  }) async {
+    final payload = <String, dynamic>{
+      'tipo_novedad': tipoNovedad,
+      if (detalle != null && detalle.trim().isNotEmpty) 'detalle': detalle.trim(),
+      if (coordenadas != null && coordenadas.trim().isNotEmpty) 'coordenadas': coordenadas.trim(),
+    };
+
+    if (await _hasConnection()) {
+      try {
+        final nueva = await _apiService.createEscalation(orderNumber, payload);
+        if (fotoPath != null) {
+          await _dbService.addPendingPhoto(
+            nueva.numeroOrden,
+            fotoPath,
+            tipo: 'Novedad escalamiento',
+          );
+          UploadService.instance.syncPendingUploads();
+        }
+        return {
+          'offline': false,
+          'numero_orden': nueva.numeroOrden,
+          'order': nueva,
+        };
+      } catch (e) {
+        rethrow;
+      }
+    }
+
+    await _queueOperation('escalation', orderNumber, {
+      ...payload,
+      if (fotoPath != null) 'foto_path': fotoPath,
+    });
+
+    return {'offline': true, 'numero_orden': null};
   }
 
   Future<void> rejectOrder(String orderNumber) async {
