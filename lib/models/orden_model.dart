@@ -299,8 +299,11 @@ class Orden {
   static const Map<String, String> tipoOrdenOptions = {
     '025': '025 REVISION TECNICA',
     '033': '033 RECONEXION',
+    '034': '034 RECONEXION INSTALACION',
     '037': '037 CAMBIO CONTRASEÑA',
     '038': '038 TRASLADO INTERNO',
+    '039': '039 ESCALAMIENTO',
+    '040': '040 TRASLADO INSTALACION',
     '004': '004 SUSPENSION',
     '005': '005 RECONEXION',
     '010': '010 TRASLADO',
