@@ -120,6 +120,16 @@ class Orden {
     final raw = (tipoServicio ?? '').trim().toUpperCase();
     final sol = (solicitudSuscriptor ?? '').trim().toUpperCase();
 
+    // 0. Órdenes creadas desde los recursos "Órdenes de TV" y "Órdenes de Cámara"
+    // del panel: el servicio lo define la propia orden, no el plan del cliente.
+    final tipoRegistro = (tipo ?? '').trim().toUpperCase();
+    if (tipoRegistro == 'TV') {
+      return 'TV';
+    }
+    if (tipoRegistro == 'CAMARA' || tipoRegistro == 'CÁMARA') {
+      return 'CAMARA';
+    }
+
     // 1. Si la orden tiene un plan de internet registrado, el plan determina exactamente
     // lo que el técnico va a instalar en terreno (evita que estados previos de TV del cliente alteren la orden):
     if (plan.isNotEmpty) {
@@ -197,6 +207,7 @@ class Orden {
   bool get isCombo => tipoServicioNormalizado == 'COMBO' || isComboAutomonitoreo;
   bool get isSoloInternet => tipoServicioNormalizado == 'INTERNET';
   bool get isSoloTv => tipoServicioNormalizado == 'TV';
+  bool get isSoloCamara => tipoServicioNormalizado == 'CAMARA';
 
   String get tipoServicioDisplay {
     switch (tipoServicioNormalizado) {
@@ -208,6 +219,8 @@ class Orden {
         return 'TV + Internet';
       case 'TV':
         return 'Solo Televisión';
+      case 'CAMARA':
+        return 'Solo Cámara';
       case 'INTERNET':
       default:
         return 'Solo Internet';

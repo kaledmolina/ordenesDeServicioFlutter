@@ -113,6 +113,25 @@ class ServiceTypeBadge extends StatelessWidget {
         ];
         break;
 
+      case 'CAMARA':
+        bgColor = const Color(0xFFEEF2FF); // Indigo 50
+        borderColor = const Color(0xFF6366F1); // Indigo 500
+        textColor = const Color(0xFF3730A3); // Indigo 800
+        contentChildren = [
+          Icon(Icons.videocam, size: compact ? 12 : 15, color: textColor),
+          const SizedBox(width: 4),
+          Text(
+            'SOLO CÁMARA',
+            style: TextStyle(
+              color: textColor,
+              fontSize: compact ? 10 : 11,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.3,
+            ),
+          ),
+        ];
+        break;
+
       case 'INTERNET':
       default:
         bgColor = const Color(0xFFE0F2FE); // Sky 100

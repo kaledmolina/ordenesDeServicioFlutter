@@ -921,6 +921,13 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
   }
 
   // --- VALIDATION AND FINALIZE ---
+
+  /// Solo las órdenes de escalamiento (039) exigen la firma del cliente para cerrar.
+  bool get _esEscalamiento {
+    final tipo = widget.orden.tipoOrden ?? '';
+    return tipo.contains('039') || tipo.toUpperCase().contains('ESCALAMIENTO');
+  }
+
   Future<void> _finalizeOrder() async {
     List<String> missingFields = [];
 
@@ -941,7 +948,10 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
     
     // Signatures
     if (_savedSignatureFile == null) missingFields.add('Firma del Técnico (Debe crearla)');
-    if (_savedSubscriberSignatureFile == null) missingFields.add('Firma del Cliente');
+    // La firma del cliente no es obligatoria, solo en órdenes de escalamiento.
+    if (_esEscalamiento && _savedSubscriberSignatureFile == null) {
+      missingFields.add('Firma del Cliente (Obligatoria en órdenes de escalamiento)');
+    }
 
     // 2. Normal Flow Checks
     if (!isRetiro) {
@@ -1418,7 +1428,15 @@ class _ManageOrderScreenState extends State<ManageOrderScreen> {
                        ),
                      
                      const SizedBox(height: 20),
-                     const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
+                     Row(
+                       children: [
+                         const Text('Cliente', style: TextStyle(fontWeight: FontWeight.bold)),
+                         if (_esEscalamiento)
+                           const Text(' *', style: TextStyle(color: Colors.red, fontWeight: FontWeight.bold))
+                         else
+                           const Text(' (Opcional)', style: TextStyle(color: Colors.grey)),
+                       ],
+                     ),
                      _buildSubscriberSignatureArea(),
                   ]),
                  _buildCard('Cierre', Icons.check_circle, [

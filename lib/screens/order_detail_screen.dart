@@ -793,6 +793,10 @@ class _OrderDetailScreenState extends State<OrderDetailScreen> {
       serviceCardBorderColor = const Color(0xFF14B8A6); // Teal
       serviceCardTextColor = const Color(0xFF115E59);
       serviceIcon = Icons.shield_outlined;
+    } else if (orden.isSoloCamara) {
+      serviceCardBorderColor = const Color(0xFF6366F1); // Indigo
+      serviceCardTextColor = const Color(0xFF3730A3);
+      serviceIcon = Icons.videocam;
     } else if (orden.isCombo) {
       serviceCardBorderColor = const Color(0xFFA855F7); // Purple
       serviceCardTextColor = const Color(0xFF6B21A8);
